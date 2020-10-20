@@ -20,12 +20,14 @@ namespace ETModel
         private readonly HttpListener httpListener;
         public  override  IPEndPoint GetEndPoint() { return NetworkHelper.ToIPEndPoint(prefix.ToLower().Replace("http://", "").Replace("/", "")); }
         public  readonly string prefix;
+        public  readonly bool   website;
 
-        public HttpService(string _prefix, Action<AChannel> acceptCallback)
+        public HttpService(string _prefix, bool website, Action<AChannel> acceptCallback)
         {
             this.AcceptCallback += acceptCallback;
             
             this.httpListener = new HttpListener();
+            this.website = website;
 
             this.prefix = _prefix;
             StartAccept(this.prefix);
@@ -75,6 +77,7 @@ namespace ETModel
 
         private void Result(IAsyncResult ar)
         {
+            System.Threading.Monitor.Enter(Entity.Root);
             try
             {
                 //当接收到请求后程序流会走到这里
@@ -118,17 +121,19 @@ namespace ETModel
                 //Console.ForegroundColor = ConsoleColor.Red;
                 //Console.WriteLine($"网络蹦了：{ex.ToString()}");
             }
+            System.Threading.Monitor.Exit(Entity.Root);
         }
 
         private string OnGet(HttpListenerRequest request, HttpListenerResponse response)
         {
             try
             {
-                int padIndex1 = request.RawUrl.IndexOf("?");
-                if (padIndex1 != -1&& request.RawUrl.IndexOf(".html?")==-1)
+                var RequestRawUrl = request.RawUrl.Replace("satrpc?","?");
+                int padIndex1 = RequestRawUrl.IndexOf("?");
+                if (padIndex1 != -1&& RequestRawUrl.IndexOf(".html?")==-1)
                 {
-                    string cmd = request.RawUrl.Substring(1, padIndex1 - 1);
-                    string data = request.RawUrl.Substring(padIndex1 + 1, request.RawUrl.Length - (padIndex1 + 1));
+                    string cmd = RequestRawUrl.Substring(1, padIndex1 - 1);
+                    string data = RequestRawUrl.Substring(padIndex1 + 1, RequestRawUrl.Length - (padIndex1 + 1));
 
                     string[] array = data.Split('&');
                     Dictionary<string, string> map = new Dictionary<string, string>();
@@ -146,7 +151,9 @@ namespace ETModel
 
                     return OnMessage(map, request, response);
                 }
-                else // http服务
+                else
+                // http服务
+                if(website)
                 {
                     //string httpheader = "HTTP/1.1 200 OK\n" +
                     //                    "Server: Microsoft-IIS/5.1\n" +
@@ -177,9 +184,8 @@ namespace ETModel
                     else
                     if (File.Exists("./wwwroot" + RawUrl+".html"))
                         return File.ReadAllText("./wwwroot" + RawUrl + ".html");
-
-                    return "";
                 }
+                return "";
             }
             catch (Exception ex)
             {
@@ -227,9 +233,7 @@ namespace ETModel
             message.request  = request;
             message.response = response;
 
-            System.Threading.Monitor.Enter(Entity.Root);
             componentNetMsg.HandleMsg(null, NetOpcodeBase.HttpMessage, message);
-            System.Threading.Monitor.Exit(Entity.Root);
 
             return message.result;
         }

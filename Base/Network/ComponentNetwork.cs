@@ -82,7 +82,8 @@ namespace ETModel
                         break;
 					case NetworkProtocol.HttpSocket:
 						string[] prefixs = address.Split(';');
-						this.Service = new HttpService(prefixs[0], this.OnAccept);
+						Boolean.TryParse(jd["website"]?.ToString(), out bool website);
+						this.Service = new HttpService(prefixs[0], website, this.OnAccept);
 						break;
                 }
 			}
