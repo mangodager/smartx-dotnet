@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+
+    <!--自定义样式
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>
+     -->
+    <style>
+        .nav_box {
+            height: 60px;
+            position: relative;
+            top: calc(50% - 30px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qx_1 {
+            display: flex;
+            line-height: 70x;
+            margin: -15px 5px 0 5px;
+            padding: 0 18px 0 18px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        body {
+            padding-bottom: 48px;
+        }
+
+        .jumbotron {
+            background-size: cover;
+            padding-top: 7%;
+            padding-bottom: 2%;
+        }
+    </style>
+    
+    <style>
+        fieldset {
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 0 .625em;
+        }
+
+        label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: left;
+            width: 180px;
+            vertical-align: top;
+        }
+
+        input {
+            font-size: inherit;
+            width: 300px;
+        }
+    </style>
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+
+
+    <div class="container">
+
+        <div class="jumbotron">
+            <h1>SmartX</h1>
+            <button type="button" class="btn btn-primary" onclick='OnSave()'>保存</button>
+        </div>
+
+        <h1> </h1>
+
+        <div id="rules">Setting:</div>
+        <h6> </h6>
+
+        <fieldset>
+            <p> </p>
+            <p>
+                <label for="title">服务器地址:</label>
+                <input type="text" id="serverIP" name="serverIP" align="left">
+            </p>
+
+        </fieldset>
+
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <script>
+        function liOnclick(e) {
+            alert(e.id);
+        };
+
+        function OnSave(e) {
+            var serverIP = $('#serverIP').val();
+            if (serverIP[serverIP.length - 1] == '\\' || serverIP[serverIP.length - 1] == '/')
+                serverIP = serverIP.substring(0, serverIP.length - 1);
+
+            Helper.SetServerIP(serverIP)
+        };
+
+        $('#serverIP').val(Helper.GetServerIP());
+
+
+
+    </script>
+
+</body>
+</html>

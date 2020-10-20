@@ -1,0 +1,220 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+
+    <!--自定义样式
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>
+     -->
+    <style>
+        .nav_box {
+            height: 60px;
+            position: relative;
+            top: calc(50% - 30px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qx_1 {
+            display: flex;
+            line-height: 70x;
+            margin: -15px 5px 0 5px;
+            padding: 0 18px 0 18px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        body {
+            padding-bottom: 48px;
+        }
+
+        .jumbotron {
+            background-size: cover;
+            padding-top: 7%;
+            padding-bottom: 2%;
+        }
+
+        .textarea-inherit {
+            width: 100%;
+            overflow: auto;
+            word-break: break-all;
+             color:white;
+             background-color:#202020;
+        }
+
+    </style>
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+
+    <div class="container">
+
+        <div class="jumbotron">
+            <h1>SmartX</h1>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'>刷新</button>
+        </div>
+
+        <div id="rules">Console:</div>
+        <h6> </h6>
+
+        <form name="my_form" div id="my_form" method="POST">
+            <!--<textarea class="textarea-inherit" rows=20 name=s1 cols=27 onpropertychange="this.style.posHeight=this.scrollHeight "></textarea>-->
+        </form>
+
+        <div class="input-group">
+            <div class="input-group-btn dropup">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Command <span class="caret"></span></button>
+                <ul class="dropdown-menu" @command="handledropdown">
+                    <li><a href="#" onclick='onClickCommand("stats")'>stats</a></li>
+                    <li><a href="#" onclick='onClickCommand("rules")'>rules</a></li>
+                    <li><a href="#" onclick='onClickCommand("beruler")'>beruler</a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="#" onclick='onClickCommand("account")'>account</a></li>
+                    <li><a href="#" onclick='onClickCommand("transferstate")'>transfer</a></li>
+                    <li><a href="#" onclick='onClickCommand("getmnemonic")'>getmnemonic</a></li>
+                </ul>
+            </div><!-- /btn-group -->
+            <input type="text" class="form-control" id='commandinput' aria-label="..." onkeyup='return onKeyPress(event)'>
+        </div><!-- /input-group -->
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <script>
+        function OnRefresh(e) {
+            window.location.href = "console.html";
+        };
+
+        function liOnclick(e) {
+            alert(e.id);
+        };
+
+        function onClickCommand(e) {
+            SendCommand(e);
+        }
+
+        var platform = Helper.checkPlatform();
+        var textarea = document.createElement("btn-item-new");
+
+        if (platform == "pc") {
+            textarea.innerHTML = "<textarea class='textarea-inherit' id='textarea' rows=27 name=s1 cols=27 onpropertychange='this.style.posHeight=this.scrollHeight'  disabled='disabled' ></textarea > ";
+        }
+        else {
+            textarea.innerHTML = "<textarea class='textarea-inherit' id='textarea' rows=16 name=s1 cols=27 onpropertychange='this.style.posHeight=this.scrollHeight'  disabled='disabled' ></textarea > ";
+        }
+        document.getElementById("my_form").appendChild(textarea);
+
+        jQuery.support.cors = true;
+        // 方向键支持
+        var inputlist = new Array();
+        var inputlast = 0;
+
+        function onKeyPress(e) {
+            var keyCode = null;
+            if (e.which)
+                keyCode = e.which;
+            else if (e.keyCode)
+                keyCode = e.keyCode;
+            if (keyCode == 13) {
+                SendCommand();
+                return true;
+            }
+
+            // 方向键支持
+            if (keyCode == 38 || keyCode == 40) // 上下
+            {
+                inputlast = keyCode == 38 ? (inputlast) - 1 : (inputlast) + 1;
+                if (inputlast < 0)
+                    inputlast = 0;
+                if (inputlast >= inputlist.length)
+                    inputlast = inputlist.length;
+                $('#commandinput').val(inputlast != inputlist.length ? inputlist[inputlast] : "");
+                return false;
+            }
+
+            return true;
+        }
+
+        function GetSystemTime() {
+            var date = new Date();
+            year = date.getFullYear();
+            month = date.getMonth() + 1;
+            day = date.getDate();
+            hours = date.getHours();
+            minutes = date.getMinutes();
+            seconds = date.getSeconds();
+            return year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+        };
+
+        function SendCommand(inputText) {
+            if (inputText == null)
+                inputText = $('#commandinput').val();
+            $('#commandinput').val("");
+
+            var ta = document.getElementById("textarea");
+            ta.value = [ta.value, GetSystemTime() + "> " + inputText + "\n"].join("");
+
+            if (inputText != null && inputText != "") {
+                $.ajax({
+                    url: Helper.GetServerIP()+ "/Command",
+                    dataType: "text",
+                    type: "get",
+                    data: "input=" + inputText,
+                    success: function (data) {
+                        ta.value = [ta.value, data + "\n"].join("");
+                        ta.scrollTop = ta.scrollHeight;
+
+                    },
+                    error: function (err) {
+                        ta.value = [ta.value, GetSystemTime() + "> " + "connect error!" + "\n"].join("");
+                        ta.scrollTop = ta.scrollHeight;
+                    }
+                });
+
+                if (inputlist[inputlist.length] != inputText) {
+                    inputlist.push(inputText); inputlast = inputlist.length; // 方向键支持
+                }
+            }
+        }
+
+    </script>
+
+
+</body>
+</html>

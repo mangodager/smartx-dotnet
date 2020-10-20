@@ -1,0 +1,274 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式-->
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>-->
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+
+
+    <div class="container" id="body_container">
+
+        <div class="jumbotron">
+            <h1>SmartX</h1>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'>刷新</button>
+        </div>
+        <h4></h4>
+        <div class="col-lg-6">
+            Block:
+            <button type="button" class="btn  btn-default" onclick='liOnclickUp()'>上 一 页</button>
+            <button type="button" class="btn  btn-default" onclick='liOnclickDown()'>下 一 页</button>
+            <h4></h4>
+        </div>
+        <div class="col-lg-6">
+            <div class="input-group">
+                <input type="text" id="searchText" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                </span>
+            </div>
+            <h4></h4>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="mytable">
+                <thead id="thead_mytable111">
+                    <tr>
+                        <th>height</th>
+                        <th>blk</th>
+                        <th>tran</th>
+                        <!--<th>weight</th>-->
+                        <th>hash</th>
+                        <th>Address</th>
+                        <th>prehash</th>
+                        <th>prehashmkl</th>
+                        <th>timestamp</th>
+                        <th>random</th>
+                        <th>sign</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="BlockInfo" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="BlockInfoLabel" aria-hidden="true" style="top:10%">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Block
+                    </h4>
+                </div>
+                <div style="width:100%;height:100%;overflow-x:auto;">
+                    <table class="table table-hover" id="BlockInfoTable">
+                        <thead id="thead_mytable111">
+                            <tr>
+                                <th>key</th>
+                                <th>value</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="liOnBlockInfoLeave()">
+                        离开
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var colorindex = 1
+
+        function OnRefresh(e) {
+            window.location.href = window.location.href;
+        };
+
+        function liOnclick(e) {
+            ShowBlock(e.id);
+            //alert(e.id);
+        };
+
+        function liOnSearch(e) {
+            var text = $('#' + e).val();
+            ShowBlock(text);
+        }
+
+        function ShowBlock(text) {
+            if (text != "") {
+                $.ajax({
+                    url: Helper.GetServerIP() + "/GetBlock",
+                    dataType: "text",
+                    type: "get",
+                    data: { hash: text },
+                    success: function (data) {
+                        if (data != "") {
+                            // 删除之前的数据
+                            var mytableEle = document.getElementById("BlockInfoTable");
+                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                    mytableEle.children[i].remove();
+                            }
+
+                            var jsonObj = JSON.parse(data);
+                            for (var key in jsonObj) {
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                                if (key != "linksblk" && key != "linkstran") {
+                                    Helper.TableInsert("BlockInfoTable", key, color, key, jsonObj[key])
+                                }
+                            }
+
+                            for (var key in jsonObj["linksblk"]) {
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                                Helper.TableInsert("BlockInfoTable", "linksblk_" + jsonObj["linksblk"][key], color, "linksblk_" + key, jsonObj["linksblk"][key])
+                            }
+
+                            for (var key in jsonObj["linkstran"]) {
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                                Helper.TableInsert("BlockInfoTable", "linkstran_" + jsonObj["linkstran"][key]["hash"], color, "linkstran_" + key, jsonObj["linkstran"][key]["hash"])
+                            }
+                            $("#BlockInfo").modal('show');
+                        }
+                    },
+                    error: function (err) {
+                        alert("网络连接错误!");
+                    }
+                });
+            }
+        };
+
+        function liOnBlockInfoLeave(e) {
+            $("#BlockInfo").modal('hide');
+        };
+
+        var colorlist = ["success", "", "info", "", "warning", "", "danger", ""];
+        var colorindex = 0;
+
+        //for (var i = 0; i < 20; i++) {
+        //    var color = colorlist[i % colorlist.length];
+        //    Helper.TableInsert("mytable", "sddd"+i, color, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        //}
+
+        var browserIndexCur = 0;
+        var browserIndexMax = 0;
+
+        function JSONLength(obj) {
+            var size = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) size++;
+            }
+            return size;
+        };
+
+        function onBrowserInit() {
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/GetNearBlock",
+                dataType: "text",
+                type: "get",
+                data: { browserIndex: browserIndexCur },
+                success: function (data) {
+
+                    // 删除之前的
+                    var mytableEle = document.getElementById("mytable");
+                    for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                        if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                            mytableEle.children[i].remove();
+                    }
+                    colorindex = 0;
+
+
+                    var jsonObj = JSON.parse(data);
+                    for (var key in jsonObj) {
+
+                        var color = colorlist[colorindex % colorlist.length]; colorindex++;
+                        Helper.TableInsert("mytable", jsonObj[key]["hash"], color,
+                            jsonObj[key]["height"],
+                            JSONLength(jsonObj[key]["linksblk"]),
+                            JSONLength(jsonObj[key]["linkstran"]),
+                            //jsonObj[key]["weight"],
+                            jsonObj[key]["hash"],
+                            jsonObj[key]["Address"],
+                            jsonObj[key]["prehash"],
+                            jsonObj[key]["prehashmkl"],
+                            jsonObj[key]["timestamp"],
+                            jsonObj[key]["random"], "");
+                        //jsonObj[key]["sign"]);
+
+                        if (browserIndexCur == 0) {
+                            browserIndexCur = parseInt(jsonObj[key]["height"]);
+                            browserIndexMax = browserIndexCur;
+                        }
+                    }
+
+                },
+                error: function (err) {
+
+                }
+            });
+        }
+        onBrowserInit(0);
+
+        function liOnclickUp(e) {
+            browserIndexCur += 21;
+            if (browserIndexCur > browserIndexMax)
+                browserIndexCur = 0;
+            onBrowserInit();
+        };
+        function liOnclickDown(e) {
+            browserIndexCur -= 21;
+            onBrowserInit();
+
+        };
+
+    </script>
+
+</body>
+</html>

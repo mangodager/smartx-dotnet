@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Core.App": {
+      "commandName": "Project",
+      "commandLineArgs": "-index:1 -configure:./Data/Config/All4.json -node:All -db:./Data/LevelDB -wallet:./Data/wallet.json",
+      "workingDirectory": "../"
+    }
+  }
+}

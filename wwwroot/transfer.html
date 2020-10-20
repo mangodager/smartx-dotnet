@@ -1,0 +1,823 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>
+     -->
+
+    <!--ModalTransfer-->
+    <style>
+        .modal.fade.in {
+            top: 15%;
+        }
+
+        fieldset {
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 0 .625em;
+        }
+
+        label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: left;
+            width: 80px;
+            vertical-align: top;
+        }
+
+        input {
+            font-size: inherit;
+            width: 300px;
+        }
+    </style>
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script type="text/javascript" src="js/qrcode.min.js"></script>
+    <script src="js/reqrcode.js"></script>
+    <script src='js/bignumber.min.js'></script>
+
+    <div class="container">
+
+        <div class="jumbotron">
+            <h1>SmartX</h1>
+            <button type="button" class="btn btn-primary" onclick="liOnShowQRCode()">收款</button>
+            <button type="button" class="btn btn-info" onclick="liOnScanQRCode()">扫码支付</button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalTransfer">转账</button>
+            <button type="button" class="btn btn-warning" id="btnCopyToClip" title="" onclick='copyToClipBoard()'
+                    data-container="body" data-toggle="popover" data-placement="bottom"
+                    data-content="地址已复制到剪切板">
+                复制地址
+            </button>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#ModalExport">导出</button>
+
+        </div>
+
+        <h3 id="address" style='text-align:center;'>...</h3>
+        <h6> </h6>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="waittable">
+                <caption id="caption_mytable111">
+                    处理中:
+                </caption>
+                <thead id="thead_mytable111">
+                    <tr>
+                        <th>hash</th>
+                        <th style='text-align:right;'>state</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="mytable">
+                <caption id="caption_mytable111">
+                    <div class="col-lg-6">
+                        账户:
+                        <button type="button" class="btn  btn-default" onclick='liOnclickUp()'> 上 一 页</button>
+                        <button type="button" class="btn  btn-default" onclick='liOnclickDown()'> 下 一 页</button>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="input-group">
+                            <input type="text" id="searchText" class="form-control">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                            </span>
+                        </div>
+                        <h4></h4>
+                    </div>
+
+                </caption>
+                <thead id="thead_mytable111">
+                    <tr>
+                        <th>hash</th>
+                        <th style='text-align:right;'>state</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="ModalTransfer" tabindex="-1" role="dialog" aria-labelledby="ModalTransferLabel" aria-hidden="true" onload="onTransferLoad()">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h5 class="modal-title" id="myModalLabel">
+                        正在申请交易
+                    </h5>
+                </div>
+
+                <fieldset>
+                    <p> </p>
+                    <p>
+                        <label for="title">转出地址:</label>
+                        <input type="text" id="input_addressIn" name="addressIn" align="left" disabled="disabled">
+                    </p>
+                    <p>
+                        <label for="title">转账金额:</label>
+                        <input type="text" id="input_amount" name="amount" align="left">
+                    </p>
+                    <p>
+                        <label for="username">转入地址:</label>
+                        <input type="text" id="input_addressOut" name="addressOut" align="left">
+                    </p>
+                    <p>
+                        <label for="username">备注:</label>
+                        <input type="text" id="input_remarks" name="remarks" align="left">
+                    </p>
+                    <p>
+                        <label for="username">nonce:</label>
+                        <input type="text" id="input_nonce" name="nonce" align="left">
+                    </p>
+                    <p>
+                        <label for="username">依赖交易:</label>
+                        <input type="text" id="input_depend" name="depend" align="left">
+                    </p>
+                    <p>
+                        <label for="username">矿工费:</label>
+                        <input type="text" id="gas" name="gas" align="left" value="0" disabled="disabled">
+                    </p>
+                </fieldset>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="onTransferSubmit('ModalTransfer')">
+                        提交
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="TransferInfo" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="TransferInfoLabel" aria-hidden="true" style="top:10%">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        Transfer
+                    </h4>
+                </div>
+                <div style="width:100%;height:100%;overflow-x:auto;">
+                    <table class="table table-hover" id="TransferInfoTable">
+                        <thead id="thead_mytable111">
+                            <tr>
+                                <th>key</th>
+                                <th>value</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="liOnTransferInfoDelete()">
+                        删除
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="liOnTransferInfoLeave()">
+                        离开
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalQRCode" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalQRCodeLabel" aria-hidden="true" style="top:10%">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        QRCode
+                    </h4>
+                </div>
+                <h4></h4>
+                <div id="qrcode" style="width:300px; height:300px; margin-top:15px; margin: 0 auto;"></div>
+                <h4></h4>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="liOnModalQRCodeLeave()">
+                        离开
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalScanQRCode" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalScanQRCodeLabel" aria-hidden="true" style="top:10%">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        扫码支付
+                    </h4>
+                </div>
+                <h4></h4>
+                <label id="photo">照相机<input type="file" id='photo_image1' accept="image/*" capture='camera' onchange="OnScanQRCodeChange('photo_image1')"></label>
+
+                <fieldset>
+                    <p>
+                        <label for="title">转出地址:</label>
+                        <input type="text" id="scan_addressIn" align="left" disabled="disabled">
+                    </p>
+                </fieldset>
+                <fieldset>
+                    <p>
+                        <label for="title">转入地址:</label>
+                        <input type="text" id="scan_addressOut" align="left" disabled="disabled">
+                        <input type="file" id="photo_image2" onchange="OnScanQRCodeChange('photo_image2')">
+                    </p>
+                </fieldset>
+                <fieldset>
+                    <p>
+                        <label for="title">转账金额:</label>
+                        <input type="text" id="scan_amount" align="left">
+                    </p>
+                </fieldset>
+                <input type="text" id="scan_nonce" align="left" style="display:none">
+                <input type="text" id="scan_depend" align="left" style="display:none">
+                <input type="text" id="scan_remarks" align="left" style="display:none">
+
+                <h4></h4>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="OnScanQRCodeSubmit('ModalScanQRCode')">
+                        提交
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalExport" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalExportLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="myModalLabel">
+                        导出Address
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">输密码</span>
+                    <input type="password" class="form-control" id="ModalExportText" aria-describedby="basic-addon3" onchange="OnExportChange()">
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">助记词</span>
+                    <input type="text" class="form-control" id="MnemonicWord" readonly>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="OnExportLeave()">
+                        离开
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        if (Login.LoadPassword() == null)
+            window.location.href = "index.html";
+
+        function OnExportChange() {
+            $("#MnemonicWord").val("");
+            var password = $("#ModalExportText").val();
+            if (Login.checkPassword(password)) {
+                var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
+                var str = Wallet.GetMnemonicWord(addressKeyPair);
+                $("#ModalExport").modal('show');
+                $("#MnemonicWord").val(str);
+            }
+        };
+
+        function OnExportLeave(e) {
+            $("#MnemonicWord").val("");
+            $("#ModalExport").modal('hide');
+        }
+
+        function liOnSearch(e) {
+            var text = $('#' + e).val();
+
+            if (text != "") {
+                ShowTransfer(text)
+            }
+        }
+
+        function onTransferLoad(e) {
+            //alert(e.id);
+        };
+
+        $(function () {
+            $("[data-toggle='popover']").popover();
+        });
+
+        // 地址栏参数
+        function getQueryVariable(variable, search) {
+            if (search == null)
+                search = window.location.search;
+            var query = search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var platform = Helper.checkPlatform();
+        var colorindex = 1
+
+        var addressCur = getQueryVariable("address");
+        var amountCur = 0;
+        var nonceCur = 0;
+        // show address
+        var element = document.getElementById("address");
+        element.innerHTML = " 余额: " + amountCur;
+        var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
+
+        $(function () {
+            $('#ModalTransfer').on('show.bs.modal', function () {
+                //var element = document.getElementById("myModalLabel");
+                //element.innerHTML = "转出地址: " + addressCur;
+                locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
+                $('#input_addressIn').val(addressCur);
+                $('#input_nonce').val(nonceCur);
+            })
+        });
+
+        // 复制到剪切板
+        var hide_popover_timer = null;
+        function copyToClipBoard() {
+            var aux = document.createElement("input");
+            aux.setAttribute("value", addressCur);
+            document.body.appendChild(aux);
+
+            if (navigator.userAgent.match(/(iPhone|iPod|iPad);?/i)) {//区分iPhone设备
+                window.getSelection().removeAllRanges();//这段代码必须放在前面否则无效
+                var range = document.createRange();
+                // 选中需要复制的节点
+                range.selectNode(aux);
+                // 执行选中元素
+                window.getSelection().addRange(range);
+                // 执行 copy 操作
+                var successful = document.execCommand('copy');
+                // 移除选中的元素
+                window.getSelection().removeAllRanges();
+            } else {
+                aux.select(); // 选择对象
+                document.execCommand("Copy"); // 执行浏览器复制命令
+            }
+            document.body.removeChild(aux);
+
+
+            $("[data-toggle='popover']").popover();
+            clearTimeout(hide_popover_timer);
+            hide_popover_timer = setTimeout("hide_popover()", 3000);
+        };
+
+        function hide_popover() {
+            var popover = document.getElementsByClassName("popover fade bottom in");
+            if (popover.length >= 1)
+                document.getElementById("btnCopyToClip").click();
+        }
+
+        function onTransferSubmit(e) {
+            //var amount = parseInt($('#input_amount').val()) * 10000;
+            var amount = new BigNumber($('#input_amount').val()).multipliedBy(10000);
+            var addressOut = $('#input_addressOut').val();
+            var depend = $('#input_depend').val();
+            var remarks = $('#input_remarks').val();
+            var nonce = parseInt($('#input_nonce').val());
+
+            if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
+                SendTransferSubmit(e, amount.toString(), addressOut, depend, remarks, nonce);
+        };
+
+        function CheckTransfer(amount, addressOut, nonce, depend, remarks)
+        {
+            if (addressOut == "") {
+                alert('addressOut Can not be empty');
+                return false;
+            }
+            if ($('#input_amount').val() == "") {
+                alert('amount Can not be empty');
+                return false;
+            }
+            if (amount.isLessThanOrEqualTo(0)) {
+                alert('amount Must be greater than zero');
+                return false;
+            }
+            if (amount.isNaN()) {
+                alert('amount Must be a number');
+                return false;
+            }
+            if (isNaN(nonce)) {
+                alert('nonce Must be a number');
+                return false;
+            }
+            return true;
+        }
+
+        function SendTransferSubmit(e, amount, addressOut, depend, remarks, nonce) {
+            if (Login.LoadPassword() == null) {
+                alert("password is null!");
+                return;
+            }
+            // 取秘钥
+            var addressKeyPair = Wallet.LoadFromAddress(addressCur, Login.LoadPassword());
+            if (addressKeyPair == null) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            var timestamp = new Date().getTime();
+            var hashdata = "transfer#" + nonce + "#" + addressCur + "#" + addressOut + "#" + amount + "#" + remarks + "#" + depend + "#" + timestamp;
+            var hash = new Hashes.SHA256().hex(hashdata);
+            var sign = Wallet.sign(hash, addressKeyPair);
+            var signHex = Wallet.Bytes2Hex(sign);
+
+            var transferdata = { type: "transfer", hash: hash, nonce: nonce, addressIn: addressCur, addressOut: addressOut, amount: amount, data: remarks, depend: depend, timestamp: timestamp, sign: signHex }
+            //console.warn(hash);
+            //console.warn(sign);
+
+            var jsonStr = JSON.stringify(transferdata);
+            Helper.AddTransfer(addressCur, jsonStr);
+            var temp = Helper.LoadTransfer(addressCur, 1);
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/Transfer",
+                dataType: "text",
+                type: "get",
+                data: transferdata,
+                success: function (data) {
+                    if (data != "{\"success\":true}") {
+                        alert("提交失败,交易数据出错或者节点无出块权限!");
+                    }
+
+                    //var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                    //Helper.TableInsert2("waittable", hash, color, Helper.Simplify(hash, platform), "转账" + (amount / -10000))
+
+                    //alert("提交成功!");
+                    $("#" + e).modal("hide");//关掉
+                    window.location.href = window.location.href;
+                },
+                error: function (err) {
+                    alert("网络连接错误!");
+                }
+            });
+
+        };
+
+        var transferIndex = 0;
+        function onTransferInit() {
+            colorindex = 1;
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/GetTransfers",
+                dataType: "text",
+                type: "get",
+                data: { address: addressCur, index: transferIndex },
+                success: function (data) {
+
+                    // 删除之前的数据
+                    var mytableEle = document.getElementById("mytable");
+                    for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                        if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                            mytableEle.children[i].remove();
+                    }
+
+                    var jsonObj = JSON.parse(data);
+                    for (var key in jsonObj) {
+
+                        var hash = jsonObj[key]["hash"];
+
+                        var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                        //var amount = parseInt(jsonObj[key]["amount"]) / 10000;
+                        var amount = new BigNumber(jsonObj[key]["amount"]).dividedBy(10000).toFormat();
+
+                        if (jsonObj[key]["type"] == "transfer") {
+                            if (jsonObj[key]["addressIn"] == addressCur)
+                                amount = "转账  -" + amount;
+                            else
+                                amount = "+" + amount;
+                        }
+                        else
+                            if (jsonObj[key]["type"] == "Reward_Rule" || jsonObj[key]["type"] == "Reward_Mc") {
+                                amount = "出块  +" + amount;
+                            }
+                            else
+                                if (jsonObj[key]["type"] == "contract") {
+                                    if (jsonObj[key]["addressOut"] == "")
+                                        amount = "合约  发布";
+                                    else
+                                        amount = "合约  调用";
+                                }
+                        Helper.TableInsert2("mytable", hash, color, Helper.Simplify(hash, platform), amount)
+                    }
+                },
+                error: function (err) {
+                    alert("没有找到可用节点");
+                }
+            });
+        }
+        onTransferInit(0);
+
+        // WaitTable
+        function onTransferWaitInit() {
+            colorindex = 1;
+            var count = Helper.GetTransferCount(addressCur);
+            for (var index = 1; index <= count; index++) {
+                var str = Helper.LoadTransfer(addressCur, index);
+                var jsonObj = JSON.parse(str);
+                var hash = jsonObj["hash"];
+                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                //var amount = parseInt(jsonObj["amount"]) / 10000;
+                var amount = new BigNumber(jsonObj["amount"]).dividedBy(10000).toFormat();
+                if (jsonObj["type"] == "transfer") {
+                    if (jsonObj["addressIn"] == addressCur)
+                        amount = "转账  -" + amount;
+                    else
+                        amount = "+" + amount;
+                }
+                else
+                    if (jsonObj["type"] == "Reward_Rule" || jsonObj["type"] == "Reward_Mc") {
+                        amount = "出块  +" + amount;
+                    }
+                    else
+                        if (jsonObj["type"] == "contract") {
+                            if (jsonObj["addressOut"] == "")
+                                amount = "合约  发布";
+                            else
+                                amount = "合约  调用";
+                        }
+                Helper.TableInsert2("waittable", hash, color, Helper.Simplify(hash, platform), amount)
+            }
+        }
+        onTransferWaitInit();
+
+        function liOnclickUp(e) {
+            transferIndex -= 20;
+            if (transferIndex < 0)
+                transferIndex = 0;
+            onTransferInit();
+        };
+        function liOnclickDown(e) {
+            var mytableEle = document.getElementById("mytable");
+            if (mytableEle.children.length >= 22) {
+                transferIndex += 20;
+                onTransferInit();
+            }
+        };
+
+        var curshottransferHash = "";
+        function ShowTransfer(text) {
+            if (text != "") {
+                $.ajax({
+                    url: Helper.GetServerIP() + "/TransferState",
+                    dataType: "text",
+                    type: "get",
+                    data: { hash: text },
+                    success: function (data) {
+                        if (data != "") {
+                            // 删除之前的数据
+                            var mytableEle = document.getElementById("TransferInfoTable");
+                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                    mytableEle.children[i].remove();
+                            }
+
+                            var jsonObj = JSON.parse(data);
+                            for (var key in jsonObj) {
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                                if (key != "linksblk" && key != "linkstran") {
+                                    Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
+                                }
+                            }
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                            Helper.TableInsert("TransferInfoTable", "state", color, "状态", "交易已完成")
+
+                            curshottransferHash = text;
+                            $("#TransferInfo").modal('show');
+                        }
+                        else {
+                            // transferWait
+                            str = Helper.GetTransfer(addressCur, text);
+                            var jsonObj = JSON.parse(str);
+
+                            // 删除之前的数据
+                            var mytableEle = document.getElementById("TransferInfoTable");
+                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                    mytableEle.children[i].remove();
+                            }
+
+                            for (var key in jsonObj) {
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                                if (key != "linksblk" && key != "linkstran") {
+                                    Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
+                                }
+                            }
+
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                            Helper.TableInsert("TransferInfoTable", "state", color, "状态", "交易未确认")
+                            curshottransferHash = text;
+                            $("#TransferInfo").modal('show');
+                        }
+                    },
+                    error: function (err) {
+                        alert("网络连接错误!");
+                    }
+                });
+            }
+        };
+
+        function liOnclick(e) {
+            //alert(e.id);
+            ShowTransfer(e.id)
+        };
+
+        function liOnTransferInfoLeave(e) {
+            $("#TransferInfo").modal('hide');
+        };
+
+        // 删除处理中的交易
+        function liOnTransferInfoDelete(e) {
+            if (curshottransferHash != "") {
+                Helper.DelTransfer(addressCur, curshottransferHash)
+                curshottransferHash = "";
+                window.location.href = window.location.href;
+            }
+        };
+
+        function liOnModalQRCodeLeave(e) {
+            $("#ModalQRCode").modal('hide');
+        };
+
+        function liOnShowQRCode(e) {
+            $("#ModalQRCode").modal('show');
+
+            // 删除之前的数据
+            var myEle = document.getElementById("qrcode");
+            for (var i = myEle.children.length - 1; i >= 0; i--) {
+                myEle.children[i].remove();
+            }
+
+            //初始化存放二维码的div
+            var qrcodeEncode = new QRCode(document.getElementById("qrcode"), {
+                width: 300,
+                height: 300
+            });
+            //window.location.href获取到URL
+            qrcodeEncode.makeCode("http://www.SmartX.com/Wallet/transfer.html?target=" + addressCur);
+        };
+
+        function liOnScanQRCode(e) {
+            $("#ModalScanQRCode").modal('show');
+            $("#scan_addressIn").val(addressCur);
+            $("#scan_addressOut").val("");
+            $("#scan_amount").val("");
+            $("#scan_nonce").val(nonceCur);
+            document.getElementById('photo').style.display = "none";//不可见;
+            document.getElementById('photo_image1').value = '';
+            document.getElementById('photo_image2').value = '';
+            document.getElementById('photo_image2').style.display = "block";//可见;
+            $("#photo_image1").click();
+        }
+
+        var getObjectURL = function (file) {
+            var url = null;
+            if (window.createObjectURL != undefined) { // basic
+                url = window.createObjectURL(file);
+            } else if (window.URL != undefined) { // mozilla(firefox)
+                url = window.URL.createObjectURL(file);
+            } else if (window.webkitURL != undefined) { // webkit or chrome
+                url = window.webkitURL.createObjectURL(file);
+            }
+            return url;
+        }
+
+        function OnScanQRCodeChange(e) {
+            var file = document.getElementById(e).files[0];
+            qrcode.decode(getObjectURL(file));
+            qrcode.callback = function (imgMsg) {
+                document.getElementById('photo').style.display = "none";//不可见;
+                if (imgMsg == null || imgMsg == "error decoding QR Code") {
+                    alert("无法识别,请重试！")
+                    return;
+                }
+                document.getElementById('photo_image2').style.display = "none";//不可见;
+
+                var search = imgMsg.split("?");
+                if (search.length >= 2) {
+                    var addressOut = getQueryVariable("target", "?" + search[1])
+                    $("#scan_addressOut").val(addressOut);
+                }
+            }
+        }
+
+        function OnScanQRCodeSubmit(e) {
+            //var amount = parseInt($('#scan_amount').val()) * 10000;
+            var amount = new BigNumber($('#scan_amount').val()).multipliedBy(10000);
+            var addressOut = $('#scan_addressOut').val();
+            var depend = $('#scan_depend').val();
+            var remarks = $('#scan_remarks').val();
+            var nonce = parseInt($('#scan_nonce').val());
+
+            if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
+                SendTransferSubmit(e, amount.toString(), addressOut, depend, remarks, nonce);
+        }
+
+        function OnRefreshAmount() {
+            var arrayoAddress = new Array();
+            arrayoAddress[0] = addressCur;
+            $.ajax({
+                url: Helper.GetServerIP() + "/getaccounts",
+                dataType: "text",
+                type: "get",
+                data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
+                success: function (data) {
+                    var jsonObj = JSON.parse(data);
+                    for (var index = 0; index < arrayoAddress.length; index++) {
+
+                        var address = arrayoAddress[index];
+                        var account = jsonObj[address];
+                        //var amount  = parseInt(account["amount"]) / 10000;
+                        var amount = new BigNumber(account["amount"]).dividedBy(10000).toFormat();
+                        var nonce = account["nonce"];
+
+                        var element = document.getElementById("address");
+                        element.innerHTML = " 余额: " + amount;
+                        amountCur = amount;
+                        nonceCur = nonce + 1;
+                    }
+                },
+                error: function (err) {
+                }
+            });
+        }
+        OnRefreshAmount();
+
+
+
+    </script>
+
+
+</body>
+</html>

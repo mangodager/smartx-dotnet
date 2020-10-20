@@ -1,0 +1,116 @@
+
+/*按钮列表*/
+.nav_box {
+    height: 60px;
+    position: relative;
+    top: calc(50% - 30px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.qx_1 {
+    display: flex;
+    line-height: 70x;
+    margin: -15px 5px 0 5px;
+    padding: 0 18px 0 18px;
+    font-size: 14px;
+    position: relative;
+}
+
+body {
+    padding-bottom: 70px;
+}
+
+
+/*巨幕*/
+.jumbotron {
+    background-size: cover;
+    padding-top: 7%;
+    padding-bottom: 2%;
+}
+
+/*模态框整体高度*/
+.modal.fade.in {
+    top: 25%;
+}
+
+.noselect {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/*表格样式1*/
+
+table {
+    /*table-layout: fixed;*/
+    empty-cells: show;
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+td {
+    height: 30px;
+}
+
+.table {
+    border: 1px solid #cad9ea;
+    color: #666;
+}
+
+.table th {
+    background-repeat: repeat-x;
+    height: 30px;
+}
+
+.table td, .table th {
+    border: 1px solid #cad9ea;
+    padding: 0 1em 0;
+}
+
+.table tr.alter {
+    background-color: #f5fafe;
+}
+
+
+/*表格样式1*/
+/*
+table {
+    width: 90%;
+    background: #ccc;
+    margin: 10px auto;
+    border-collapse: collapse;
+}
+
+th, td {
+    height: 25px;
+    line-height: 25px;
+    border: 1px solid #ccc;
+}
+
+th {
+    background: #eee;
+    font-weight: normal;
+}
+
+tr {
+    background: #fff;
+}
+
+    tr:hover {
+        background: #cc0;
+    }
+
+td a {
+    color: #06f;
+    text-decoration: none;
+}
+
+td a:hover {
+    color: #06f;
+    text-decoration: underline;
+}
+*/
+

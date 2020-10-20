@@ -1,0 +1,72 @@
+{
+  "All": {
+    "appType": "All",
+
+    "NodeSessions": [
+      "192.168.1.103:58601"
+    ],
+
+    "ComponentNetworkInner": {
+      "protocol": "TCP",
+      "address": "0:58601",
+      "CheckHearBeat": false,
+      "CheckKcpWaitsnd": false
+    },
+
+    "ComponentNetMsg": {
+
+    },
+
+    "LevelDBStore": {
+      "db_path": "Data/LevelDB"
+    },
+
+    "LuaVMEnv": {
+    },
+    "NodeManager": {
+
+    },
+
+    "BlockMgr": {
+    },
+
+
+    "Consensus": {
+      "transferShow" : true
+    },
+
+    "Rule": {
+      "Run": true
+
+    },
+
+    "SmartxRpc": {
+      "Entity": "SmartxRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://192.168.1.103:5000/"
+      }
+    },
+
+    "HttpRpc": {
+      "Entity": "HttpRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://192.168.1.103:8001/"
+      }
+
+    },
+    "HttpPool": {
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://192.168.1.103:9001/"
+      }
+    },
+    "Pool": {
+      "style": "PPLNS",
+      "db_path": "Data/PoolDB",
+    },
+
+  }
+
+}

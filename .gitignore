@@ -1,0 +1,24 @@
+#folders
+.idea
+bin
+
+#project files
+*.iml
+wallet.data
+
+#compile object files
+*.o
+*.obj
+*.class
+target
+distribution
+
+#log
+*.log
+log
+logs
+database
+
+#local db
+*.sh
+*.db

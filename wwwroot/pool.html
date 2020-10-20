@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式-->
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>-->
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script src='js/bignumber.min.js'></script>
+
+    <div class="container" id="body_container">
+
+        <div class="jumbotron">
+            <h1>SmartX <small id="statsLabel" style="font-size: 50%"></small></h1>
+            <!--<button type="button" class="btn btn-danger" onclick="OnClear()">清空</button>-->
+        </div>
+
+
+        <div class="row">
+            <div class="col-lg-2"></div>
+            <div class="col-lg-1">
+                <h4>账户:</h4>
+                <h4></h4>
+            </div><!-- /.col-lg-6 -->
+            <div class="col-lg-5">
+                <div class="input-group">
+                    <input type="text" id="searchText" class="form-control" placeholder="Address ...">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>搜索</button>
+                    </span>
+                </div><!-- /input-group -->
+            </div><!-- /.col-lg-6 -->
+        </div><!-- /.row -->
+        <h4></h4>
+
+        <div class="row">
+            <div class="col-lg-1"></div>
+            <div class="col-lg-3">
+                <h4 id="miner_count" style='text-align:left;'></h4>
+            </div>
+            <div class="col-lg-3">
+                <h4 id="totalPower" style='text-align:center;'></h4>
+            </div>
+            <div class="col-lg-3">
+                <h4 id="miner_amount" style='text-align:right;'></h4>
+            </div>
+        </div>
+
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="billtable">
+                <caption id="bill_caption_mytable111">账单列表:</caption>
+                <thead id="bill_mytable111">
+                    <tr>
+                        <th>时间</th>
+                        <th>金额</th>
+                        <th>交易 ID</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="minertable">
+                <caption id="miner_caption_mytable111">矿机列表:</caption>
+                <thead id="miner_mytable111">
+                    <tr>
+                        <th>编号</th>
+                        <th>矿机名</th>
+                        <th>实时算力</th>
+                        <th>平均算力</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <script>
+        // 地址栏参数
+        function getQueryVariable(variable, search) {
+            if (search == null)
+                search = window.location.search;
+            var query = search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        Login.Init();
+
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var platform = Helper.checkPlatform();
+        var colorindex = 1;
+
+        var addressCur = getQueryVariable("address");
+        if (addressCur!="")
+            $('#searchText').val(addressCur);
+
+        function liOnSearch(e) {
+            var text = $('#' + e).val();
+            window.location.href = "pool.html?address=" + text;
+        }
+
+        function QueryStats() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/Stats",
+                dataType: "text",
+                type: "get",
+                data: { style: "2" },
+                success: function (data) {
+
+                    var element = document.getElementById("statsLabel");
+                    element.innerHTML = data;
+
+                },
+                error: function (err) {
+                }
+            });
+        }
+        QueryStats();
+
+        function ShowMiners(address)
+        {
+            if (address == null || address == "")
+                return;
+            $.ajax({
+                url: Helper.GetServerIP() + "/Command",
+                dataType: "text",
+                type: "get",
+                data: "input=miner " + address + " 0 10 0 20",
+                success: function (data) {
+                    if (data != "no miner" && data != "{ \"ret\": \"failed\" }") {
+                        //// 删除之前的数据
+                        //var miner_list = document.getElementById("miner_mytable111");
+                        //for (var i = miner_list.children.length - 1; i >= 0; i--) {
+                        //    if (miner_list.children[i].id.indexOf("_mytable111") == -1)
+                        //        miner_list.children[i].remove();
+                        //}
+
+                        var minerView = JSON.parse(data);
+
+                        // miners
+                        var miners = minerView["miners"];
+                        var index = 1;
+
+                        // 排序
+                        var arr = new Array();
+                        for (var key in miners) {
+                            arr.push({ key: key, number: miners[key]["number"] });
+                        }
+                        arr = arr.sort(function (a, b) { return a.number.localeCompare(b.number) })
+
+                        for (var i = 0; i < arr.length; i++) {
+                            var key = arr[i].key;
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                            Helper.TableInsert("minertable", index, color, index, miners[key]["number"], miners[key]["power_cur"], miners[key]["power_average"]);
+                            index++;
+                        }
+
+                        // bills
+                        var transfers = minerView["transfers"];
+                        for (var key in transfers) {
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                            var amount = new BigNumber(transfers[key]["amount"]).dividedBy(10000).toFormat();
+
+                            var state = "完成";
+                            var hash = transfers[key]["hash"];
+                            if (hash == null) {
+                                hash = "";
+                                state= "正在转"
+                            }
+
+                            Helper.TableInsert("billtable", hash, color, transfers[key]["depend"], amount, hash, state);
+                        }
+
+                        var element = document.getElementById("miner_count");
+                        element.innerHTML = " 矿机数: " + minerView.totalMiners;
+
+                        var amount_cur = new BigNumber(minerView["amount_cur"]).dividedBy(10000).toFormat();
+                        var element = document.getElementById("miner_amount");
+                        if ( (""+amount_cur) == "NaN" )
+                            amount_cur = "0";
+                        element.innerHTML = " 未分账: " + amount_cur;
+
+                        var element = document.getElementById("totalPower");
+                        element.innerHTML = " 总算力: " + minerView["totalPower"];
+
+                    }
+                },
+                error: function (err) {
+                }
+            });
+        }
+        ShowMiners(addressCur);
+
+    </script>
+
+</body>
+</html>
+

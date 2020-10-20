@@ -1,0 +1,126 @@
+﻿syntax = "proto3";
+package ETModel;
+
+message IRequestProto // IRequest
+{
+	int32 RpcId = 101;
+	int64 ActorId = 102;
+}
+
+message IResponseProto // IResponse
+{
+	int32 RpcId = 101;
+	int32 Result = 102;
+	int32  Error = 103;
+	string Message = 104;
+	int64 ActorId = 105;
+}
+
+message P2P_HearBeat // IMessage
+{
+}
+
+
+message P2P_Broadcast // IMessage
+{
+	repeated long ActorIds = 1;
+	IMessage msg = 1;
+}
+
+message Q2P_New_Node // IRequestProto
+{
+	int32 HashCode = 2;
+	string address = 3;
+	string ipEndPoint = 4;
+	long sendTime = 5;
+}
+
+message R2P_New_Node // IResponseProto
+{
+	string Nodes = 2;
+	long sendTime = 5;
+	long nodeTime = 6;
+}
+
+message Q2P_Block // IRequestProto
+{
+	string hash = 1;
+}
+
+message R2P_Block // IResponseProto
+{
+	string block = 1;
+}
+
+message Q2P_McBlock // IRequestProto
+{
+	long height = 1;
+}
+
+message R2P_McBlock // IResponseProto
+{
+	string block = 1;
+}
+
+message Q2P_Prehashmkl // IRequestProto
+{
+	long height = 1;
+}
+
+message R2P_Prehashmkl // IResponseProto
+{
+	string prehashmkl = 1;
+}
+
+message P2P_NewBlock // IMessage
+{
+	string block = 1;
+	string ipEndPoint = 2;
+}
+
+message Q2P_Transfer // IRequestProto
+{
+	string transfer = 1;
+}
+
+message R2P_Transfer // IResponseProto
+{
+	string rel = 1;
+}
+
+message Q2P_McBlockHash // IRequestProto
+{
+	long height = 1;
+}
+
+message R2P_McBlockHash // IResponseProto
+{
+	string hash = 1;
+}
+
+message Q2P_BeLinkHash // IRequestProto
+{
+	string hash = 1;
+}
+
+message R2P_BeLinkHash // IResponseProto
+{
+	string hashs = 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,20 @@
+﻿syntax = "proto3";
+package ETModel;
+
+message O2G_HandSake // IRequest
+{
+	int32 RpcId = 101;
+	int64 ActorId = 1;
+
+}
+
+message G2O_HandSake // IResponse
+{
+	int32 RpcId = 101;
+	int32 Result = 102;
+	int32  Error = 103;
+	string Message = 104;
+	int64 ActorId = 1;
+}
+
+

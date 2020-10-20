@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式-->
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>-->
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script src='js/bignumber.min.js'></script>
+
+    <div class="container" id="body_container">
+
+        <div class="jumbotron">
+            <h1>SmartX <small id="statsLabel" style="font-size: 50%"></small></h1>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ModalCreate">创建</button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalImport">导入</button>
+            <!--<button type="button" class="btn btn-danger" onclick="OnClear()">清空</button>-->
+        </div>
+
+        <h4></h4>
+        <div class="col-lg-6">
+            <h4>账户:</h4>
+            <h4></h4>
+        </div>
+        <div class="col-lg-6">
+            <div class="input-group">
+                <input type="text" id="searchText" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                </span>
+            </div>
+            <h4></h4>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="mytable">
+                <!--<caption id="mytable_caption">账户:</caption>-->
+                <thead id="mytable_thead">
+                    <tr>
+                        <th>地址</th>
+                        <th style='text-align:right;'>余额</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="ModalCreate" tabindex="-1" role="dialog" aria-labelledby="ModalCreateLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        正在创建地址
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">请输入随机数</span>
+                    <input type="text" class="form-control" id="CreateText" aria-describedby="basic-addon3">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="OnCreate('CreateText')">
+                        提交
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="ModalImport" tabindex="-1" role="dialog" aria-labelledby="ModalImportLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        正在导入地址
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">请输入助记词</span>
+                    <input type="text" class="form-control" id="ImportText" aria-describedby="basic-addon3">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="OnImport('ImportText')">
+                        提交
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalCreateUser" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalCreateUserLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="myModalLabel">
+                        创建账号
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">输入密码</span>
+                    <input type="password" class="form-control" id="PasswprdText1" aria-describedby="basic-addon3">
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">再次输入</span>
+                    <input type="password" class="form-control" id="PasswprdText2" aria-describedby="basic-addon3">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="Login.OnCreate('PasswprdText')">
+                        创建
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalLogin" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalLoginLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="myModalLabel">
+                        输入密码登录
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">输入密码</span>
+                    <input type="password" class="form-control" id="PasswprdText" aria-describedby="basic-addon3">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="Login.OnLogin('PasswprdText')">
+                        登录
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        console.log("aJkFxRaJ2j5Qm8queLbjc2CkKHi7G7WQH = " + Wallet.CheckAddress("aJkFxRaJ2j5Qm8queLbjc2CkKHi7G7WQH"));
+
+        console.log("ZjpBR7FnTeMrC4ErG13eJWFGYihVPkzgo = " + Wallet.CheckAddress("ZjpBR7FnTeMrC4ErG13eJWFGYihVPkzgo"));
+
+        console.log("ZjpBR7FnTeMrC4ErG13eJWFGYihVPkzg1 = " + Wallet.CheckAddress("ZjpBR7FnTeMrC4ErG13eJWFGYihVPkzg1"));
+
+
+        Login.Init();
+
+        function OnClear(e) {
+            Wallet.Clear();
+            window.location.href = "index.html";
+        }
+
+        function OnCreate(e) {
+            var value = document.getElementById(e).value;
+            var text = $('#' + e).val();
+            $('#' + e).val(""); // clear
+
+            var keyPair = Wallet.CreateKeyPair(text);
+
+            var index = Wallet.GetCount(Login.LoadPassword());
+            if (index > 100) {
+                alert("数量超出限制");
+                return;
+            }
+
+            Wallet.Save(index, keyPair, Login.LoadPassword());
+
+            //console.warn( Wallet.GetMnemonicWord(keyPair) );
+            //console.warn( Wallet.Bytes2Hex(keyPair.publicKey) );
+            //console.warn( Wallet.Bytes2Hex(keyPair.privateKey) );
+            //console.warn( Wallet.ToAddress(keyPair.publicKey) );
+
+            $("#ModalCreate").modal('hide');
+            window.location.href = "index.html";
+        };
+
+        function OnImport(e) {
+            var value = document.getElementById(e).value;
+            var text = $('#' + e).val();
+            $('#' + e).val(""); // clear
+
+            var keyPair = Wallet.ImportKeyPair(text);
+
+            var index = Wallet.GetCount(Login.LoadPassword());
+            if (index > 100) {
+                alert("数量超出限制");
+                return;
+            }
+
+            Wallet.Save(index, keyPair, Login.LoadPassword());
+
+            $("#ModalImport").modal('hide');
+            window.location.href = "index.html";
+        };
+
+        //// show address
+        //var element = document.getElementById("address");
+        //element.innerHTML = address;
+
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var colorindex = 0;
+
+        var platform = Helper.checkPlatform();
+
+        var arrayoAddress = new Array();;
+        for (var index = 1; index < 100; index++) {
+            var KeyPair = Wallet.Load(index, Login.LoadPassword());
+            if (KeyPair == null)
+                break;
+
+            var address = Wallet.ToAddress(KeyPair.publicKey);
+            arrayoAddress[index - 1] = address;
+
+            var color = colorlist[(index - 0) % colorlist.length];
+            Helper.TableInsert2("mytable", address, color, address, "")
+        }
+
+
+        $.ajax({
+            url: Helper.GetServerIP() + "/getaccounts",
+            dataType: "text",
+            type: "get",
+            data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
+            success: function (data) {
+                var jsonObj = JSON.parse(data);
+                for (var index = 0; index < arrayoAddress.length; index++) {
+                    var element = document.getElementById(arrayoAddress[index]);
+                    element.remove();
+
+                    var address = arrayoAddress[index];
+                    var account = jsonObj[address];
+                    var amount = new BigNumber(account["amount"]).dividedBy(10000).toFormat();
+
+                    var color = colorlist[(index - 0) % colorlist.length];
+                    Helper.TableInsert2("mytable", address + "&amount=" + amount, color, Helper.Simplify(address, platform), amount)
+
+                }
+            },
+            error: function (err) {
+            }
+        });
+
+        function liOnclick(e) {
+            window.location.href = "transfer.html?address=" + e.id;
+        };
+
+        function liOnSearch(e) {
+            var text = $('#' + e).val();
+            window.location.href = "transfer.html?address=" + text;
+        }
+
+        function QueryStats() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/Stats",
+                dataType: "text",
+                type: "get",
+                data: { style: "1" },
+                success: function (data) {
+
+                    var element = document.getElementById("statsLabel");
+                    element.innerHTML = data;
+
+                },
+                error: function (err) {
+                }
+            });
+        }
+        QueryStats();
+
+    </script>
+
+</body>
+</html>
+
