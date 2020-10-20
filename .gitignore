@@ -1,6 +1,5 @@
 #folders
 .idea
-bin
 
 #project files
 *.iml
