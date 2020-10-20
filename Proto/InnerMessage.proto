@@ -1,7 +1,7 @@
 ﻿syntax = "proto3";
 package ETModel;
 
-message IRequestProto // IRequest
+message IRequestProto // IQuery
 {
 	int32 RpcId = 101;
 	int64 ActorId = 102;
@@ -106,6 +106,15 @@ message Q2P_BeLinkHash // IRequestProto
 message R2P_BeLinkHash // IResponseProto
 {
 	string hashs = 1;
+}
+
+message Q2P_IP_INFO // IRequestProto
+{
+}
+
+message R2P_IP_INFO // IResponseProto
+{
+	string address = 1;
 }
 
 

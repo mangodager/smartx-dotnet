@@ -102,6 +102,7 @@ namespace ETModel
                 {
                     jdNode["HttpRpc"]["ComponentNetworkHttp"]["address"]  = ((string)jdNode["HttpRpc" ]["ComponentNetworkHttp"]["address"]).Replace("8001", (8000 + int.Parse(index)).ToString() );
                     jdNode["HttpPool"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkHttp"]["address"]).Replace("9001", (9000 + int.Parse(index)).ToString());
+                    jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"]).Replace("5000", ((5000 - 1) + int.Parse(index)).ToString());
                     jdNode["ComponentNetworkInner"]["address"] = ((string)jdNode["ComponentNetworkInner"]["address"]).Replace("58601", (58600 + int.Parse(index)).ToString());
                     jdNode["Pool"]["db_path"] = ((string)jdNode["Pool"]["db_path"]) + index;
                 }

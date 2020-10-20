@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "cK35LTJWIChH8HKDKT1/+ysyCWU4XAh8mlPfAlS7GOGBS1b2kc2lJZNVh0jk6ZHQ7o9Co+Up7u28hfE8k4i2ug==",
+  "dgSpecHash": "jOv+A1g1pqIrCDYNGJeZlDnfLIzW5wq4vSOe+p1Hw/ckM62jExtgC61oAQq7ahS/5lYJpxdIcNewCpaifMkfyA==",
   "success": true,
-  "projectFilePath": "E:\\github\\smartx-dotnet\\Core\\Core.App.csproj",
+  "projectFilePath": "E:\\github\\new-dotnet\\smartx-dotnet\\Core\\Core.App.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\dnsclient\\1.3.1\\dnsclient.1.3.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\leveldb.standard\\2.1.6.1\\leveldb.standard.2.1.6.1.nupkg.sha512",

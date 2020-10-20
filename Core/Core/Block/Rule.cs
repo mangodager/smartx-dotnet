@@ -162,7 +162,7 @@ namespace ETModel
             blks = BlockChainHelper.GetRuleBlk(consensus, blks, chain1.hash);
             if(blks.Count >= BlockChainHelper.Get2F1(t_2max) )
             {
-                chain2 = BlockChainHelper.GetMcBlockNextNotBeLink(chain1,timestamp, pooltime);
+                chain2 = BlockChainHelper.GetMcBlockNextNotBeLink(chain1,timestamp, pooltime*1000);
                 if (chain2!=null)
                 {
                     var blk2 = chain2.GetMcBlock();
@@ -233,7 +233,7 @@ namespace ETModel
             Block myblk = new Block();
             myblk.Address    = Wallet.GetWallet().GetCurWallet().ToAddress();
             myblk.prehash    = preblk != null ? preblk.hash : "";
-            myblk.timestamp  = nodeManager.GetNodeTime() / 1000;
+            myblk.timestamp  = nodeManager.GetNodeTime();
             myblk.height     = preblk !=null ? preblk.height+1 : 1;
             myblk.random     = System.Guid.NewGuid().ToString("N").Substring(0, 16);
 

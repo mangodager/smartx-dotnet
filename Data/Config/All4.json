@@ -52,14 +52,14 @@
       "Entity": "HttpRpc",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.104:8001/"
+        "address": "http://192.168.1.104:8101/"
       }
 
     },
     "HttpPool": {
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.104:9001/"
+        "address": "http://192.168.1.104:9101/"
       }
     },
     "Pool": {

@@ -46,7 +46,7 @@ namespace ETModel
         // 节点队列
         List<NodeData> nodes = new List<NodeData>();
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-        public long nodeTimeOffset = 0;
+        public long   nodeTimeOffset = 0;
 
         public override void Awake(JToken jd = null)
         {
@@ -54,7 +54,6 @@ namespace ETModel
             //componentNetMsg.registerMsg(NetOpcode.A2M_HearBeat, A2M_HearBeat_Handle);
             componentNetMsg.registerMsg(NetOpcode.Q2P_New_Node, Q2P_New_Node_Handle);
             //componentNetMsg.registerMsg(NetOpcode.R2P_New_Node, R2P_New_Node_Handle);
-
         }
 
         public long GetMyNodeId()
@@ -69,18 +68,31 @@ namespace ETModel
 
         public async override void Start()
         {
-            networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
-            Log.Info($"Node:{networkInner.ipEndPoint.ToString()}");
-
             string tmp = Program.jdNode["NodeSessions"].ToString();
             List<string> list = JsonHelper.FromJson<List<string>>(tmp);
 
+            // Get Internet IP
+            {
+                Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
+                Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
+                R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
+                try
+                {
+                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+                }
+                catch(Exception)
+                {
+                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
+                }
+            }
+            Log.Info($"NodeManager.Start {networkInner.ipEndPoint.ToString()}");
+
+            // 
             Q2P_New_Node new_Node = new Q2P_New_Node();
             new_Node.ActorId = GetMyNodeId();
             new_Node.address = Wallet.GetWallet().GetCurWallet().ToAddress();
             new_Node.ipEndPoint = networkInner.ipEndPoint.ToString();
 
-            Log.Debug($"NodeManager.Start");
             while (true && list.Count>0)
             {
                 try
@@ -124,7 +136,15 @@ namespace ETModel
             }
         }
 
-        //[MessageMethod(NetOpcode.O2G_New_Node)]
+        [MessageMethod(NetOpcode.Q2P_IP_INFO)]
+        static public void Q2P_IP_INFO_Handle(Session session, int opcode, object msg)
+        {
+            Q2P_IP_INFO qNode = msg as Q2P_IP_INFO;
+            R2P_IP_INFO response = new R2P_IP_INFO() { address = session.RemoteAddress.Address.ToString() };
+            session.Reply(qNode, response);
+        }
+
+        //[MessageMethod(NetOpcode.Q2P_New_Node)]
         void Q2P_New_Node_Handle(Session session, int opcode, object msg)
         {
             Q2P_New_Node new_Node = msg as Q2P_New_Node;

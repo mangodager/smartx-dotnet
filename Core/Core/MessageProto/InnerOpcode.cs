@@ -19,5 +19,7 @@ namespace ETModel
 		 public const ushort R2P_McBlockHash = 115;
 		 public const ushort Q2P_BeLinkHash = 116;
 		 public const ushort R2P_BeLinkHash = 117;
+		 public const ushort Q2P_IP_INFO = 118;
+		 public const ushort R2P_IP_INFO = 119;
 	}
 }

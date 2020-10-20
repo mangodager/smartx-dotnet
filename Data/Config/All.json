@@ -23,8 +23,8 @@
 
     "LuaVMEnv": {
     },
-    "NodeManager": {
 
+    "NodeManager": {
     },
 
     "BlockMgr": {
@@ -52,7 +52,8 @@
       "Entity": "HttpRpc",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:8001/"
+        "address": "http://192.168.1.103:8001/",
+        "website":true
       }
 
     },

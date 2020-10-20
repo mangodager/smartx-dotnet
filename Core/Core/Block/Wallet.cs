@@ -346,6 +346,16 @@ namespace ETModel
             }
         }
 
+        static public void Test3()
+        {
+            byte[] publickey = "537007d703cedabfed8d81031f974bbb67ab82fbdfc4097bd3ceb9a01b46ff07".HexToBytes();
+            string address = Wallet.ToAddress(publickey);
+
+
+
+
+        }
+
     }
 
 }

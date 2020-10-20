@@ -2,7 +2,7 @@ using ETModel;
 using System.Collections.Generic;
 namespace ETModel
 {
-	public partial class IQueryProto : IQuery
+	public partial class IRequestProto: IQuery
 	{
 		public int RpcId { get; set; }
 
@@ -39,7 +39,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_New_Node,AppType.Core)]
-	public partial class Q2P_New_Node: IQueryProto
+	public partial class Q2P_New_Node: IRequestProto
 	{
 		public int HashCode { get; set; }
 
@@ -63,7 +63,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_Block,AppType.Core)]
-	public partial class Q2P_Block: IQueryProto
+	public partial class Q2P_Block: IRequestProto
 	{
 		public string hash { get; set; }
 
@@ -77,7 +77,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_McBlock,AppType.Core)]
-	public partial class Q2P_McBlock: IQueryProto
+	public partial class Q2P_McBlock: IRequestProto
 	{
 		public long height { get; set; }
 
@@ -91,7 +91,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_Prehashmkl,AppType.Core)]
-	public partial class Q2P_Prehashmkl: IQueryProto
+	public partial class Q2P_Prehashmkl: IRequestProto
 	{
 		public long height { get; set; }
 
@@ -114,7 +114,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_Transfer,AppType.Core)]
-	public partial class Q2P_Transfer: IQueryProto
+	public partial class Q2P_Transfer: IRequestProto
 	{
 		public string transfer { get; set; }
 
@@ -128,7 +128,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_McBlockHash,AppType.Core)]
-	public partial class Q2P_McBlockHash: IQueryProto
+	public partial class Q2P_McBlockHash: IRequestProto
 	{
 		public long height { get; set; }
 
@@ -142,7 +142,7 @@ namespace ETModel
 	}
 
 	[Message(NetOpcode.Q2P_BeLinkHash,AppType.Core)]
-	public partial class Q2P_BeLinkHash: IQueryProto
+	public partial class Q2P_BeLinkHash: IRequestProto
 	{
 		public string hash { get; set; }
 
@@ -152,6 +152,18 @@ namespace ETModel
 	public partial class R2P_BeLinkHash: IResponseProto
 	{
 		public string hashs { get; set; }
+
+	}
+
+	[Message(NetOpcode.Q2P_IP_INFO,AppType.Core)]
+	public partial class Q2P_IP_INFO: IRequestProto
+	{
+	}
+
+	[Message(NetOpcode.R2P_IP_INFO,AppType.Core)]
+	public partial class R2P_IP_INFO: IResponseProto
+	{
+		public string address { get; set; }
 
 	}
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace ETModel
@@ -10,6 +11,7 @@ namespace ETModel
     public class HttpRpc : Component
     {
         ComponentNetworkHttp networkHttp;
+        List<string> whiteList = new List<string>();
 
         public override void Awake(JToken jd = null)
         {

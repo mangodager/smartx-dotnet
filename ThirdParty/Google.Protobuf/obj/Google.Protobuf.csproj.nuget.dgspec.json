@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {}
+    "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {}
   },
   "projects": {
-    "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {
+    "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
+        "projectUniqueName": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
         "projectName": "Google.Protobuf",
-        "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
+        "projectPath": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\obj\\",
+        "outputPath": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
