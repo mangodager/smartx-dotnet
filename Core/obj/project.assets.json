@@ -5121,11 +5121,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\smartx_dotnet\\Core\\Core.App.csproj",
+      "projectUniqueName": "E:\\github\\smartx-dotnet\\Core\\Core.App.csproj",
       "projectName": "Core",
-      "projectPath": "E:\\smartx_dotnet\\Core\\Core.App.csproj",
+      "projectPath": "E:\\github\\smartx-dotnet\\Core\\Core.App.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\smartx_dotnet\\Core\\obj\\",
+      "outputPath": "E:\\github\\smartx-dotnet\\Core\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -5144,8 +5144,8 @@
       "frameworks": {
         "netcoreapp3.1": {
           "projectReferences": {
-            "E:\\smartx_dotnet\\Base\\Core.Base.csproj": {
-              "projectPath": "E:\\smartx_dotnet\\Base\\Core.Base.csproj"
+            "E:\\github\\smartx-dotnet\\Base\\Core.Base.csproj": {
+              "projectPath": "E:\\github\\smartx-dotnet\\Base\\Core.Base.csproj"
             }
           }
         }

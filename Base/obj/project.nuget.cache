@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "QG5ZZjVU+f7yaTnHnILFVTghqTfbTbaFhsmS4PU1wuSsq4LaJKkPZT5Q50hv3HxWWUORWGM+uN+/7nJDoIHqyA==",
+  "dgSpecHash": "NA4R42s6cEyJXNma+X6+QGVWucPi79d50fb7DVA7yoRk63PehvPosG4XboNg/rMLQ0erGmFnXK7is8R+G4Gr5A==",
   "success": true,
-  "projectFilePath": "E:\\smartx_dotnet\\Base\\Core.Base.csproj",
+  "projectFilePath": "E:\\github\\smartx-dotnet\\Base\\Core.Base.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\dnsclient\\1.3.1\\dnsclient.1.3.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.netcore.platforms\\2.1.2\\microsoft.netcore.platforms.2.1.2.nupkg.sha512",

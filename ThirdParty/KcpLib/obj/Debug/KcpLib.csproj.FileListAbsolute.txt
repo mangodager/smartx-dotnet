@@ -36,3 +36,4 @@ E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.ca
 E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
 E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
 E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache

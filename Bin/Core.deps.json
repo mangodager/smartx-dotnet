@@ -12,6 +12,7 @@
           "LevelDB.Standard": "2.1.6.1",
           "MongoDB.Driver": "2.11.2",
           "MongoDB.Driver.Core": "2.11.2",
+          "SauceControl.Blake2Fast": "2.0.0",
           "Tangram.Ed25519": "1.0.0",
           "JsonFx.Json": "1.4.1003.3007"
         },
@@ -264,6 +265,14 @@
       "runtime.ubuntu.14.04-x64.runtime.native.System.Security.Cryptography.OpenSsl/4.3.0": {},
       "runtime.ubuntu.16.04-x64.runtime.native.System.Security.Cryptography.OpenSsl/4.3.0": {},
       "runtime.ubuntu.16.10-x64.runtime.native.System.Security.Cryptography.OpenSsl/4.3.0": {},
+      "SauceControl.Blake2Fast/2.0.0": {
+        "runtime": {
+          "lib/netcoreapp3.0/SauceControl.Blake2Fast.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
       "SharpCompress/0.23.0": {
         "dependencies": {
           "System.Text.Encoding.CodePages": "4.5.1"
@@ -1155,6 +1164,13 @@
       "sha512": "sha512-VB5cn/7OzUfzdnC8tqAIMQciVLiq2epm2NrAm1E9OjNRyG4lVhfR61SMcLizejzQP8R8Uf/0l5qOIbUEi+RdEg==",
       "path": "runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl/4.3.0",
       "hashPath": "runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl.4.3.0.nupkg.sha512"
+    },
+    "SauceControl.Blake2Fast/2.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-8BHH1BGyrLykFrjayIUiKj6G7Xjad0+AygpIePZeYIQTXtIs1axC608uKYyYnsvYdvxmQV9igcEsvAAIkrUF6w==",
+      "path": "saucecontrol.blake2fast/2.0.0",
+      "hashPath": "saucecontrol.blake2fast.2.0.0.nupkg.sha512"
     },
     "SharpCompress/0.23.0": {
       "type": "package",

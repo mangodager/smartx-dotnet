@@ -45,3 +45,4 @@ E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
 E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
 E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
 E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache

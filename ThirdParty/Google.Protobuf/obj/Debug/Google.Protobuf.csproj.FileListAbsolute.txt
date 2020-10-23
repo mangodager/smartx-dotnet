@@ -42,3 +42,4 @@ E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.Ass
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache

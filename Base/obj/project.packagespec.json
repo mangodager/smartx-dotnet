@@ -1,10 +1,10 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "E:\\smartx_dotnet\\Base\\Core.Base.csproj",
+    "projectUniqueName": "E:\\github\\smartx-dotnet\\Base\\Core.Base.csproj",
     "projectName": "Base",
-    "projectPath": "E:\\smartx_dotnet\\Base\\Core.Base.csproj",
-    "outputPath": "E:\\smartx_dotnet\\Base\\obj\\",
+    "projectPath": "E:\\github\\smartx-dotnet\\Base\\Core.Base.csproj",
+    "outputPath": "E:\\github\\smartx-dotnet\\Base\\obj\\",
     "projectStyle": "PackageReference",
     "fallbackFolders": [
       "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -19,11 +19,11 @@
     "frameworks": {
       "netcoreapp3.1": {
         "projectReferences": {
-          "E:\\smartx_dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {
-            "projectPath": "E:\\smartx_dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj"
+          "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj": {
+            "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj"
           },
-          "E:\\smartx_dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {
-            "projectPath": "E:\\smartx_dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj"
+          "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {
+            "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj"
           }
         }
       }
