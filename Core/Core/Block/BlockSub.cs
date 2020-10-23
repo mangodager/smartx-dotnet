@@ -16,6 +16,7 @@ namespace ETModel
         public string data;
         public byte[] sign;
         public string depend;
+        public long   gas;
         public long   height;
         public long   timestamp;
 

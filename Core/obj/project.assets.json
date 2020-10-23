@@ -429,6 +429,15 @@
           }
         }
       },
+      "SauceControl.Blake2Fast/2.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/netcoreapp3.0/SauceControl.Blake2Fast.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/SauceControl.Blake2Fast.dll": {}
+        }
+      },
       "SharpCompress/0.23.0": {
         "type": "package",
         "dependencies": {
@@ -2025,6 +2034,33 @@
         "runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl.4.3.0.nupkg.sha512",
         "runtime.ubuntu.16.10-x64.runtime.native.system.security.cryptography.openssl.nuspec",
         "runtimes/ubuntu.16.10-x64/native/System.Security.Cryptography.Native.OpenSsl.so"
+      ]
+    },
+    "SauceControl.Blake2Fast/2.0.0": {
+      "sha512": "8BHH1BGyrLykFrjayIUiKj6G7Xjad0+AygpIePZeYIQTXtIs1axC608uKYyYnsvYdvxmQV9igcEsvAAIkrUF6w==",
+      "type": "package",
+      "path": "saucecontrol.blake2fast/2.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net45/SauceControl.Blake2Fast.dll",
+        "lib/net45/SauceControl.Blake2Fast.xml",
+        "lib/netcoreapp2.1/SauceControl.Blake2Fast.dll",
+        "lib/netcoreapp2.1/SauceControl.Blake2Fast.xml",
+        "lib/netcoreapp3.0/SauceControl.Blake2Fast.dll",
+        "lib/netcoreapp3.0/SauceControl.Blake2Fast.xml",
+        "lib/netstandard1.1/SauceControl.Blake2Fast.dll",
+        "lib/netstandard1.1/SauceControl.Blake2Fast.xml",
+        "lib/netstandard1.3/SauceControl.Blake2Fast.dll",
+        "lib/netstandard1.3/SauceControl.Blake2Fast.xml",
+        "lib/netstandard2.0/SauceControl.Blake2Fast.dll",
+        "lib/netstandard2.0/SauceControl.Blake2Fast.xml",
+        "lib/netstandard2.1/SauceControl.Blake2Fast.dll",
+        "lib/netstandard2.1/SauceControl.Blake2Fast.xml",
+        "package/SauceControl.png",
+        "package/license",
+        "saucecontrol.blake2fast.2.0.0.nupkg.sha512",
+        "saucecontrol.blake2fast.nuspec"
       ]
     },
     "SharpCompress/0.23.0": {
@@ -5074,6 +5110,7 @@
       "LevelDB.Standard >= 2.1.6.1",
       "MongoDB.Driver >= 2.11.2",
       "MongoDB.Driver.Core >= 2.11.2",
+      "SauceControl.Blake2Fast >= 2.0.0",
       "Tangram.Ed25519 >= 1.0.0"
     ]
   },
@@ -5084,11 +5121,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\github\\new-dotnet\\smartx-dotnet\\Core\\Core.App.csproj",
+      "projectUniqueName": "E:\\smartx_dotnet\\Core\\Core.App.csproj",
       "projectName": "Core",
-      "projectPath": "E:\\github\\new-dotnet\\smartx-dotnet\\Core\\Core.App.csproj",
+      "projectPath": "E:\\smartx_dotnet\\Core\\Core.App.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\github\\new-dotnet\\smartx-dotnet\\Core\\obj\\",
+      "outputPath": "E:\\smartx_dotnet\\Core\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -5107,8 +5144,8 @@
       "frameworks": {
         "netcoreapp3.1": {
           "projectReferences": {
-            "E:\\github\\new-dotnet\\smartx-dotnet\\Base\\Core.Base.csproj": {
-              "projectPath": "E:\\github\\new-dotnet\\smartx-dotnet\\Base\\Core.Base.csproj"
+            "E:\\smartx_dotnet\\Base\\Core.Base.csproj": {
+              "projectPath": "E:\\smartx_dotnet\\Base\\Core.Base.csproj"
             }
           }
         }
@@ -5133,6 +5170,10 @@
           "MongoDB.Driver.Core": {
             "target": "Package",
             "version": "[2.11.2, )"
+          },
+          "SauceControl.Blake2Fast": {
+            "target": "Package",
+            "version": "[2.0.0, )"
           },
           "Tangram.Ed25519": {
             "target": "Package",

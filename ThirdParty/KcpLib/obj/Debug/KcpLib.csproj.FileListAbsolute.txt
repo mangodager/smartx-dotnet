@@ -27,3 +27,12 @@ E:\github\new-dotnet\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyIn
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+E:\github\smartx-dotnet\Bin\libkcp.dylib
+E:\github\smartx-dotnet\Bin\KcpLib.deps.json
+E:\github\smartx-dotnet\Bin\KcpLib.dll
+E:\github\smartx-dotnet\Bin\KcpLib.pdb
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
+E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb

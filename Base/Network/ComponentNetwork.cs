@@ -9,9 +9,9 @@ namespace ETModel
     // 网络层Component
     public abstract class ComponentNetwork : Component
     {
-		private AService Service;
+		protected AService Service;
 
-		private readonly Dictionary<long, Session> sessions = new Dictionary<long, Session>();
+		protected readonly Dictionary<long, Session> sessions = new Dictionary<long, Session>();
 
 		public IMessagePacker MessagePacker { get; set; }
 
@@ -53,7 +53,7 @@ namespace ETModel
             {
                 ipEndPoint = NetworkHelper.ToIPEndPoint(address);
             }
-            else 
+            else
             {
                 ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
             }

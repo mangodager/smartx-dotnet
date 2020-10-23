@@ -1,7 +1,10 @@
-﻿using System;
+﻿using LevelDB;
+using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 namespace ETModel
@@ -29,8 +32,8 @@ namespace ETModel
         }
         public class WalletJson
         {
-            public int  version  = 101;
-            public int  curIndex = 0;
+            public int version = 101;
+            public int curIndex = 0;
             public List<WalletJsonAddress> accounts;
         }
 
@@ -98,7 +101,7 @@ namespace ETModel
             //string input = "123";
             string input = wallet.Input("Please enter passwords: ");
             int ret = wallet.OpenWallet(input);
-            if (ret == -1&&!string.IsNullOrEmpty(input))
+            if (ret == -1 && !string.IsNullOrEmpty(input))
             {
                 string input2 = wallet.Input("Please enter your passwords again: ");
                 if (input == input2)
@@ -119,7 +122,7 @@ namespace ETModel
                 Log.Info($"passwords error!");
             }
             else
-            if (ret == -2)
+            if (ret == -3)
             {
                 Log.Info($"version error!");
             }
@@ -131,9 +134,12 @@ namespace ETModel
             passwords = password;
             try
             {
+                if (!File.Exists(walletFile))
+                    return -1;
+
                 string allText = File.ReadAllText(walletFile, System.Text.Encoding.UTF8);
                 var walletJson = JsonHelper.FromJson<WalletJson>(allText);
-                if (walletJson==null||walletJson.version < 101)
+                if (walletJson == null || walletJson.version < 101)
                     return -3;
                 var aes256 = new AesEverywhere.AES256();
 
@@ -157,14 +163,14 @@ namespace ETModel
             }
             catch (Exception)
             {
-                return -1;
+                return -2;
             }
             return 1;
         }
 
         public void SaveWallet()
         {
-            var walletJson  = new WalletJson();
+            var walletJson = new WalletJson();
             walletJson.curIndex = curIndex;
             walletJson.accounts = new List<WalletJsonAddress>();
 
@@ -174,7 +180,7 @@ namespace ETModel
             {
                 var walletJsonAddress = new WalletJsonAddress();
 
-                walletJsonAddress.address   = keys[i].ToAddress();
+                walletJsonAddress.address = keys[i].ToAddress();
                 walletJsonAddress.encrypted = aes256.Encrypt(keys[i].random.ToHexString(), passwords);
 
                 walletJson.accounts.Add(walletJsonAddress);
@@ -336,7 +342,7 @@ namespace ETModel
 
 
             byte[] data = "e33b68cd7ad3dc29e623e399a46956d54c1861c5cd1e5039b875811d2ca4447d".HexToBytes();
-            byte[] sign    = Wallet.Sign(data, walletKey);
+            byte[] sign = Wallet.Sign(data, walletKey);
 
             Log.Info("sign \n" + sign.ToHexString());
 
@@ -348,12 +354,27 @@ namespace ETModel
 
         static public void Test3()
         {
-            byte[] publickey = "537007d703cedabfed8d81031f974bbb67ab82fbdfc4097bd3ceb9a01b46ff07".HexToBytes();
-            string address = Wallet.ToAddress(publickey);
+            {
+                string hexpublickey = "537007d703cedabfed8d81031f974bbb67ab82fbdfc4097bd3ceb9a01b46ff07";
+                string addressOld = "0x6411c766bf61f22fe716cc51f5396a7e4279d749";
+                string addressNew = Wallet.ToAddress(hexpublickey.HexToBytes());
+                Log.Debug($"addressOld : {addressOld} addressNew : {addressNew} check : { CheckPulblicKeyToAddress_Old_Java_V1(addressOld, addressNew, hexpublickey) }");
+            }
 
 
+        }
 
+        static public bool CheckPulblicKeyToAddress_Old_Java_V1(string addressOld, string addressNew, string hexpublickey)
+        {
+            var hash1 = Blake2Fast.Blake2b.ComputeHash(32, ("302a300506032b6570032100" + hexpublickey).HexToBytes()).RIPEMD160();
+            string address1 = hash1.Take(20).ToHexString();
+            string address2 = Wallet.ToAddress(hexpublickey.HexToBytes());
 
+            if (address1 != addressOld.ToLower().Replace("0x", ""))
+                return false;
+            if (address2 != addressNew)
+                return false;
+            return true;
         }
 
     }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj": {}
+    "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj": {}
   },
   "projects": {
-    "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj": {
+    "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
+        "projectUniqueName": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
         "projectName": "MongoDB.Bson",
-        "projectPath": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
+        "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\github\\new-dotnet\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\obj\\",
+        "outputPath": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

@@ -10,6 +10,7 @@ using XLua;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Net;
 
 namespace ETModel
 {
@@ -35,7 +36,7 @@ namespace ETModel
 
             if (param.TryGetValue("index", out string index))
             {
-                param["wallet"] = param["wallet"].Replace(".josn", $"{index}.josn");
+                param["wallet"] = param["wallet"].Replace(".json", $"{index}.json");
                 param["db"] = param["db"] + index;
             }
 
@@ -50,6 +51,9 @@ namespace ETModel
             //return;
 
             //Wallet.Test2();
+            //return;
+
+            //Wallet.Test3();
             //return;
 
             // 测试代码
@@ -72,7 +76,7 @@ namespace ETModel
 
             if (param.TryGetValue("makeGenesis", out string tmp2))
             {
-                Consensus.MakeGenesis();            
+                Consensus.MakeGenesis();
                 return;
             }
 
@@ -90,6 +94,7 @@ namespace ETModel
             // 读取配置文件
             StreamReader sr = new StreamReader(new FileStream(param["configure"], FileMode.Open, FileAccess.Read, FileShare.ReadWrite), System.Text.Encoding.UTF8);
             string strTxt = sr.ReadToEnd();
+            strTxt = strTxt.Replace("0.0.0.0", NodeManager.GetIpV4());
             sr.Close(); sr.Dispose();
             JToken jd = JToken.Parse(strTxt);
 
@@ -98,13 +103,28 @@ namespace ETModel
                 jdNode = jd[NodeKey];
                 Log.Debug("启动： " + jdNode["appType"]);
 
-                if (index!=null)
+                // DNS
+                List<string> list = JsonHelper.FromJson<List<string>>(jdNode["NodeSessions"].ToString());
+                for (int ii = 0; ii < list.Count; ii++)
                 {
-                    jdNode["HttpRpc"]["ComponentNetworkHttp"]["address"]  = ((string)jdNode["HttpRpc" ]["ComponentNetworkHttp"]["address"]).Replace("8001", (8000 + int.Parse(index)).ToString() );
-                    jdNode["HttpPool"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkHttp"]["address"]).Replace("9001", (9000 + int.Parse(index)).ToString());
-                    jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"]).Replace("5000", ((5000 - 1) + int.Parse(index)).ToString());
-                    jdNode["ComponentNetworkInner"]["address"] = ((string)jdNode["ComponentNetworkInner"]["address"]).Replace("58601", (58600 + int.Parse(index)).ToString());
-                    jdNode["Pool"]["db_path"] = ((string)jdNode["Pool"]["db_path"]) + index;
+                    list[ii] = NetworkHelper.DnsToIPEndPoint(list[ii]).ToString();
+                }
+                jdNode["NodeSessions"] = JsonHelper.ToJson(list);
+
+                if (!string.IsNullOrEmpty(index))
+                {
+                    if(jdNode["HttpRpc"]!=null)
+                        jdNode["HttpRpc"]["ComponentNetworkHttp"]["address"]  = ((string)jdNode["HttpRpc" ]["ComponentNetworkHttp"]["address"]).Replace("8101", (8100 + int.Parse(index)).ToString() );
+                    if(jdNode["HttpRpc"]!=null)
+                        jdNode["HttpPool"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkHttp"]["address"]).Replace("9101", (9100 + int.Parse(index)).ToString());
+                    if(jdNode["HttpRpc"]!=null)
+                        jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"]).Replace("5000", ((5000 - 1) + int.Parse(index)).ToString());
+                    if(jdNode["HttpRpc"]!=null)
+                        jdNode["ComponentNetworkInner"]["address"] = ((string)jdNode["ComponentNetworkInner"]["address"]).Replace("58601", (58600 + int.Parse(index)).ToString());
+                    if(jdNode["RelayNetwork"]!=null)
+                        jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"] = ((string)jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"]).Replace("57601", (57600 + int.Parse(index)).ToString());
+                    if(jdNode["Pool"] != null)
+                        jdNode["Pool"]["db_path"] = ((string)jdNode["Pool"]["db_path"]) + index;
                 }
 
                 // 数据库路径
@@ -115,6 +135,7 @@ namespace ETModel
 
                 Entity.Root.AddComponent<ComponentStart>(jd[NodeKey]);
             }
+
             Update();
 
         }

@@ -30,13 +30,16 @@ namespace ETModel
         Rule rule = null;
         bool transferShow = false;
         bool bRun = true;
+        bool openSyncFast = true;
 
         public override void Awake(JToken jd = null)
         {
             try
             {
-                transferShow = jd["transferShow"] != null;
+                Boolean.TryParse(jd["transferShow"]?.ToString(), out transferShow);
+                Boolean.TryParse(jd["openSyncFast"]?.ToString(), out openSyncFast);
                 Log.Info($"Consensus.transferShow = {transferShow}");
+                Log.Info($"Consensus.openSyncFast = {openSyncFast}");
 
                 if (jd["Run"] != null)
                     bool.TryParse(jd["Run"].ToString(), out bRun);
@@ -54,6 +57,7 @@ namespace ETModel
                 }
 
                 //string aa = BigInt.Div("1000,1000","1000");
+
 
             }
             catch (Exception)
@@ -507,7 +511,8 @@ namespace ETModel
                         bifurcatedReport = "";
                     }
 
-                    await Task.Delay(1000);
+                    if(newBlocks.Count==0)
+                       await Task.Delay(1000);
                 }
                 catch (Exception e)
                 {
@@ -620,7 +625,15 @@ namespace ETModel
         }
 
         string bifurcatedReport = "";
-        async Task<bool> SyncHeight(Block otherMcBlk,string ipEndPoint)
+        async Task<bool> SyncHeight(Block otherMcBlk, string ipEndPoint)
+        {
+            if (transferHeight + 20 >= otherMcBlk.height)
+                return await SyncHeightNear(otherMcBlk, ipEndPoint);
+            else
+                return await SyncHeightFast(otherMcBlk, ipEndPoint);
+        }
+
+        async Task<bool> SyncHeightFast(Block otherMcBlk,string ipEndPoint)
         {
             if (transferHeight >= otherMcBlk.height)
                 return true;
@@ -631,7 +644,7 @@ namespace ETModel
             BlockChain chain2F1 = BlockChainHelper.GetBlockChain(l2F1Height);
             if (chain2F1 != null && chain2F1.hash != hash2F1)
             {
-                if(bifurcatedReport == "")
+                if(bifurcatedReport == ""&&!string.IsNullOrEmpty(hash2F1))
                     bifurcatedReport = $"find a branch chain. height: {otherMcBlk.height} address: {otherMcBlk.Address} , rules count: {otherMcBlk.linksblk.Count}";
                 return true;
             }
@@ -657,15 +670,128 @@ namespace ETModel
                 break;
             }
 
+            // 
+            Dictionary<long, string> blockChains = new Dictionary<long, string>();
+            bool error = false;
+            var q2p_Sync_Height = new Q2P_Sync_Height();
+            q2p_Sync_Height.spacing = 103;
+            q2p_Sync_Height.height  = currHeight;
+            var reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint,15);
+            if (reply != null)
+            {
+                blockChains = JsonHelper.FromJson<Dictionary<long, string>>(reply.blockChains);
+                do
+                {
+                    for (int kk = 0; kk < reply.blocks.Count; kk++)
+                    {
+                        var blk = JsonHelper.FromJson<Block>(reply.blocks[kk]);
+                        if (!blockMgr.AddBlock(blk))
+                        {
+                            error = true;
+                            break;
+                        }
+                    }
+                    if (!error&& reply.height!=-1)
+                    {
+                        q2p_Sync_Height.height = reply.height;
+                        q2p_Sync_Height.spacing = Math.Max(1, 103 - (reply.height - currHeight));
+
+                        reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint);
+                    }
+                }
+                while (!error && reply != null && reply.height != -1);
+            }
+
             //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
             bool bUndoHeight = false;
             long ii = currHeight;
             for ( ; ii < syncHeight + 1 && ii < currHeight + 100; ii++)
             {
+                blockChains.TryGetValue(ii, out string hash);
+                Block syncMcBlk = blockMgr.GetBlock(hash);
+                if (syncMcBlk == null)
+                    break;
+
+                // 比较链
+                if (syncMcBlk.height > 2 && !bUndoHeight)
+                {
+                    var chain = BlockChainHelper.GetBlockChain(syncMcBlk.height - 3);
+                    if (chain != null)
+                    {
+                        var chainnext = chain.GetMcBlockNext();
+                        if (chainnext != null)
+                        {
+                            Block blk2 = blockMgr.GetBlock(chainnext.hash);
+                            Block blk3 = blockMgr.GetBlock(syncMcBlk.prehash);
+                            if (blk2 != null && blk3 != null && blk2.hash != blk3.prehash)
+                            {
+                                bUndoHeight = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 回滚到同步块的高度
+            if (bUndoHeight)
+            {
+                long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
+                levelDBStore.UndoTransfers(currHeight);
+                long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
+            }
+
+            if (ii < syncHeight + 1)
+                return false;
+
+            return true;
+        }
+
+        async Task<bool> SyncHeightNear(Block otherMcBlk, string ipEndPoint)
+        {
+            if (transferHeight >= otherMcBlk.height)
+                return true;
+
+            long.TryParse(levelDBStore.Get("Snap___2F1Height"), out long l2F1Height);
+            l2F1Height = Math.Max(1, l2F1Height);
+            string hash2F1 = await QueryMcBlockHash(l2F1Height, ipEndPoint);
+            BlockChain chain2F1 = BlockChainHelper.GetBlockChain(l2F1Height);
+            if (chain2F1 != null && chain2F1.hash != hash2F1)
+            {
+                if (bifurcatedReport == "" && !string.IsNullOrEmpty(hash2F1))
+                    bifurcatedReport = $"find a branch chain. height: {otherMcBlk.height} address: {otherMcBlk.Address} , rules count: {otherMcBlk.linksblk.Count}";
+                return true;
+            }
+
+            // 接收广播过来的主块
+            // 检查链是否一致，不一致表示前一高度有数据缺失
+            // 获取对方此高度主块linksblk列表,对方非主块的linksblk列表忽略不用拉取
+            // 没有的块逐个拉取,校验数据是否正确,添加到数据库
+            // 拉取到的块重复此过程
+            // UndoTransfers到拉去到的块高度 , 有新块添加需要重新判断主块把漏掉的账本应用
+            // GetMcBlock 重新去主块 ，  ApplyTransfers 应用账本
+            long syncHeight = Math.Max(otherMcBlk.height - 1, transferHeight);
+            long currHeight = Math.Min(otherMcBlk.height - 1, transferHeight);
+            for (long jj = currHeight; jj > l2F1Height; jj--)
+            {
+                currHeight = jj;
+                BlockChain chain = BlockChainHelper.GetBlockChain(jj);
+                string hash = await QueryMcBlockHash(jj, ipEndPoint);
+                if (hash != "" && (chain == null || chain.hash != hash))
+                {
+                    continue;
+                }
+                break;
+            }
+
+            //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
+            bool bUndoHeight = false;
+            long ii = currHeight;
+            for (; ii < syncHeight + 1 && ii < currHeight + 100; ii++)
+            {
                 Block syncMcBlk = null;
                 if (ii == otherMcBlk.height - 1) // 同步prehash， 先查
                 {
-                    syncMcBlk = blockMgr.GetBlock(otherMcBlk.prehash) ??  await QueryMcBlock(ii, ipEndPoint);
+                    syncMcBlk = blockMgr.GetBlock(otherMcBlk.prehash) ?? await QueryMcBlock(ii, ipEndPoint);
                 }
                 if (ii == otherMcBlk.height)
                 {
@@ -801,7 +927,7 @@ namespace ETModel
                 session = null;
 
             Block blk = null;
-            //if (session == null)
+            if (session == null)
             {
                 NodeManager.NodeData node = nodeManager.GetRandomNode();
                 if(node!=null)
@@ -975,6 +1101,84 @@ namespace ETModel
             session.Reply(q2q_McBlockHash, r2p_McBlockHash);
         }
 
+
+        public async Task<R2P_Sync_Height> QuerySync_Height(Q2P_Sync_Height q2p_Sync_Height, string ipEndPoint = null,float timeout=5)
+        {
+            q2p_Sync_Height.ActorId = nodeManager.GetMyNodeId();
+
+            Session session = null;
+            if (ipEndPoint != null && ipEndPoint != "")
+                session = await networkInner.Get(NetworkHelper.ToIPEndPoint(ipEndPoint));
+            if (session != null && !session.IsConnect())
+                session = null;
+
+            if (session == null)
+            {
+                NodeManager.NodeData node = nodeManager.GetRandomNode();
+                if (node != null)
+                    session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
+            }
+
+            if (session != null)
+            {
+                R2P_Sync_Height reply_msg = (R2P_Sync_Height)await session.Query(q2p_Sync_Height, timeout);
+                return reply_msg;
+            }
+
+            return null;
+        }
+
+        [MessageMethod(NetOpcode.Q2P_Sync_Height)]
+        public static void Q2P_Sync_Height_Handle(Session session, int opcode, object msg)
+        {
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            if (!consensus.openSyncFast)
+            {
+                return;
+            }
+            else
+            {
+
+                Q2P_Sync_Height q2p_Sync_Height = msg as Q2P_Sync_Height;
+                R2P_Sync_Height reply_msg = new R2P_Sync_Height();
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+
+                long max = 1 * 1024 * 1024;
+                long size = 0;
+                reply_msg.height = q2p_Sync_Height.height;
+                long spacing = q2p_Sync_Height.height + q2p_Sync_Height.spacing;
+                Dictionary<long, string> blockChains = new Dictionary<long, string>();
+
+                for (; reply_msg.height < spacing; reply_msg.height++)
+                {
+                    var chain1 = BlockChainHelper.GetBlockChain(reply_msg.height);
+                    if (chain1 != null)
+                    {
+                        blockChains.Add(chain1.height, chain1.hash);
+                    }
+
+                    List<Block> blks = blockMgr.GetBlock(reply_msg.height);
+                    for (reply_msg.handle = q2p_Sync_Height.handle; reply_msg.handle < blks.Count; reply_msg.handle++)
+                    {
+                        string temp = JsonHelper.ToJson(blks[reply_msg.handle]);
+                        reply_msg.blocks.Add(temp);
+                        size += temp.Length;
+                        if (size > max)
+                        {
+                            reply_msg.handle++;
+                            reply_msg.blockChains = JsonHelper.ToJson(blockChains);
+                            session.Reply(q2p_Sync_Height, reply_msg);
+                            return;
+                        }
+                    }
+                }
+
+                reply_msg.height = -1;
+                reply_msg.blockChains = JsonHelper.ToJson(blockChains);
+                session.Reply(q2p_Sync_Height, reply_msg);
+            }
+        }
+
         public static void MakeGenesis()
         {
             if (true)
@@ -994,7 +1198,7 @@ namespace ETModel
                     BlockSub transfer = new BlockSub();
                     transfer.addressIn = "";
                     transfer.addressOut = blk.Address;
-                    transfer.amount = (3L * 100L * 10000L * 10000L).ToString();
+                    transfer.amount = (3L * 100L * 100 * 10000L * 10000L).ToString();
                     transfer.nonce = 1;
                     transfer.type = "transfer";
                     transfer.timestamp = blk.timestamp;

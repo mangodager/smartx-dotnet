@@ -157,7 +157,8 @@ namespace ETModel
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
             Block blk = JsonHelper.FromJson<Block>(p2p_Block.block);
-            Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
+            //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
+            Log.Debug($"NewBlock Address:{blk.Address} hash:{blk.hash} ");
 
             // 有高度差的直接忽略
             long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);

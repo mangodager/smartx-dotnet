@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
+using System.Threading;
 
 namespace ETModel
 {
@@ -17,18 +18,13 @@ namespace ETModel
 
     public class HttpService : AService
     {
-        private readonly HttpListener httpListener;
         public  override  IPEndPoint GetEndPoint() { return NetworkHelper.ToIPEndPoint(prefix.ToLower().Replace("http://", "").Replace("/", "")); }
         public  readonly string prefix;
         public  readonly bool   website;
 
         public HttpService(string _prefix, bool website, Action<AChannel> acceptCallback)
         {
-            this.AcceptCallback += acceptCallback;
-            
-            this.httpListener = new HttpListener();
             this.website = website;
-
             this.prefix = _prefix;
             StartAccept(this.prefix);
         }
@@ -60,34 +56,26 @@ namespace ETModel
         {            
         }
 
-        public void StartAccept(string prefix)
+        public void StartAccept(string uriPrefix)
         {
-            try
+            HttpListener httpListener = new HttpListener();
+            httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
+            httpListener.Prefixes.Add(uriPrefix);
+            httpListener.Start();
+            new Thread(new ThreadStart(delegate
             {
-                this.httpListener.Prefixes.Add(prefix);
-                httpListener.Start();
-                httpListener.BeginGetContext(Result, null);
-
-            }
-            catch (HttpListenerException e)
-            {
-                Log.Debug(e.ToString());
-            }
+                while (true)
+                {
+                    HttpListenerContext httpListenerContext = httpListener.GetContext();
+                    Result(httpListenerContext);
+                }
+            })).Start();
         }
 
-        private void Result(IAsyncResult ar)
+        private void Result(HttpListenerContext context)
         {
-            System.Threading.Monitor.Enter(Entity.Root);
             try
             {
-                //当接收到请求后程序流会走到这里
-                //继续异步监听
-                httpListener.BeginGetContext(Result, null);
-                //var guid = Guid.NewGuid().ToString();
-                //Console.ForegroundColor = ConsoleColor.White;
-                //Console.WriteLine($"接到新的请求:{guid},时间：{DateTime.Now.ToString()}");
-                //获得context对象
-                var context = httpListener.EndGetContext(ar);
                 var request = context.Request;
                 var response = context.Response;
                 //如果是js的ajax请求，还可以设置跨域的ip地址与参数
@@ -121,7 +109,6 @@ namespace ETModel
                 //Console.ForegroundColor = ConsoleColor.Red;
                 //Console.WriteLine($"网络蹦了：{ex.ToString()}");
             }
-            System.Threading.Monitor.Exit(Entity.Root);
         }
 
         private string OnGet(HttpListenerRequest request, HttpListenerResponse response)
@@ -179,11 +166,17 @@ namespace ETModel
                     if (RawUrl.IndexOf(".html?") != -1)
                         RawUrl = RawUrl.Split('?')[0];
 
-                    if(File.Exists("./wwwroot" + RawUrl))
-                        return File.ReadAllText( "./wwwroot" + RawUrl);
+                    string RawUrlFileText = null;
+                    if (File.Exists("./wwwroot" + RawUrl))
+                        RawUrlFileText = File.ReadAllText( "./wwwroot" + RawUrl);
                     else
                     if (File.Exists("./wwwroot" + RawUrl+".html"))
-                        return File.ReadAllText("./wwwroot" + RawUrl + ".html");
+                        RawUrlFileText = File.ReadAllText("./wwwroot" + RawUrl + ".html");
+                    if(RawUrl== "/js/helper.js" && RawUrlFileText != null)
+                    {
+                        RawUrlFileText = RawUrlFileText.Replace("\"http://www.SmartX.com:8004\"", $"\"http://{request.Url.Authority}\"");
+                    }
+                    return RawUrlFileText;
                 }
                 return "";
             }
@@ -233,8 +226,16 @@ namespace ETModel
             message.request  = request;
             message.response = response;
 
-            componentNetMsg.HandleMsg(null, NetOpcodeBase.HttpMessage, message);
+            System.Threading.Monitor.Enter(Entity.Root);
+            try
+            {
+                componentNetMsg.HandleMsg(null, NetOpcodeBase.HttpMessage, message);
+            }
+            catch(Exception e)
+            {
 
+            }
+            System.Threading.Monitor.Exit(Entity.Root);
             return message.result;
         }
 

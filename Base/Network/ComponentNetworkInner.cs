@@ -99,6 +99,14 @@ namespace ETModel
             }
         }
 
+        public void BroadcastToAll(IMessage msg)
+        {
+            foreach (var session in sessions.Values)
+            {
+                session.Send(msg);
+            }
+        }
+
         public IPEndPoint GetIPEndPoint(AppType appType)
         {
             foreach (KeyValuePair<IPEndPoint, int> kv in serverIPs)

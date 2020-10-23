@@ -93,14 +93,16 @@ namespace ETModel
         public static async Task<HttpMessage> Query(string url, HttpMessage request)
         {
             string jsonModel = JsonHelper.ToJson(request.map);
-            var wc = new WebClient();
-            //发送到服务端并获得返回值
-            var returnInfo = await wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false);
-            var str = System.Text.Encoding.UTF8.GetString(returnInfo); //把服务端返回的信息转成字符串
-            //var str = HttpClient.Post(url, jsonModel);
-            HttpMessage response = new HttpMessage();
-            response.map = JsonHelper.FromJson<Dictionary<string,string>>(str);
-            return response;
+            using (WebClient wc = new WebClient())
+            {
+                //发送到服务端并获得返回值
+                var returnInfo = await wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false);
+                var str = System.Text.Encoding.UTF8.GetString(returnInfo); //把服务端返回的信息转成字符串
+                //var str = HttpClient.Post(url, jsonModel);
+                HttpMessage response = new HttpMessage();
+                response.map = JsonHelper.FromJson<Dictionary<string, string>>(str);
+                return response;
+            }
         }
 
         //public async void TestRun()

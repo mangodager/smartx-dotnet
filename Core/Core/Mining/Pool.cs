@@ -18,10 +18,12 @@ namespace ETModel
         public TransferProcess transferProcess = null;
         public LevelDBStore PoolDBStore = new LevelDBStore();
         public string style = "SOLO";
+        public float  serviceFee = 0; // 矿池手续费
 
         public override void Awake(JToken jd = null)
         {
             style = jd["style"]?.ToString();
+            float.TryParse(jd["serviceFee"]?.ToString(), out serviceFee);
             if (style == "PPLNS")
             {
                 string db_path = jd["db_path"]?.ToString();
@@ -198,6 +200,8 @@ namespace ETModel
                         if (mcblk != null && mcblk.Address == ownerAddress)
                         {
                             long reward = Consensus.GetReward(rewardheight);
+                            reward = (long)(reward * (1.0f-serviceFee));
+
                             var miner = miners.Values.FirstOrDefault(c => c.random == mcblk.random);
                             if (miner == null)
                             {

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Q+H+klvHJZDSWbol98eG1A/xMOT+9dQJ49D4ZhNFLckRBNVOCohciY2suBCSn1Fep9aZs13RxPCfnMgKZzv9xA==",
+  "dgSpecHash": "nwa1zvC5r27kxDUWjRg3F4fJtT2NSeeukAxZ4xYsBbV6voKUX+8SN1evYnP5ygoQCcgNeS6GH8pw8zqk0maLnQ==",
   "success": true,
-  "projectFilePath": "E:\\github\\new-dotnet\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+  "projectFilePath": "E:\\github\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
   "expectedPackageFiles": [
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.app\\2.1.0\\microsoft.netcore.app.2.1.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.dotnetapphost\\2.1.0\\microsoft.netcore.dotnetapphost.2.1.0.nupkg.sha512",

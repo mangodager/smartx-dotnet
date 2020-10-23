@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Net;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace ETModel
 {
@@ -68,21 +69,20 @@ namespace ETModel
 
         public async override void Start()
         {
-            string tmp = Program.jdNode["NodeSessions"].ToString();
-            List<string> list = JsonHelper.FromJson<List<string>>(tmp);
-
+            List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
             // Get Internet IP
             {
                 Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
                 Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
                 R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
+                networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
                 try
                 {
+                    if(rIPNode!=null)
                     networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
                 }
                 catch(Exception)
                 {
-                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
                 }
             }
             Log.Info($"NodeManager.Start {networkInner.ipEndPoint.ToString()}");
@@ -102,7 +102,7 @@ namespace ETModel
                         bool bResponse = false;
                         new_Node.HashCode = StringHelper.HashCode(JsonHelper.ToJson(nodes));
                         new_Node.sendTime = TimeHelper.Now();
-                        Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
+                        Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[ii]));
                         if (session != null && session.IsConnect())
                         {
                             //Log.Debug($"NodeSessions connect " + r2P_New_Node.ActorId);
@@ -145,25 +145,37 @@ namespace ETModel
         }
 
         //[MessageMethod(NetOpcode.Q2P_New_Node)]
-        void Q2P_New_Node_Handle(Session session, int opcode, object msg)
+        async void Q2P_New_Node_Handle(Session session, int opcode, object msg)
         {
-            Q2P_New_Node new_Node = msg as Q2P_New_Node;
-            //Log.Debug($"Q2P_New_Nod {new_Node.ActorId} \r\nHash: {new_Node.HashCode}");
-
-            NodeData data = new NodeData();
-            data.nodeId     = new_Node.ActorId;
-            data.address    = new_Node.address;
-            data.ipEndPoint = new_Node.ipEndPoint;
-            data.kIndex = GetkIndex();
-            AddNode(data);
-
-            R2P_New_Node response = new R2P_New_Node() { Nodes = "" , sendTime = new_Node.sendTime , nodeTime = TimeHelper.Now() };
-            if(StringHelper.HashCode(JsonHelper.ToJson(nodes))!= new_Node.HashCode)
+            try
             {
-                response.Nodes = JsonHelper.ToJson(nodes);
-                session.Send(response);
+                Q2P_New_Node new_Node = msg as Q2P_New_Node;
+                //Log.Debug($"Q2P_New_Node_Handle {new_Node.ActorId} ipEndPoint: {new_Node.ipEndPoint}");
+                Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 2);
+                Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
+                R2P_IP_INFO rIPNode = (R2P_IP_INFO)await sessionNew.Query(qIPNode, 0.3f);
+
+                if (rIPNode != null)
+                {
+                    NodeData data = new NodeData();
+                    data.nodeId = new_Node.ActorId;
+                    data.address = new_Node.address;
+                    data.ipEndPoint = new_Node.ipEndPoint;
+                    data.kIndex = GetkIndex();
+                    AddNode(data);
+
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = "", sendTime = new_Node.sendTime, nodeTime = TimeHelper.Now() };
+                    if (StringHelper.HashCode(JsonHelper.ToJson(nodes)) != new_Node.HashCode)
+                    {
+                        response.Nodes = JsonHelper.ToJson(nodes);
+                        session.Send(response);
+                    }
+                    session.Reply(new_Node, response);
+                }
             }
-            session.Reply(new_Node, response);
+            catch(Exception)
+            {
+            }
         }
 
         void R2P_New_Node_Handle(Session session, int opcode, object msg)

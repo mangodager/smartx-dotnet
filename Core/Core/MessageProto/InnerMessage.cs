@@ -167,4 +167,28 @@ namespace ETModel
 
 	}
 
+	[Message(NetOpcode.Q2P_Sync_Height,AppType.Core)]
+	public partial class Q2P_Sync_Height: IRequestProto
+	{
+		public long height { get; set; }
+
+		public int handle { get; set; }
+
+		public long spacing { get; set; }
+
+	}
+
+	[Message(NetOpcode.R2P_Sync_Height,AppType.Core)]
+	public partial class R2P_Sync_Height: IResponseProto
+	{
+		public long height { get; set; }
+
+		public int handle { get; set; }
+
+		public List<string> blocks = new List<string>();
+
+		public string blockChains { get; set; }
+
+	}
+
 }

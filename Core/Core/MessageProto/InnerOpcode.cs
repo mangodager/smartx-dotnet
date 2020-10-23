@@ -21,5 +21,7 @@ namespace ETModel
 		 public const ushort R2P_BeLinkHash = 117;
 		 public const ushort Q2P_IP_INFO = 118;
 		 public const ushort R2P_IP_INFO = 119;
+		 public const ushort Q2P_Sync_Height = 120;
+		 public const ushort R2P_Sync_Height = 121;
 	}
 }

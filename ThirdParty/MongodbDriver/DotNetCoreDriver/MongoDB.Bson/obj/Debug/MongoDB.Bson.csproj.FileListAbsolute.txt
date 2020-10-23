@@ -24,3 +24,11 @@ E:\github\new-dotnet\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\Mon
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.AssemblyInfo.cs
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.dll
 E:\github\new-dotnet\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.pdb
+E:\github\smartx-dotnet\Bin\MongoDB.Bson.deps.json
+E:\github\smartx-dotnet\Bin\MongoDB.Bson.dll
+E:\github\smartx-dotnet\Bin\MongoDB.Bson.pdb
+E:\github\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.csproj.CoreCompileInputs.cache
+E:\github\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.AssemblyInfoInputs.cache
+E:\github\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.AssemblyInfo.cs
+E:\github\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.dll
+E:\github\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.pdb

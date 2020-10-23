@@ -46,6 +46,10 @@
           "target": "Package",
           "version": "[2.11.2, )"
         },
+        "SauceControl.Blake2Fast": {
+          "target": "Package",
+          "version": "[2.0.0, )"
+        },
         "Tangram.Ed25519": {
           "target": "Package",
           "version": "[1.0.0, )"

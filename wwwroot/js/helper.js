@@ -16,7 +16,7 @@
 
     Helper.GetServerIP = function () {
         var serverIP = localStorage.getItem("serverIP");
-        if (serverIP == null)
+        if (serverIP == null || serverIP=="")
             serverIP = "http://www.SmartX.com:8004";
         return serverIP;
     }
