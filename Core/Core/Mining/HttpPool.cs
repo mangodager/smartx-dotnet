@@ -68,7 +68,7 @@ namespace ETModel
         }
 
         // http://127.0.0.1:8088/mining?cmd=Submit
-        public virtual void OnSubmit(HttpMessage httpMessage)
+        public void OnSubmit(HttpMessage httpMessage)
         {
             // submit
             Dictionary<string, string> map = new Dictionary<string, string>();
@@ -120,13 +120,13 @@ namespace ETModel
             httpMessage.result = JsonHelper.ToJson(map);
         }
 
-        public virtual Dictionary<string, MinerTask> GetMiner(long height)
+        public Dictionary<string, MinerTask> GetMiner(long height)
         {
             Miners.TryGetValue(height, out Dictionary<string, MinerTask> value);
             return value;
         }
 
-        public virtual Dictionary<string, MinerTask> GetMinerReward(out long height)
+        public Dictionary<string, MinerTask> GetMinerReward(out long height)
         {
             if (Miners.Keys.Count > 0)
             {
@@ -138,7 +138,7 @@ namespace ETModel
             return null;
         }
 
-        public virtual void DelMiner(long height)
+        public void DelMiner(long height)
         {
             Miners.Remove(height);
         }

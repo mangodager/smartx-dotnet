@@ -47,7 +47,9 @@ namespace ETModel
 
 		public string ipEndPoint { get; set; }
 
-		public long sendTime { get; set; }
+		public long state { get; set; }
+
+		public string version { get; set; }
 
 	}
 
@@ -55,8 +57,6 @@ namespace ETModel
 	public partial class R2P_New_Node: IResponseProto
 	{
 		public string Nodes { get; set; }
-
-		public long sendTime { get; set; }
 
 		public long nodeTime { get; set; }
 

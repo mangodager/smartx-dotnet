@@ -20,7 +20,7 @@ namespace ETModel
     {
         public CalculatePower calculatePower = new CalculatePower(32L);
         public Dictionary<string, RuleInfo> ruleInfos = new Dictionary<string, RuleInfo>();
-        public string superAddress = "";
+        public string auxiliaryAddress = "";
         public string consAddress = "";
 
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
@@ -28,9 +28,9 @@ namespace ETModel
         NodeManager nodeManager = Entity.Root.GetComponent<NodeManager>();
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
         Rule rule = null;
-        bool transferShow = false;
-        bool bRun = true;
-        bool openSyncFast = true;
+        public bool transferShow = false;
+        public bool openSyncFast = true;
+        public bool bRun = true;
 
         public override void Awake(JToken jd = null)
         {
@@ -73,7 +73,7 @@ namespace ETModel
 
             string genesisText = File.ReadAllText("./Data/genesisBlock.dat");
             Block blk = JsonHelper.FromJson<Block>(genesisText);
-            superAddress = blk.Address;
+            auxiliaryAddress = blk.Address;
 
             long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out long UndoHeight);
             if (UndoHeight == 0)

@@ -125,12 +125,12 @@ namespace ETModel
             //var t_2max = consensus.GetRuleCount(chain.height + 1);
             //List<Block> blks = blockMgr.GetBlock(chain.height + 1);
             //var blksRule = BlockChainHelper.GetRuleBlk(consensus, blks, chain.hash);
-            //var blkSuper = blksRule.Find((x) => { return x.Address == consensus.superAddress; });
-            //if (blkSuper != null && blkSuper.Address == consensus.superAddress && blksRule.Count >= Math.Max(2, (BlockChainHelper.Get2F1(t_2max) / 2)))
+            //var blkAuxiliary = blksRule.Find((x) => { return x.Address == consensus.auxiliaryAddress; });
+            //if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blksRule.Count >= Math.Max(2, (BlockChainHelper.Get2F1(t_2max) / 2)))
             //{
             //    List<Block> blksTemp = blockMgr.GetBlock(chain.height + 2);
-            //    if(blksTemp.Exists( (x) => { return x.prehash == blkSuper.hash; } )) {
-            //        return new BlockChain() { hash = blkSuper.hash, height = blkSuper.height };
+            //    if(blksTemp.Exists( (x) => { return x.prehash == blkAuxiliary.hash; } )) {
+            //        return new BlockChain() { hash = blkAuxiliary.hash, height = blkAuxiliary.height };
             //    }
             //}
 
@@ -262,10 +262,10 @@ namespace ETModel
             int rel = IsIrreversible(consensus, chain.GetMcBlock(), blks2) ? 2 : 0;
 
             var blksRule = BlockChainHelper.GetRuleBlk(consensus, blks2, chain.hash);
-            var blkSuper = blksRule.Find((x) => { return x.Address == consensus.superAddress; });
-            //if (blkSuper != null && blkSuper.Address == consensus.superAddress && blksRule.Count >= Math.Min(2, consensus.GetRuleCount(chain.height + 1)))
+            var blkAuxiliary = blksRule.Find((x) => { return x.Address == consensus.auxiliaryAddress; });
+            //if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blksRule.Count >= Math.Min(2, consensus.GetRuleCount(chain.height + 1)))
             var t_2max = consensus.GetRuleCount(chain.height + 1);
-            if (blkSuper != null && blkSuper.Address == consensus.superAddress && blksRule.Count >= Math.Max(2,(BlockChainHelper.Get2F1(t_2max) / 2)) )
+            if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blksRule.Count >= Math.Max(2,(BlockChainHelper.Get2F1(t_2max) / 2)) )
             {
                 rel = rel + 1;
             }
@@ -320,7 +320,7 @@ namespace ETModel
                 }
 
                 var exist = list2.Exists((x) => { return x.checkWeight >= 2; });
-                if (exist) // 如果存在2F+1 block就删除 super block
+                if (exist) // 如果存在2F+1 block就删除 auxiliary block
                     list2.RemoveAll((x) => { return x.checkWeight == 1; });
 
                 listT = list2;

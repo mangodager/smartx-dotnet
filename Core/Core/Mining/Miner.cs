@@ -37,6 +37,10 @@ namespace ETModel
         public string taskid = "";
         double diff_max = 0;
 
+        public string poolPower = "";
+        protected Action changeCallback;
+        public int intervalTime = 1000;
+
         TimePass timePassInfo  = new TimePass(10);
         TimePass timePassDebug = new TimePass(10);
         public async void Run()
@@ -114,6 +118,9 @@ namespace ETModel
                                 hashmining = temphash;
                                 height = tempheight;
                                 random = "";
+
+                                result.map.TryGetValue("power", out poolPower);
+                                changeCallback?.Invoke();
                             }
                         }
                     }
@@ -122,7 +129,7 @@ namespace ETModel
                 {
                     Log.Error(e);
                 }
-                await Task.Delay(1000);
+                await Task.Delay(intervalTime);
             }
         }
 

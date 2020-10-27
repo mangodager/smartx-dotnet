@@ -108,7 +108,7 @@ namespace ETModel
                                 var miner = miners.Values.FirstOrDefault(c => c.diff == diff);
                                 if(miner!=null)
                                     blk.random = miner.random;
-                                httpRule?.SetMinging(blk.height, "", consensus.calculatePower.GetPower());
+                                httpRule.SetMinging(blk.height, "", consensus.calculatePower.GetPower());
                             }
                         }
 
@@ -172,12 +172,12 @@ namespace ETModel
                 }
             }
 
-            // Super Address
-            var blkSuper = blks.Find((x) => { return x.Address == consensus.superAddress; });
-            //if (blkSuper != null && blkSuper.Address == consensus.superAddress && blks.Count >= Math.Min(2, consensus.GetRuleCount(blk1.height+1)) )
-            if (blkSuper != null && blkSuper.Address == consensus.superAddress && blks.Count >= Math.Max(2, (BlockChainHelper.Get2F1(t_2max) / 2)))
+            // Auxiliary Address
+            var blkAuxiliary = blks.Find((x) => { return x.Address == consensus.auxiliaryAddress; });
+            //if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blks.Count >= Math.Min(2, consensus.GetRuleCount(blk1.height+1)) )
+            if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blks.Count >= Math.Max(2, (BlockChainHelper.Get2F1(t_2max) / 2)))
             {
-                return blkSuper;
+                return blkAuxiliary;
             }
 
             return blk1;

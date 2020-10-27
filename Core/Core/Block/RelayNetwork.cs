@@ -12,6 +12,7 @@ namespace ETModel
 {
     public class RelayNetwork : Component
     {
+        NodeManager nodeManager = Entity.Root.GetComponent<NodeManager>();
         ComponentNetworkInner relayNetworkInner = null;
 
         public override void Awake(JToken jd = null)
@@ -23,8 +24,8 @@ namespace ETModel
 
         public override void Start()
         {
-            ComponentNetMsg componentNetMsg = this.entity.GetComponent<ComponentNetMsg>();// 中继网络
-            componentNetMsg.registerMsg(NetOpcode.Q2P_New_Node, Q2P_New_Node_Handle);
+            var relayNetworkNetMsg = this.entity.GetComponent<ComponentNetMsg>();// 中继网络
+            relayNetworkNetMsg.registerMsg(NetOpcode.Q2P_New_Node, Q2P_New_Node_Handle);
 
             relayNetworkInner = this.entity.GetComponent<ComponentNetworkInner>();
             Log.Info($"RelayNetwork.Start {relayNetworkInner.ipEndPoint}");
@@ -44,11 +45,15 @@ namespace ETModel
         {
             Q2P_New_Node new_Node = msg as Q2P_New_Node;
             //Log.Debug($"Q2P_New_Nod {new_Node.ActorId} \r\nHash: {new_Node.HashCode}");
+            if (nodeManager != null)
+            {
+                var nodes = nodeManager.GetNodeList();
+                nodes = nodes.FindAll((n) => { return (n.state & NodeManager.EnumState.RelayNetwork) == NodeManager.EnumState.RelayNetwork; });
 
-            R2P_New_Node response = new R2P_New_Node() { Nodes = "", sendTime = new_Node.sendTime, nodeTime = TimeHelper.Now() };
-            session.Reply(new_Node, response);
+                R2P_New_Node response = new R2P_New_Node() { Nodes = JsonHelper.ToJson(nodes), nodeTime = TimeHelper.Now() };
+                session.Reply(new_Node, response);
+            }
         }
-
 
 
     }

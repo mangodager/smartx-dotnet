@@ -439,7 +439,7 @@
 
         function onTransferSubmit(e) {
             //var amount = parseInt($('#input_amount').val()) * 10000;
-            var amount = new BigNumber($('#input_amount').val()).multipliedBy(10000);
+            var amount = new BigNumber($('#input_amount').val()).multipliedBy(10000).dividedToIntegerBy(1);
             var addressOut = $('#input_addressOut').val();
             var depend = $('#input_depend').val();
             var remarks = $('#input_remarks').val();

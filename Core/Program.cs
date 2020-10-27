@@ -91,16 +91,27 @@ namespace ETModel
             SynchronizationContext.SetSynchronizationContext(OneThreadSynchronizationContext.Instance);
             AssemblyHelper.AddAssembly("Base",typeof(AssemblyHelper).Assembly);
             AssemblyHelper.AddAssembly("App" ,typeof(Program).Assembly);
-            // 读取配置文件
-            StreamReader sr = new StreamReader(new FileStream(param["configure"], FileMode.Open, FileAccess.Read, FileShare.ReadWrite), System.Text.Encoding.UTF8);
-            string strTxt = sr.ReadToEnd();
-            strTxt = strTxt.Replace("0.0.0.0", NodeManager.GetIpV4());
-            sr.Close(); sr.Dispose();
-            JToken jd = JToken.Parse(strTxt);
 
-            if (jd[NodeKey] !=null)
+            // 读取配置文件
+            try
             {
+                StreamReader sr = new StreamReader(new FileStream(param["configure"], FileMode.Open, FileAccess.Read, FileShare.ReadWrite), System.Text.Encoding.UTF8);
+                string strTxt = sr.ReadToEnd();
+                strTxt = strTxt.Replace("0.0.0.0", NodeManager.GetIpV4());
+                sr.Close(); sr.Dispose();
+                JToken jd = JToken.Parse(strTxt);
                 jdNode = jd[NodeKey];
+            }
+            catch (Exception e)
+            {
+                Log.Info(e.ToString());
+                Log.Error($"configure file: {param["configure"]} on exists ro json foramt error.");
+                Console.ReadKey();
+                return;
+            }
+
+            if (jdNode!=null)
+            {
                 Log.Debug("启动： " + jdNode["appType"]);
 
                 // DNS
@@ -133,7 +144,7 @@ namespace ETModel
                     jdNode["LevelDBStore"]["db_path"] = param["db"];
                 }
 
-                Entity.Root.AddComponent<ComponentStart>(jd[NodeKey]);
+                Entity.Root.AddComponent<ComponentStart>(jdNode);
             }
 
             Update();

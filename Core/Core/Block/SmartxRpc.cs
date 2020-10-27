@@ -163,7 +163,7 @@ namespace ETModel
                     httpMessage.result = "{\"count\":" + account.index + "}";
                     return;
                 }
-                httpMessage.result = "false";
+                httpMessage.result = "{\"count\":0}";
             }
         }
 
@@ -520,7 +520,7 @@ namespace ETModel
                 if (account != null)
                 {
                     result.Add("Account", account.address);
-                    result.Add("amount", BigInt.Div(account.amount, "10000"));
+                    result.Add("amount", account.amount.Insert(account.amount.Length-4,"."));
                     result.Add("index",account.index);
                     httpMessage.result = JsonHelper.ToJson(result);
                 }

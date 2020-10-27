@@ -20,6 +20,7 @@
 
 body {
     padding-bottom: 70px;
+    background: #fafafa;
 }
 
 
@@ -28,6 +29,7 @@ body {
     background-size: cover;
     padding-top: 7%;
     padding-bottom: 2%;
+    background: #e5e5e5;
 }
 
 /*模态框整体高度*/

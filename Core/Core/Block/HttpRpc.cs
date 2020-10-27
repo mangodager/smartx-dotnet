@@ -443,7 +443,7 @@ namespace ETModel
             {
                 Account account = dbSnapshot.Accounts.Get(address);
                 if (account != null)
-                    httpMessage.result = $"          Account: {account.address}, amount:{BigInt.Div(account.amount , "10000")} , index:{account.index}";
+                    httpMessage.result = $"          Account: {account.address}, amount:{account.amount.Insert(account.amount.Length - 4, ".")} , index:{account.index}";
                 else
                     httpMessage.result = $"          Account: {address}, amount:0 , index:0";
             }
@@ -559,7 +559,16 @@ namespace ETModel
 
         public void OnBeRuler(HttpMessage httpMessage)
         {
-            Consensus consensus = Entity.Root.GetComponent<Consensus>();
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+
+            // 判断当前块高度是否接近主线
+            if(blockMgr.newBlockHeight-consensus.transferHeight > 1000)
+            {
+                httpMessage.result = $"{consensus.transferHeight}:{blockMgr.newBlockHeight} The current block height is too low. command BeRuler have been ignore.";
+                return;
+            }
+
             WalletKey key = Wallet.GetWallet().GetCurWallet();
 
             var  address = key.ToAddress();

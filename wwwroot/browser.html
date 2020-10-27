@@ -199,10 +199,10 @@
         var browserIndexCur = 0;
         var browserIndexMax = 0;
 
-        function JSONLength(obj) {
+        function JSONLength2(obj) {
             var size = 0, key;
             for (key in obj) {
-                if (obj.hasOwnProperty(key)) size++;
+                return key;
             }
             return size;
         };
@@ -231,8 +231,8 @@
                         var color = colorlist[colorindex % colorlist.length]; colorindex++;
                         Helper.TableInsert("mytable", jsonObj[key]["hash"], color,
                             jsonObj[key]["height"],
-                            JSONLength(jsonObj[key]["linksblk"]),
-                            JSONLength(jsonObj[key]["linkstran"]),
+                            JSONLength2(jsonObj[key]["linksblk"]),
+                            JSONLength2(jsonObj[key]["linkstran"]),
                             //jsonObj[key]["weight"],
                             jsonObj[key]["hash"],
                             jsonObj[key]["Address"],

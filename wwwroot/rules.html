@@ -51,7 +51,7 @@
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="myrules">
-                <caption>Rules:</caption>
+                <caption id="RulesLabel">Rules:</caption>
                 <thead>
                     <tr>
                         <th>Address</th>
@@ -64,14 +64,14 @@
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="mynode">
-                <caption>Node:</caption>
+                <caption id="NodeLabel">Node:</caption>
                 <thead>
                     <tr>
                         <th>nodeId</th>
                         <th>address</th>
                         <th>ipEndPoint</th>
                         <th>kIndex</th>
-                        <th>time</th>
+                        <th>state</th>
                     </tr>
                 </thead>
             </table>
@@ -102,6 +102,14 @@
             window.location.href = "console.html";
         };
 
+        function JSONLength(obj) {
+            var size = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) size++;
+            }
+            return size;
+        };
+
         var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
         var colorindex = 0;
         var platform = Helper.checkPlatform();
@@ -123,6 +131,8 @@
                         jsonObj[key]["End"]);
                 }
 
+                var element = document.getElementById("RulesLabel");
+                element.innerHTML = "Rules: " + JSONLength(jsonObj);
 
             },
             error: function (err) {
@@ -145,9 +155,11 @@
                         Helper.Simplify(jsonObj[key]["address"], platform),
                         jsonObj[key]["ipEndPoint"],
                         jsonObj[key]["kIndex"],
-                        jsonObj[key]["time"]);
+                        jsonObj[key]["state"]);
                 }
 
+                var element = document.getElementById("NodeLabel");
+                element.innerHTML = "Node: " + JSONLength(jsonObj);
 
             },
             error: function (err) {

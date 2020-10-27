@@ -73,6 +73,10 @@
         document.getElementById(arguments[0]).appendChild(item_new);
     }
 
+    Helper.MyTableCount = function (name) {
+        var mytableEle = document.getElementById(name);
+        return mytableEle.children.length - 2;
+    }
 
     Helper.TableInsertNoSelect2 = function () {
         var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='liOnclick(this)'>";

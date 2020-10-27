@@ -212,8 +212,8 @@ end";
 
                 if (transfer.addressOut == null || transfer.addressOut == "")
                 {
-                    // 当前版本只能由superAddress发布智能合约
-                    if (consensus.superAddress != transfer.addressIn)
+                    // 当前版本只能由auxiliaryAddress发布智能合约
+                    if (consensus.auxiliaryAddress != transfer.addressIn)
                         return;
 
                     luaVMScript = new LuaVMScript() { script = Base58.Decode(transfer.data) };

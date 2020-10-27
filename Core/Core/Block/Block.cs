@@ -119,14 +119,10 @@ namespace ETModel
 
             blk.linksblk  = new Dictionary<int, string>  (This.linksblk.Count);
             blk.linkstran = new Dictionary<int, BlockSub>(This.linkstran.Count);
-            for (int jj = 0; jj < This.linksblk.Count; jj++)
-            {
-                blk.linksblk.Add(jj, "");
-            }
-            for (int jj = 0; jj < This.linkstran.Count; jj++)
-            {
-                blk.linkstran.Add(jj, null);
-            }
+
+            blk.linksblk.Add(This.linksblk.Count, "");
+            blk.linkstran.Add(This.linkstran.Count, null);
+
             return blk;
         }
 

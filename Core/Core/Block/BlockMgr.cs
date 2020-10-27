@@ -153,6 +153,7 @@ namespace ETModel
             return blks;
         }
 
+        public long newBlockHeight = 0;
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
@@ -160,6 +161,7 @@ namespace ETModel
             //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
             Log.Debug($"NewBlock Address:{blk.Address} hash:{blk.hash} ");
 
+            newBlockHeight = blk.height;
             // 有高度差的直接忽略
             long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
             if (transferHeight - 1 < blk.height)
@@ -168,8 +170,9 @@ namespace ETModel
             }
 
             // 如果收到的是桶外的数据 , 向K桶内进行一次广播
-            if (nodeManager.IsNeedBroadcast2Kad(session.RemoteAddress))
+            if (nodeManager.IsNeedBroadcast2Kad(NetworkHelper.ToIPEndPoint(p2p_Block.ipEndPoint)))
             {
+                p2p_Block.ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString();
                 nodeManager.Broadcast2Kad(p2p_Block);
             }
 

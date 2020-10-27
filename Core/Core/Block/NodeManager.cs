@@ -16,13 +16,20 @@ namespace ETModel
         static public int K_INDEX_ROW = 12; // height
         static public int K_INDEX_COL = 12; // width
 
+        public class EnumState
+        {
+            public const long transferShow = 1;
+            public const long openSyncFast = 2;
+            public const long RelayNetwork = 4;
+        }
+
         public class NodeData
         {
-            public long   nodeId;
+            public long nodeId;
             public string address;
             public string ipEndPoint;
-            public int    kIndex; // K桶序号
-            public long   time;
+            public int kIndex; // K桶序号
+            public long state;
         }
 
         public static string GetIpV4()
@@ -47,7 +54,7 @@ namespace ETModel
         // 节点队列
         List<NodeData> nodes = new List<NodeData>();
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-        public long   nodeTimeOffset = 0;
+        public long nodeTimeOffset = 0;
 
         public override void Awake(JToken jd = null)
         {
@@ -55,6 +62,17 @@ namespace ETModel
             //componentNetMsg.registerMsg(NetOpcode.A2M_HearBeat, A2M_HearBeat_Handle);
             componentNetMsg.registerMsg(NetOpcode.Q2P_New_Node, Q2P_New_Node_Handle);
             //componentNetMsg.registerMsg(NetOpcode.R2P_New_Node, R2P_New_Node_Handle);
+
+            // 是否添加自身到Nodes列表
+            bool bRun = true;
+            if (jd["AddSelfToNodes"] != null)
+            {
+                bool.TryParse(jd["AddSelfToNodes"].ToString(), out bRun);
+            }
+            if (bRun)
+            {
+                Run();
+            }
         }
 
         public long GetMyNodeId()
@@ -64,11 +82,13 @@ namespace ETModel
 
         public long GetNodeTime()
         {
-            return TimeHelper.Now()+ nodeTimeOffset;
+            return TimeHelper.Now() + nodeTimeOffset;
         }
 
-        public async override void Start()
+        public async void Run()
         {
+            await Task.Delay(1 * 1000);
+
             List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
             // Get Internet IP
             {
@@ -85,13 +105,25 @@ namespace ETModel
                 {
                 }
             }
-            Log.Info($"NodeManager.Start {networkInner.ipEndPoint.ToString()}");
+            Log.Info($"NodeManager  {networkInner.ipEndPoint.ToString()}");
+            Log.Info($"NodeSessions {list[0]}");
 
             // 
             Q2P_New_Node new_Node = new Q2P_New_Node();
             new_Node.ActorId = GetMyNodeId();
             new_Node.address = Wallet.GetWallet().GetCurWallet().ToAddress();
-            new_Node.ipEndPoint = networkInner.ipEndPoint.ToString();
+            new_Node.ipEndPoint  = networkInner.ipEndPoint.ToString();
+
+            long state = 0;
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            if (consensus != null)
+            {
+                state |= consensus.transferShow ? EnumState.transferShow : 0;
+                state |= consensus.openSyncFast ? EnumState.openSyncFast : 0;
+            }
+            state |= Entity.Root.GetComponentInChild<RelayNetwork>() != null ? EnumState.RelayNetwork : 0;
+            new_Node.state    = state;
+            new_Node.version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             while (true && list.Count>0)
             {
@@ -101,21 +133,21 @@ namespace ETModel
                     {
                         bool bResponse = false;
                         new_Node.HashCode = StringHelper.HashCode(JsonHelper.ToJson(nodes));
-                        new_Node.sendTime = TimeHelper.Now();
                         Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[ii]));
                         if (session != null && session.IsConnect())
                         {
                             //Log.Debug($"NodeSessions connect " + r2P_New_Node.ActorId);
                             //session.Send(new_Node);
 
-                            R2P_New_Node r2P_New_Node = (R2P_New_Node)await session.Query(new_Node, 0.3f);
+                            long sendTime = TimeHelper.Now();
+                            R2P_New_Node r2P_New_Node = (R2P_New_Node)await session.Query(new_Node, 3f);
                             if (r2P_New_Node != null)
                             {
+                                long timeNow = TimeHelper.Now() ;
+                                nodeTimeOffset = (timeNow - sendTime) / 2 + r2P_New_Node.nodeTime - timeNow;
                                 if (r2P_New_Node.Nodes != "")
                                 {
                                     nodes = JsonHelper.FromJson<List<NodeData>>(r2P_New_Node.Nodes);
-                                    long timeNow = TimeHelper.Now() ;
-                                    nodeTimeOffset = (timeNow - new_Node.sendTime) / 2 + r2P_New_Node.nodeTime - timeNow;
                                 }
                                 bResponse = true;
                             }
@@ -144,12 +176,15 @@ namespace ETModel
             session.Reply(qNode, response);
         }
 
+        Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+
         //[MessageMethod(NetOpcode.Q2P_New_Node)]
         async void Q2P_New_Node_Handle(Session session, int opcode, object msg)
         {
             try
             {
                 Q2P_New_Node new_Node = msg as Q2P_New_Node;
+
                 //Log.Debug($"Q2P_New_Node_Handle {new_Node.ActorId} ipEndPoint: {new_Node.ipEndPoint}");
                 Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 2);
                 Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
@@ -158,17 +193,19 @@ namespace ETModel
                 if (rIPNode != null)
                 {
                     NodeData data = new NodeData();
-                    data.nodeId = new_Node.ActorId;
-                    data.address = new_Node.address;
+                    data.nodeId     = new_Node.ActorId;
+                    data.address    = new_Node.address;
                     data.ipEndPoint = new_Node.ipEndPoint;
+                    data.state      = new_Node.state;
                     data.kIndex = GetkIndex();
                     AddNode(data);
 
-                    R2P_New_Node response = new R2P_New_Node() { Nodes = "", sendTime = new_Node.sendTime, nodeTime = TimeHelper.Now() };
-                    if (StringHelper.HashCode(JsonHelper.ToJson(nodes)) != new_Node.HashCode)
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
+                    string nodesjson = JsonHelper.ToJson(nodes);
+                    if (StringHelper.HashCode(nodesjson) != new_Node.HashCode)
                     {
-                        response.Nodes = JsonHelper.ToJson(nodes);
-                        session.Send(response);
+                        response.Nodes = nodesjson;
+                        //session.Send(response);
                     }
                     session.Reply(new_Node, response);
                 }
@@ -205,7 +242,6 @@ namespace ETModel
                 return false;
             }
 
-            data.time = DateTime.Now.Ticks;
             nodes.Add(data);
 
             Log.Debug($"\r\nAddNode {data.nodeId} {data.address} {data.ipEndPoint} kIndex:{data.kIndex} nodes:{nodes.Count}");
@@ -304,7 +340,7 @@ namespace ETModel
             List<NodeData> result = GetBroadcastNode();
 
             // 剔除自己所在桶
-            NodeData nodeSelf = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(networkInner.ipEndPoint.ToString()); });
+            NodeData nodeSelf = nodes.Find((n) => { return n.nodeId == GetMyNodeId(); });
             if (nodeSelf != null)
             {
                 NodeData nodeIgnore = result.Find((n) => { return n.kIndex == nodeSelf.kIndex; });
@@ -330,7 +366,7 @@ namespace ETModel
         // Broadcast to my Kademlia
         public async void Broadcast2Kad(IMessage message)
         {
-            NodeData nodeSelf = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(networkInner.ipEndPoint.ToString());});
+            NodeData nodeSelf = nodes.Find((n) => { return n.nodeId == GetMyNodeId(); });
             if (nodeSelf == null)
                 return;
 
@@ -355,7 +391,7 @@ namespace ETModel
         public bool IsNeedBroadcast2Kad(IPEndPoint ipEndPoint)
         {
             NodeData nodetarget = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(ipEndPoint.ToString()); });
-            NodeData nodeSelf   = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(ipEndPoint.ToString()); });
+            NodeData nodeSelf   = nodes.Find((n) => { return n.nodeId == GetMyNodeId(); });
             if (nodetarget != null && nodeSelf != null)
             {
                 if (nodetarget.kIndex != nodeSelf.kIndex)
@@ -381,7 +417,6 @@ namespace ETModel
             }
             return RandomHelper.Random() % K_INDEX_ROW;
         }
-
 
 
 
