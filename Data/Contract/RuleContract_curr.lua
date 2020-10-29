@@ -22,7 +22,7 @@ function Sort(a,b)
 		return lualib.StringCompare(a.Address , b.Address) > 0;
 	end
 
-	return bigint.Greater(a.Amount > b.Amount,false);
+	return bigint.Greater(a.Amount , b.Amount,false);
 end
 
 function Add()
