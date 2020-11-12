@@ -60,6 +60,50 @@ namespace ETModel
             return a.CompareTo(b);
         }
 
+        static public bool IsRuleOnline(long height,string address)
+        {
+            var mcblk = BlockChainHelper.GetMcBlock(height);
+            if(mcblk != null)
+            {
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+                for (int i = 0; i < mcblk.linksblk.Count; i++)
+                {
+                    Block blk = blockMgr.GetBlock(mcblk.linksblk[i]);
+                    if (blk != null)
+                    {
+                        if (blk.Address == address)
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        static public void TransferEvent(string sender, string _to, string _value)
+        {
+            if(Entity.Root.GetComponent<Consensus>().transferShow)
+            {
+                // bind to account
+                var consAddress = LuaVMEnv.s_consAddress;
+                var dbSnapshot  = LuaVMEnv.s_dbSnapshot;
+                if (!string.IsNullOrEmpty(consAddress))
+                {
+                    var mapIn = dbSnapshot.ABC.Get(sender) ?? new List<string>();
+                    mapIn.Remove(consAddress);
+                    mapIn.Add(consAddress);
+                    dbSnapshot.ABC.Add(sender, mapIn);
+                    if (!string.IsNullOrEmpty(_to))
+                    {
+                        var mapOut = dbSnapshot.ABC.Get(_to) ?? new List<string>();
+                        mapOut.Remove(consAddress);
+                        mapOut.Add(consAddress);
+                        dbSnapshot.ABC.Add(_to, mapOut);
+
+                        dbSnapshot.BindTransfer2Account($"{_to}{consAddress}", LuaVMEnv.s_transfer.hash);
+                    }
+                }
+            }
+        }
 
     }
 

@@ -26,8 +26,10 @@ namespace ETModel
         public DbCache<LuaVMScript>  Contracts { get; }
         public DbCache<LuaVMContext> Storages { get; }
         public DbCache<string>       StoragesAccount { get; }
-        public DbCache<string>       TFA { get; } // Accounts_TransfersIndex bing Transfers_hash
+        public DbCache<List<string>> ABC { get; } // Accounts Bind Contracts
+
         public DbCache<BlockChain>   BlockChains { get; }
+        public DbList<string>        List { get; }
 
         public DbSnapshot(DB db, long height, bool bUndo)
         {
@@ -54,9 +56,10 @@ namespace ETModel
             Accounts  = new DbCache<Account>(db, options, batch, Undos, "Accounts");
             Contracts = new DbCache<LuaVMScript>(db, options, batch, Undos, "Contracts");
             Storages  = new DbCache<LuaVMContext>(db, options, batch, Undos, "Storages");
-            TFA       = new DbCache<string>(db, options, batch, Undos, "TFA");
             BlockChains = new DbCache<BlockChain>(db, options, batch, Undos, "BlockChain");
             StoragesAccount = new DbCache<string>(db, options, batch, Undos, "StgAcc");
+            ABC       = new DbCache<List<string>>(db, options, batch, Undos, "ABC");
+            List      = new DbList<string>(db, options, batch, Undos, "List");
 
         }
 
@@ -69,9 +72,10 @@ namespace ETModel
             Accounts.Commit();
             Contracts.Commit();
             Storages.Commit();
-            TFA.Commit();
             BlockChains.Commit();
             StoragesAccount.Commit();
+            ABC.Commit();
+            List.Commit();
 
             if (Undos != null)
             {
@@ -105,9 +109,9 @@ namespace ETModel
 
         }
 
-        public void BindTransfer2Account(string account, long transfersIndex, string transfer)
+        public void BindTransfer2Account(string account, string transfer)
         {
-            TFA.Add( $"{account}_{transfersIndex}", transfer);
+            List.Add($"TFA__{account}", transfer);
         }
 
         public void Add(string key, string value)

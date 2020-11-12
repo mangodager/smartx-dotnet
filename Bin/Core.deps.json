@@ -6,13 +6,14 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v3.1": {
-      "Core/1.0.0": {
+      "Core/1.5.0": {
         "dependencies": {
           "Base": "1.0.0",
           "LevelDB.Standard": "2.1.6.1",
           "MongoDB.Driver": "2.11.2",
           "MongoDB.Driver.Core": "2.11.2",
           "SauceControl.Blake2Fast": "2.0.0",
+          "System.Runtime.Numerics": "4.3.0",
           "Tangram.Ed25519": "1.0.0",
           "JsonFx.Json": "1.4.1003.3007"
         },
@@ -950,7 +951,7 @@
     }
   },
   "libraries": {
-    "Core/1.0.0": {
+    "Core/1.5.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

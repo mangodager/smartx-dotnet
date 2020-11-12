@@ -127,32 +127,52 @@ namespace ETModel
 
         static public void Test()
         {
-            CalculatePower calculate = new CalculatePower();
-
-            Block blk = new Block();
-            blk.prehash = "b6b67d3d8b83f4885620ccd45d1af81d5690a056de2aba8ddf899fba8088b75d";
-
-            double diff_max = 0;
-            for (int jj = 0; jj < 100; jj++)
+            //
             {
-                for (int ii = 0; ii < 1000*1000; ii++)
+                Block blk = new Block();
+                blk.prehash = "b6b67d3d8b83f4885620ccd45d1af81d5690a056de2aba8ddf899fba8088b75d";
                 {
-                    string random = RandomHelper.RandUInt64().ToString("x");
-                    string hash = blk.ToHash(random);
-
-                    double diff = Helper.GetDiff(hash);
-                    if (diff > diff_max)
-                    {
-                        diff_max = diff;
-                        blk.hash = hash;
-                        blk.random = random;
-                    }
+                    blk.hash = "000000c09983d8950d8d0dce9ab5e9039fade2590d25f361ee0f9c1047832ceb";
+                    double value1 = CalculatePower.Power(blk.GetDiff());
+                    string value2 = CalculatePower.GetPowerCompany(value1);
+                    Log.Info($"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}");
                 }
+                {
+                    blk.hash = "0000003e833bc8b524922d9400e8b489eb1fe753d35efde0d5e2ae5ee430dfbe";
+                    double value1 = CalculatePower.Power(blk.GetDiff());
+                    string value2 = CalculatePower.GetPowerCompany(value1);
+                    Log.Info($"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}");
+                }
+            }
+            // 2
+            {
+                CalculatePower calculate = new CalculatePower();
 
-                double value1 = CalculatePower.Power(blk.GetDiff());
-                string value2 = CalculatePower.GetPowerCompany(value1);
+                Block blk = new Block();
+                blk.prehash = "b6b67d3d8b83f4885620ccd45d1af81d5690a056de2aba8ddf899fba8088b75d";
 
-                Log.Info( $"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}" );
+                double diff_max = 0;
+                for (int jj = 0; jj < 100; jj++)
+                {
+                    for (int ii = 0; ii < 1000 * 1000; ii++)
+                    {
+                        string random = RandomHelper.RandUInt64().ToString("x");
+                        string hash = blk.ToHash(random);
+
+                        double diff = Helper.GetDiff(hash);
+                        if (diff > diff_max)
+                        {
+                            diff_max = diff;
+                            blk.hash = hash;
+                            blk.random = random;
+                        }
+                    }
+
+                    double value1 = CalculatePower.Power(blk.GetDiff());
+                    string value2 = CalculatePower.GetPowerCompany(value1);
+
+                    Log.Info($"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}");
+                }
             }
         }
 

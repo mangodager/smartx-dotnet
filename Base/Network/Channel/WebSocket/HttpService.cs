@@ -53,22 +53,32 @@ namespace ETModel
         }
 
         public override void Update()
-        {            
+        {
+            if(httpListener==null)
+            {
+                StartAccept(this.prefix);
+            }
+
         }
 
+        TimePass timepass = new TimePass(0,5*60);
+        HttpListener httpListener = null;
         public void StartAccept(string uriPrefix)
         {
-            HttpListener httpListener = new HttpListener();
+            httpListener = new HttpListener();
             httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             httpListener.Prefixes.Add(uriPrefix);
             httpListener.Start();
             new Thread(new ThreadStart(delegate
             {
-                while (true)
+                while (!timepass.IsPassSet())
                 {
                     HttpListenerContext httpListenerContext = httpListener.GetContext();
                     Result(httpListenerContext);
                 }
+                httpListener.Abort();
+                httpListener.Close();
+                httpListener = null;
             })).Start();
         }
 
@@ -166,6 +176,11 @@ namespace ETModel
                     if (RawUrl.IndexOf(".html?") != -1)
                         RawUrl = RawUrl.Split('?')[0];
 
+                    // 安全检查
+                    var fileInfo = new FileInfo("./wwwroot" + RawUrl);
+                    if (fileInfo.DirectoryName.IndexOf(System.Environment.CurrentDirectory+"\\wwwroot")==-1)
+                        return "";
+
                     string RawUrlFileText = null;
                     if (File.Exists("./wwwroot" + RawUrl))
                         RawUrlFileText = File.ReadAllText( "./wwwroot" + RawUrl);
@@ -226,16 +241,16 @@ namespace ETModel
             message.request  = request;
             message.response = response;
 
-            System.Threading.Monitor.Enter(Entity.Root);
-            try
+            lock (Entity.Root)
             {
-                componentNetMsg.HandleMsg(null, NetOpcodeBase.HttpMessage, message);
+                try
+                {
+                    componentNetMsg.HandleMsg(null, NetOpcodeBase.HttpMessage, message);
+                }
+                catch (Exception)
+                {
+                }
             }
-            catch(Exception e)
-            {
-
-            }
-            System.Threading.Monitor.Exit(Entity.Root);
             return message.result;
         }
 

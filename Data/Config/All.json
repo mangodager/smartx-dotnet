@@ -3,12 +3,12 @@
     "appType": "All",
 
     "NodeSessions": [
-      "192.168.1.103:58601"
+      "192.168.1.105:58601"
     ],
 
     "ComponentNetworkInner": {
       "protocol": "TCP",
-      "address": "0:58601",
+      "address": "0.0.0.0:58601",
       "CheckHearBeat": false,
       "CheckKcpWaitsnd": false
     },
@@ -44,7 +44,7 @@
       "Entity": "SmartxRpc",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:5000/"
+        "address": "http://0.0.0.0:5000/"
       }
     },
 
@@ -52,7 +52,7 @@
       "Entity": "HttpRpc",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:8001/",
+        "address": "http://0.0.0.0:8101/",
         "website":true
       }
 
@@ -60,12 +60,24 @@
     "HttpPool": {
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:9001/"
+        "address": "http://0.0.0.0:9101/"
       }
     },
     "Pool": {
       "style": "PPLNS",
       "db_path": "Data/PoolDB",
+    },
+
+    "RelayNetwork": {
+      "Entity": "RelayNetwork",
+      "ComponentNetworkInner": {
+        "protocol": "TCP",
+        "address": "0.0.0.0:57601",
+        "CheckHearBeat": false,
+        "CheckKcpWaitsnd": false
+      },
+     "ComponentNetMsg": {
+     }
     },
 
   }

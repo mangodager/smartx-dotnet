@@ -47,6 +47,9 @@ namespace ETModel
                 return;
             }
 
+            //BigHelper.Test();
+            //return;
+
             //CalculatePower.Test();
             //return;
 
@@ -64,6 +67,7 @@ namespace ETModel
             //LevelDBStore.test_delete(args);
             //LevelDBStore.test_undo(args);
             //LevelDBStore.Export2CSV_Block(args);
+            //LevelDBStore.test_ergodic(args);
             //return;
 
             //Log.Info(Environment.CurrentDirectory);
@@ -191,11 +195,11 @@ namespace ETModel
 
                     Thread.Sleep(1);
 
-                    Monitor.Enter(Entity.Root);
-                    OneThreadSynchronizationContext.Instance.Update();
-                    Entity.Root.Update();
-                    CoroutineMgr.UpdateCoroutine();
-                    Monitor.Exit(Entity.Root);
+                    lock (Entity.Root)
+                    {
+                        OneThreadSynchronizationContext.Instance.Update();
+                        Entity.Root.Update();
+                    }
                 }
                 catch (Exception e)
                 {

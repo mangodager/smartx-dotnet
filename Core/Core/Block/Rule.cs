@@ -59,7 +59,10 @@ namespace ETModel
             Block blk    = null;
             Block preblk = null;
             TimePass timePass = new TimePass(1);
+            
             var httpRule = Entity.Root.GetComponent<HttpPool>();
+            if(httpRule==null)
+                broadcasttime = pooltime * 5 / 15; // 不挖矿就提前广播块
 
             state = 0xff;
             while (true)
@@ -92,8 +95,10 @@ namespace ETModel
                     if (blk != null && httpRule == null )
                     {
                         // 挖矿
-                        if(httpRule==null)
-                            Mining(blk,hashmining);
+                        if (httpRule == null)
+                        {
+                            Mining(blk, hashmining);
+                        }
                     }
 
                     // 广播块
@@ -118,10 +123,10 @@ namespace ETModel
                         blockMgr.AddBlock(blk);
                         p2p_NewBlock.block = JsonHelper.ToJson(blk);
                         p2p_NewBlock.ipEndPoint = networkInner.ipEndPoint.ToString();
-                        nodeManager.Broadcast(p2p_NewBlock);
+                        nodeManager.Broadcast(p2p_NewBlock, blk);
                         diff_max = 0;
 
-                        Log.Debug($"Rule.Broadcast {blk.height} {blk.hash}");
+                        Log.Debug($"Rule.Broadcast {blk.height} {blk.hash} {nodeManager.GetNodeCount()}");
                         calculatePower.Insert(blk);
                         blk = null;
                         hashmining = "";
@@ -198,24 +203,39 @@ namespace ETModel
             if (!Wallet.Verify(transfer.sign, transfer.hash, transfer.addressIn))
                 return -2;
 
-            if(BigInt.Less(transfer.amount,"0",false))
-                return -3;
-            Account account = null;
-            using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+            if (transfer.type == "transfer")
             {
-                account = snapshot.Accounts.Get(transfer.addressIn);
-            }
-            if(account == null)
-                return -4;
+                if(BigHelper.Less(transfer.amount,"0",false))
+                    return -3;
 
-            if(BigInt.Less(account.amount, transfer.amount,false))
-                return -5;
+                Account account = null;
+                using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+                {
+                    account = snapshot.Accounts.Get(transfer.addressIn);
+                }
+                if (account == null)
+                    return -4;
+
+                if (BigHelper.Less(account.amount, transfer.amount, false))
+                    return -5;
+
+                if (BigHelper.Round8(transfer.amount) != transfer.amount)
+                    return -6;
+            }
+            else
+            {
+
+
+            }
+
+            if(transfer.addressIn==transfer.addressOut)
+                return -6;
 
             lock (blockSubs)
             {
                 // 出块权限
                 if (blockSubs.Count>6000)
-                    return -6;
+                    return -7;
 
                 blockSubs.Remove(transfer.hash);
                 blockSubs.Add(transfer.hash, transfer);
@@ -305,7 +325,7 @@ namespace ETModel
 
 
         [MessageMethod(NetOpcode.Q2P_Transfer)]
-        public static void P2P_Transfer_Handle(Session session, int opcode, object msg)
+        public static void Q2P_Transfer_Handle(Session session, int opcode, object msg)
         {
             Q2P_Transfer q2p_Transfer = msg as Q2P_Transfer;
             BlockSub transfer = JsonHelper.FromJson<BlockSub>(q2p_Transfer.transfer);

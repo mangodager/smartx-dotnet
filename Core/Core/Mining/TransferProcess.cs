@@ -64,11 +64,11 @@ namespace ETModel
                     transfersDel.Clear();
                     for (int ii = 0; ii < transfers.Count; ii++)
                     {
-                        var account = dbSnapshot.Accounts.Get(transfers[ii].addressIn);
-                        if(transfers[ii].miniindex != 0)
-                        for (long jj = transfers[ii].miniindex; jj <= account.index; jj++)
+                        int TFA_Count = dbSnapshot.List.GetCount($"TFA__{transfers[ii].addressIn}");
+                        if (transfers[ii].miniindex != 0)
+                        for (long jj = transfers[ii].miniindex; jj <= TFA_Count; jj++)
                         {
-                            string hasht = dbSnapshot.TFA.Get($"{transfers[ii].addressIn}_{jj}");
+                            string hasht = dbSnapshot.List.Get($"TFA__{transfers[ii].addressIn}",ii);
                             if (hasht != null)
                             {
                                 var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -109,8 +109,9 @@ namespace ETModel
                             transfers[ii].lastHeight = rule.height;
                             transfers[ii].sendCount++;
 
+                            int TFA_Count = dbSnapshot.List.GetCount($"TFA__{transfers[ii].addressIn}");
                             var account = dbSnapshot.Accounts.Get(transfers[ii].addressIn);
-                            transfers[ii].miniindex = account.index;
+                            transfers[ii].miniindex = TFA_Count-1;
                             BlockSub transfer = new BlockSub();
                             transfer.addressIn = transfers[ii].addressIn;
                             transfer.addressOut = transfers[ii].addressOut;

@@ -19,10 +19,12 @@ namespace ETModel
         public string Address;    // 出块地址
         public long   timestamp;  // 时间戳
         public string random;     // 随机数
+        public List<string> extend; // 扩展
+        public List<string> temp;   // 
 
         // 使用Dictionary解决Json序列化后排序错乱问题
         public Dictionary<int,string>    linksblk  = new Dictionary<int,string>();     // 引用块哈希  2F+1
-        public Dictionary<int, BlockSub> linkstran = new Dictionary<int, BlockSub>();   // 包含的交易
+        public Dictionary<int, BlockSub> linkstran = new Dictionary<int, BlockSub>();  // 包含的交易
 
         public byte[]   sign;    // 裁决签名
 
@@ -39,6 +41,7 @@ namespace ETModel
         {
             string str_linksblk = "";
             string str_linkstran = "";
+            string str_extend = "";
 
             for (int ii = 0; ii < This.linksblk.Count;ii++)
             {
@@ -50,7 +53,17 @@ namespace ETModel
                 str_linkstran = $"{str_linkstran}#{This.linkstran[ii].hash}";
             }
 
-            return $"{This.prehash}#{This.prehashmkl}#{This.height}#{This.Address}#{This.timestamp}#{str_linksblk}#{str_linkstran}";
+            if (This.extend != null)
+            {
+                str_extend += "#";
+                for (int ii = 0; ii < This.extend.Count; ii++)
+                {
+                    str_extend = $"{str_extend}#{This.extend[ii]}";
+                }
+                str_extend += "#";
+            }
+
+            return $"{This.prehash}#{This.prehashmkl}#{This.height}#{This.Address}#{This.timestamp}#{str_linksblk}#{str_linkstran}{str_extend}";
         }
 
         static public string ToHash(this Block This, string r=null)

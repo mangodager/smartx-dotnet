@@ -159,7 +159,7 @@ namespace ETModel
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
             Block blk = JsonHelper.FromJson<Block>(p2p_Block.block);
             //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
-            Log.Debug($"NewBlock Address:{blk.Address} hash:{blk.hash} ");
+            Log.Debug($"NewBlock:{blk.Address} H:{blk.height} prehash:{blk.prehash}");
 
             newBlockHeight = blk.height;
             // 有高度差的直接忽略
@@ -170,7 +170,7 @@ namespace ETModel
             }
 
             // 如果收到的是桶外的数据 , 向K桶内进行一次广播
-            if (nodeManager.IsNeedBroadcast2Kad(NetworkHelper.ToIPEndPoint(p2p_Block.ipEndPoint)))
+            if (nodeManager.IsNeedBroadcast2Kad(p2p_Block.ipEndPoint))
             {
                 p2p_Block.ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString();
                 nodeManager.Broadcast2Kad(p2p_Block);

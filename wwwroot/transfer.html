@@ -64,6 +64,7 @@
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
     <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src="js/aes256.min.js"></script>
     <script src='js/forge-sha256.min.js'></script>
     <script src='js/hashes.js'></script>
     <script src='js/wallet.js'></script>
@@ -86,6 +87,7 @@
                 复制地址
             </button>
             <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#ModalExport">导出</button>
+            &nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()">清空交易</button>
 
         </div>
 
@@ -166,6 +168,7 @@
                     <p>
                         <label for="title">转账金额:</label>
                         <input type="text" id="input_amount" name="amount" align="left">
+                        <label for="title" id="tokenname" ></label>
                     </p>
                     <p>
                         <label for="username">转入地址:</label>
@@ -178,10 +181,6 @@
                     <p>
                         <label for="username">nonce:</label>
                         <input type="text" id="input_nonce" name="nonce" align="left">
-                    </p>
-                    <p>
-                        <label for="username">依赖交易:</label>
-                        <input type="text" id="input_depend" name="depend" align="left">
                     </p>
                     <p>
                         <label for="username">矿工费:</label>
@@ -309,20 +308,16 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title" id="myModalLabel">
-                        导出Address
+                        导出Keystore
                     </h4>
                 </div>
                 <div class="input-group">
                     <span class="input-group-addon" id="basic-addon3">输密码</span>
                     <input type="password" class="form-control" id="ModalExportText" aria-describedby="basic-addon3" onchange="OnExportChange()">
                 </div>
-                <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">助记词</span>
-                    <input type="text" class="form-control" id="MnemonicWord" readonly>
-                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="OnExportLeave()">
-                        离开
+                        导出
                     </button>
                 </div>
             </div>
@@ -331,23 +326,33 @@
 
 
     <script>
+        setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+
         if (Login.LoadPassword() == null)
             window.location.href = "index.html";
 
         function OnExportChange() {
-            $("#MnemonicWord").val("");
-            var password = $("#ModalExportText").val();
-            if (Login.checkPassword(password)) {
-                var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
-                var str = Wallet.GetMnemonicWord(addressKeyPair);
-                $("#ModalExport").modal('show');
-                $("#MnemonicWord").val(str);
-            }
         };
 
         function OnExportLeave(e) {
             $("#MnemonicWord").val("");
-            $("#ModalExport").modal('hide');
+            var password = $("#ModalExportText").val();
+            if (Login.checkPassword(password)) {
+                var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
+                var MnemonicWord = Wallet.GetMnemonicWord(addressKeyPair);
+
+                var encrypted = AES256.encrypt(MnemonicWord, password);// Encrypt
+                var jsonObj = { version: 101, curIndex: 0, accounts: [{ address: addressCur, encrypted: encrypted }] };
+                var jsonStr = JSON.stringify(jsonObj);
+
+                Helper.funDownload(jsonStr, "Smart-Wallet.json");
+                $("#MnemonicWord").val("");
+                $("#ModalExport").modal('hide');
+            }
+            else
+            {
+                alert("密码错误!");
+            }
         }
 
         function liOnSearch(e) {
@@ -361,6 +366,11 @@
         function onTransferLoad(e) {
             //alert(e.id);
         };
+
+        function OnClear(e) {
+            Helper.ClearTransferWait(addressCur + tokenAddress);
+            window.location.href = window.location.href;
+        }
 
         $(function () {
             $("[data-toggle='popover']").popover();
@@ -383,9 +393,11 @@
         var platform = Helper.checkPlatform();
         var colorindex = 1
 
-        var addressCur = getQueryVariable("address");
-        var amountCur = 0;
-        var nonceCur = 0;
+        var addressCur   = getQueryVariable("address");
+        var tokenAddress = getQueryVariable("token");
+        var symbol       = getQueryVariable("symbol");
+        var amountCur    = 0;
+        var nonceCur     = 0;
         // show address
         var element = document.getElementById("address");
         element.innerHTML = " 余额: " + amountCur;
@@ -398,6 +410,7 @@
                 locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
                 $('#input_addressIn').val(addressCur);
                 $('#input_nonce').val(nonceCur);
+                document.getElementById("tokenname").innerHTML = symbol;
             })
         });
 
@@ -438,19 +451,29 @@
         }
 
         function onTransferSubmit(e) {
-            //var amount = parseInt($('#input_amount').val()) * 10000;
-            var amount = new BigNumber($('#input_amount').val()).multipliedBy(10000).dividedToIntegerBy(1);
-            var addressOut = $('#input_addressOut').val();
-            var depend = $('#input_depend').val();
-            var remarks = $('#input_remarks').val();
-            var nonce = parseInt($('#input_nonce').val());
+            if (tokenAddress != null && tokenAddress!="") {
+                var amount = new BigNumber((new BigNumber($('#input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
+                var addressOut = tokenAddress;
+                var data = "transfer(\"" + $('#input_addressOut').val() + "\",\"" + amount.toString() +"\")";
+                var nonce = parseInt($('#input_nonce').val());
+                var remarks = $('#input_remarks').val();
+                if (CheckTransfer(amount, addressOut, "", remarks, nonce))
+                    Helper.SendTransferSubmit(e, "contract", "", addressOut, data, "", nonce, remarks);
+            }
+            else {
+                var amount = new BigNumber((new BigNumber($('#input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
+                var addressOut = $('#input_addressOut').val();
+                var remarks = $('#input_remarks').val();
+                var nonce = parseInt($('#input_nonce').val());
 
-            if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
-                SendTransferSubmit(e, amount.toString(), addressOut, depend, remarks, nonce);
+                if (CheckTransfer(amount, addressOut, "", remarks, nonce))
+                    Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
+
+            }
+
         };
 
-        function CheckTransfer(amount, addressOut, nonce, depend, remarks)
-        {
+        function CheckTransfer(amount, addressOut, nonce, depend, remarks) {
             if (addressOut == "") {
                 alert('addressOut Can not be empty');
                 return false;
@@ -474,56 +497,6 @@
             return true;
         }
 
-        function SendTransferSubmit(e, amount, addressOut, depend, remarks, nonce) {
-            if (Login.LoadPassword() == null) {
-                alert("password is null!");
-                return;
-            }
-            // 取秘钥
-            var addressKeyPair = Wallet.LoadFromAddress(addressCur, Login.LoadPassword());
-            if (addressKeyPair == null) {
-                window.location.href = "index.html";
-                return;
-            }
-
-            var timestamp = new Date().getTime();
-            var hashdata = "transfer#" + nonce + "#" + addressCur + "#" + addressOut + "#" + amount + "#" + remarks + "#" + depend + "#" + timestamp;
-            var hash = new Hashes.SHA256().hex(hashdata);
-            var sign = Wallet.sign(hash, addressKeyPair);
-            var signHex = Wallet.Bytes2Hex(sign);
-
-            var transferdata = { type: "transfer", hash: hash, nonce: nonce, addressIn: addressCur, addressOut: addressOut, amount: amount, data: remarks, depend: depend, timestamp: timestamp, sign: signHex }
-            //console.warn(hash);
-            //console.warn(sign);
-
-            var jsonStr = JSON.stringify(transferdata);
-            Helper.AddTransfer(addressCur, jsonStr);
-            var temp = Helper.LoadTransfer(addressCur, 1);
-
-            $.ajax({
-                url: Helper.GetServerIP() + "/Transfer",
-                dataType: "text",
-                type: "get",
-                data: transferdata,
-                success: function (data) {
-                    if (data != "{\"success\":true}") {
-                        alert("提交失败,交易数据出错或者节点无出块权限!");
-                    }
-
-                    //var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                    //Helper.TableInsert2("waittable", hash, color, Helper.Simplify(hash, platform), "转账" + (amount / -10000))
-
-                    //alert("提交成功!");
-                    $("#" + e).modal("hide");//关掉
-                    window.location.href = window.location.href;
-                },
-                error: function (err) {
-                    alert("网络连接错误!");
-                }
-            });
-
-        };
-
         var transferIndex = 0;
         function onTransferInit() {
             colorindex = 1;
@@ -532,7 +505,7 @@
                 url: Helper.GetServerIP() + "/GetTransfers",
                 dataType: "text",
                 type: "get",
-                data: { address: addressCur, index: transferIndex },
+                data: { address: addressCur, index: transferIndex, token: tokenAddress },
                 success: function (data) {
 
                     // 删除之前的数据
@@ -543,32 +516,16 @@
                     }
 
                     var jsonObj = JSON.parse(data);
+                    if (jsonObj == null)
+                        return;
+
                     for (var key in jsonObj) {
 
                         var hash = jsonObj[key]["hash"];
 
-                        var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                        var color  = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                        var amount = GetAmountFormat(jsonObj[key]);
 
-                        //var amount = parseInt(jsonObj[key]["amount"]) / 10000;
-                        var amount = new BigNumber(jsonObj[key]["amount"]).dividedBy(10000).toFormat();
-
-                        if (jsonObj[key]["type"] == "transfer") {
-                            if (jsonObj[key]["addressIn"] == addressCur)
-                                amount = "转账  -" + amount;
-                            else
-                                amount = "+" + amount;
-                        }
-                        else
-                            if (jsonObj[key]["type"] == "Reward_Rule" || jsonObj[key]["type"] == "Reward_Mc") {
-                                amount = "出块  +" + amount;
-                            }
-                            else
-                                if (jsonObj[key]["type"] == "contract") {
-                                    if (jsonObj[key]["addressOut"] == "")
-                                        amount = "合约  发布";
-                                    else
-                                        amount = "合约  调用";
-                                }
                         Helper.TableInsert2("mytable", hash, color, Helper.Simplify(hash, platform), amount)
                     }
                 },
@@ -579,34 +536,53 @@
         }
         onTransferInit(0);
 
+        function GetAmountFormat(jsonKey) {
+            var amount = new BigNumber(jsonKey["amount"]).toFormat();
+
+            if (jsonKey["type"] == "transfer") {
+                if (jsonKey["addressIn"] == addressCur)
+                    amount = "转账  -" + amount;
+                else
+                    amount = "+" + amount;
+            }
+            else {
+                if (jsonKey["type"] == "Reward_Rule" || jsonKey["type"] == "Reward_Mc") {
+                    amount = "出块  +" + amount;
+                }
+                else {
+                    if (jsonKey["type"] == "contract") {
+                        if (jsonKey["addressOut"] == "")
+                            amount = "合约  发布";
+                        else {
+                            amount = "合约  调用";
+                            try {
+                                if (jsonKey["data"].indexOf("transfer(\"") != -1) {
+                                    var array = jsonKey["data"].split("\"")
+                                    amount = "转账 " + new BigNumber(array[3]).toFormat();
+                                }
+                            }
+                            catch {
+
+                            }
+                        }
+                    }
+                }
+            }
+            return amount;
+        }
+
         // WaitTable
         function onTransferWaitInit() {
             colorindex = 1;
-            var count = Helper.GetTransferCount(addressCur);
+            var count = Helper.GetTransferCount(addressCur + tokenAddress);
             for (var index = 1; index <= count; index++) {
-                var str = Helper.LoadTransfer(addressCur, index);
+                var str = Helper.LoadTransfer(addressCur + tokenAddress, index);
                 var jsonObj = JSON.parse(str);
+                if (jsonObj == null)
+                    return;
                 var hash = jsonObj["hash"];
                 var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                //var amount = parseInt(jsonObj["amount"]) / 10000;
-                var amount = new BigNumber(jsonObj["amount"]).dividedBy(10000).toFormat();
-                if (jsonObj["type"] == "transfer") {
-                    if (jsonObj["addressIn"] == addressCur)
-                        amount = "转账  -" + amount;
-                    else
-                        amount = "+" + amount;
-                }
-                else
-                    if (jsonObj["type"] == "Reward_Rule" || jsonObj["type"] == "Reward_Mc") {
-                        amount = "出块  +" + amount;
-                    }
-                    else
-                        if (jsonObj["type"] == "contract") {
-                            if (jsonObj["addressOut"] == "")
-                                amount = "合约  发布";
-                            else
-                                amount = "合约  调用";
-                        }
+                var amount = GetAmountFormat(jsonObj);
                 Helper.TableInsert2("waittable", hash, color, Helper.Simplify(hash, platform), amount)
             }
         }
@@ -658,7 +634,7 @@
                         }
                         else {
                             // transferWait
-                            str = Helper.GetTransfer(addressCur, text);
+                            str = Helper.GetTransfer(addressCur + tokenAddress, text);
                             var jsonObj = JSON.parse(str);
 
                             // 删除之前的数据
@@ -700,7 +676,7 @@
         // 删除处理中的交易
         function liOnTransferInfoDelete(e) {
             if (curshottransferHash != "") {
-                Helper.DelTransfer(addressCur, curshottransferHash)
+                Helper.DelTransfer(addressCur + tokenAddress, curshottransferHash)
                 curshottransferHash = "";
                 window.location.href = window.location.href;
             }
@@ -773,40 +749,31 @@
         }
 
         function OnScanQRCodeSubmit(e) {
-            //var amount = parseInt($('#scan_amount').val()) * 10000;
-            var amount = new BigNumber($('#scan_amount').val()).multipliedBy(10000);
+            var amount = new BigNumber($('#scan_amount').val());
             var addressOut = $('#scan_addressOut').val();
             var depend = $('#scan_depend').val();
             var remarks = $('#scan_remarks').val();
             var nonce = parseInt($('#scan_nonce').val());
 
             if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
-                SendTransferSubmit(e, amount.toString(), addressOut, depend, remarks, nonce);
+                Helper.SendTransferSubmit(e, "transfer",amount.toString(), addressOut, remarks, depend, nonce);
         }
 
         function OnRefreshAmount() {
-            var arrayoAddress = new Array();
-            arrayoAddress[0] = addressCur;
             $.ajax({
-                url: Helper.GetServerIP() + "/getaccounts",
+                url: Helper.GetServerIP() + "/balanceOf",
                 dataType: "text",
                 type: "get",
-                data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
+                data: { Address: addressCur, token: tokenAddress },
                 success: function (data) {
                     var jsonObj = JSON.parse(data);
-                    for (var index = 0; index < arrayoAddress.length; index++) {
+                    var amount = new BigNumber(jsonObj["amount"]).toFormat();
+                    var nonce = parseInt(jsonObj["nonce"]);
 
-                        var address = arrayoAddress[index];
-                        var account = jsonObj[address];
-                        //var amount  = parseInt(account["amount"]) / 10000;
-                        var amount = new BigNumber(account["amount"]).dividedBy(10000).toFormat();
-                        var nonce = account["nonce"];
-
-                        var element = document.getElementById("address");
-                        element.innerHTML = " 余额: " + amount;
-                        amountCur = amount;
-                        nonceCur = nonce + 1;
-                    }
+                    var element = document.getElementById("address");
+                    element.innerHTML = symbol +" : " + amount;
+                    amountCur = amount;
+                    nonceCur = nonce + 1;
                 },
                 error: function (err) {
                 }

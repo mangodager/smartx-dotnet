@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using LevelDB;
+using MongoDB.Bson.Serialization;
 using Newtonsoft.Json.Linq;
 
 namespace ETModel
@@ -96,8 +97,9 @@ namespace ETModel
 
             db.Write(batch, new WriteOptions { Sync = true });
             batch?.Dispose();
-        }
 
+            Entity.Root.GetComponent<Consensus>()?.cacheRule.Clear();
+        }
 
         public DbSnapshot GetSnapshot(long height=0)
         {
@@ -107,6 +109,190 @@ namespace ETModel
         public DbSnapshot GetSnapshotUndo(long height = 0)
         {
             return new DbSnapshot(db, height, true);
+        }
+
+        public static void Export2CSV_Block(string[] args)
+        {
+            var randName = "LevelDB";
+            if(args[2]!=null)
+                randName = args[2];
+            var tempPath = System.IO.Directory.GetCurrentDirectory();
+            var DatabasePath = System.IO.Path.Combine(tempPath, randName);
+            LevelDBStore dbstore = new LevelDBStore().Init(DatabasePath);
+
+            // file open
+            string fullPath = "C:\\blocks.csv";
+            FileInfo fi = new FileInfo(args[0]);
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            FileStream fs = new FileStream(fullPath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
+            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            string data = $"height;hash;diff;prehash;prehashmkl;Address;timestamp;random;sign;linksblk;linkstran";
+            sw.WriteLine(data);
+
+            long.TryParse(dbstore.Get("UndoHeight"), out long curHeight);
+            for (long ii = 1; ii < curHeight + 10000; ii++)
+            {
+                List<string> list = dbstore.Heights.Get(ii.ToString());
+                if (list != null)
+                {
+                    foreach (string hash in list)
+                    {
+                        Block blk = dbstore.Blocks.Get(hash);
+                        if (blk != null)
+                        {
+                            string str_linksblk = "";
+                            string str_linkstran = "";
+
+                            foreach (string value in blk.linksblk.Values)
+                            {
+                                str_linksblk = $"{str_linksblk}#{value}";
+                            }
+
+                            foreach (var value in blk.linkstran.Values)
+                            {
+                                str_linkstran = $"{str_linkstran}#{value.ToString()}";
+                            }
+
+                            string temp = $"{blk.height};{blk.hash};#{blk.GetDiff()};{blk.prehash};{blk.prehashmkl};{blk.Address};{blk.timestamp};{blk.random};{blk.sign};{str_linksblk};{str_linkstran}";
+                            sw.WriteLine(temp);
+                        }
+                    }
+                }
+                else
+                {
+                    //break;
+                }
+            }
+            sw.Close();
+            fs.Close();
+            dbstore.Dispose();
+        }
+
+        public static void Export2CSV_Height(string[] args)
+        {
+
+        }
+
+        public static void Export2CSV_Transfer(string filename, string address)
+        {
+            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                var account = dbSnapshot.Accounts.Get(address);
+                // file open
+                string fullPath = filename;
+                FileInfo fi = new FileInfo(fullPath);
+                if (!fi.Directory.Exists)
+                {
+                    fi.Directory.Create();
+                }
+                FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
+                fs.Seek(0, SeekOrigin.Begin);
+                fs.SetLength(0);
+
+                StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+                string data = $"index,height,transfer,type,data";
+                sw.WriteLine(data);
+
+                if (account != null)
+                {
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                    for (int ii = 0; ii < TFA_Count; ii++)
+                    {
+                        string hasht = dbSnapshot.List.Get($"TFA__{address}", ii);
+                        if (hasht != null)
+                        {
+                            var transfer = dbSnapshot.Transfers.Get(hasht);
+                            if (transfer != null)
+                            {
+                                string symbols = transfer.addressIn == address ? "-" : "";
+                                sw.WriteLine($"{ii},{transfer.height},{hasht},{transfer.type},{transfer.data},{symbols+transfer.amount}");
+                            }
+                        }
+                    }
+                }
+                sw.Close();
+                fs.Close();
+            }
+        }
+
+        public static void Export2CSV_Account(string filename, string address)
+        {
+            var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+            // file open
+            string fullPath = filename;
+            FileInfo fi = new FileInfo(fullPath);
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
+            fs.Seek(0, SeekOrigin.Begin);
+            fs.SetLength(0);
+
+            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            string data = $"height,account_json";
+            sw.WriteLine(data);
+
+            long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
+
+            for (long ii = 1; ii < transferHeight; ii++)
+            {
+                var account = levelDBStore.Get($"Accounts___{address}_undo_{ii}");
+                if (account != null)
+                {
+                    sw.WriteLine($"{ii},{account}");
+                }
+            }
+
+            var accountCur = levelDBStore.Get($"Accounts___{address}");
+            if (accountCur != null)
+            {
+                sw.WriteLine($"{transferHeight+1},{accountCur}");
+            }
+
+            sw.Close();
+            fs.Close();
+        }
+
+        public static void Export2CSV_Accounts(string filename)
+        {
+            // file open
+            string fullPath = filename;
+            FileInfo fi = new FileInfo(fullPath);
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
+            fs.Seek(0, SeekOrigin.Begin);
+            fs.SetLength(0);
+
+            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            string data = $"sequnce,address,amount,index,notice";
+            sw.WriteLine(data);
+
+            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                for (int ii = 0; ii < Wallet.GetWallet().keys.Count; ii++)
+                {
+                    string addressIn = Wallet.GetWallet().keys[ii].ToAddress();
+                    Account account = dbSnapshot.Accounts.Get(addressIn);
+                    if (account == null)
+                    {
+                        account = new Account() { address = addressIn, amount = "0", nonce = 0 };
+                    }
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{addressIn}");
+
+                    sw.WriteLine($"{ii},{account.address},{account.amount},{TFA_Count},{account.nonce}");
+
+                }
+
+                sw.Close();
+                fs.Close();
+            }
         }
 
         public static bool Test(string[] args)
@@ -265,181 +451,25 @@ namespace ETModel
             }
         }
 
-        public static void Export2CSV_Block(string[] args)
+        static public void test_ergodic(string[] args)
         {
-            var randName = "LevelDB";
-            if(args[2]!=null)
-                randName = args[2];
+            // 
+            //DBTests tests = new DBTests();
+            //tests.SetUp();
+            //tests.Snapshot();
             var tempPath = System.IO.Directory.GetCurrentDirectory();
+            var randName = "Data\\LevelDB4";
             var DatabasePath = System.IO.Path.Combine(tempPath, randName);
             LevelDBStore dbstore = new LevelDBStore().Init(DatabasePath);
 
-            // file open
-            string fullPath = "C:\\blocks.csv";
-            FileInfo fi = new FileInfo(args[0]);
-            if (!fi.Directory.Exists)
+            // Create new iterator
+            using (var it = dbstore.db.CreateIterator())
             {
-                fi.Directory.Create();
-            }
-            FileStream fs = new FileStream(fullPath, System.IO.FileMode.Create, System.IO.FileAccess.Write);
-            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
-            string data = $"height;hash;diff;prehash;prehashmkl;Address;timestamp;random;sign;linksblk;linkstran";
-            sw.WriteLine(data);
-
-            long.TryParse(dbstore.Get("UndoHeight"), out long curHeight);
-            for (long ii = 1; ii < curHeight + 10000; ii++)
-            {
-                List<string> list = dbstore.Heights.Get(ii.ToString());
-                if (list != null)
+                // Iterate in reverse to print the values as strings
+                for (it.SeekToFirst(); it.IsValid(); it.Next())
                 {
-                    foreach (string hash in list)
-                    {
-                        Block blk = dbstore.Blocks.Get(hash);
-                        if (blk != null)
-                        {
-                            string str_linksblk = "";
-                            string str_linkstran = "";
-
-                            foreach (string value in blk.linksblk.Values)
-                            {
-                                str_linksblk = $"{str_linksblk}#{value}";
-                            }
-
-                            foreach (var value in blk.linkstran.Values)
-                            {
-                                str_linkstran = $"{str_linkstran}#{value.ToString()}";
-                            }
-
-                            string temp = $"{blk.height};{blk.hash};#{blk.GetDiff()};{blk.prehash};{blk.prehashmkl};{blk.Address};{blk.timestamp};{blk.random};{blk.sign};{str_linksblk};{str_linkstran}";
-                            sw.WriteLine(temp);
-                        }
-                    }
+                    Log.Info($"Value as string: {it.KeyAsString()}");
                 }
-                else
-                {
-                    //break;
-                }
-            }
-            sw.Close();
-            fs.Close();
-            dbstore.Dispose();
-        }
-
-        public static void Export2CSV_Height(string[] args)
-        {
-
-        }
-
-        public static void Export2CSV_Transfer(string filename, string address)
-        {
-            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
-            {
-                var account = dbSnapshot.Accounts.Get(address);
-                // file open
-                string fullPath = filename;
-                FileInfo fi = new FileInfo(fullPath);
-                if (!fi.Directory.Exists)
-                {
-                    fi.Directory.Create();
-                }
-                FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
-                fs.Seek(0, SeekOrigin.Begin);
-                fs.SetLength(0);
-
-                StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
-                string data = $"index,height,transfer,type,data";
-                sw.WriteLine(data);
-
-                if (account != null)
-                {
-                    for (long ii = 1; ii < account.index; ii++)
-                    {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
-                        if (hasht != null)
-                        {
-                            var transfer = dbSnapshot.Transfers.Get(hasht);
-                            if (transfer != null)
-                                sw.WriteLine($"{ii},{transfer.height},{hasht},{transfer.type},{transfer.data}");
-                        }
-                    }
-                }
-                sw.Close();
-                fs.Close();
-            }
-        }
-
-        public static void Export2CSV_Account(string filename, string address)
-        {
-            var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
-            // file open
-            string fullPath = filename;
-            FileInfo fi = new FileInfo(fullPath);
-            if (!fi.Directory.Exists)
-            {
-                fi.Directory.Create();
-            }
-            FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
-            fs.Seek(0, SeekOrigin.Begin);
-            fs.SetLength(0);
-
-            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
-            string data = $"height,account_json";
-            sw.WriteLine(data);
-
-            long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
-
-            for (long ii = 1; ii < transferHeight; ii++)
-            {
-                var account = levelDBStore.Get($"Accounts___{address}_undo_{ii}");
-                if (account != null)
-                {
-                    sw.WriteLine($"{ii},{account}");
-                }
-            }
-
-            var accountCur = levelDBStore.Get($"Accounts___{address}");
-            if (accountCur != null)
-            {
-                sw.WriteLine($"{transferHeight+1},{accountCur}");
-            }
-
-            sw.Close();
-            fs.Close();
-        }
-
-        public static void Export2CSV_Accounts(string filename)
-        {
-            // file open
-            string fullPath = filename;
-            FileInfo fi = new FileInfo(fullPath);
-            if (!fi.Directory.Exists)
-            {
-                fi.Directory.Create();
-            }
-            FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
-            fs.Seek(0, SeekOrigin.Begin);
-            fs.SetLength(0);
-
-            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
-            string data = $"sequnce,address,amount,index,notice";
-            sw.WriteLine(data);
-
-            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
-            {
-                for (int ii = 0; ii < Wallet.GetWallet().keys.Count; ii++)
-                {
-                    string addressIn = Wallet.GetWallet().keys[ii].ToAddress();
-                    Account account = dbSnapshot.Accounts.Get(addressIn);
-                    if (account == null)
-                    {
-                        account = new Account() { address = addressIn, amount = "0", index = 0, nonce = 0 };
-                    }
-                    sw.WriteLine($"{ii},{account.address},{account.amount},{account.index},{account.nonce}");
-
-                }
-
-                sw.Close();
-                fs.Close();
             }
         }
 

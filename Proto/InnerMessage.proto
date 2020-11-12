@@ -29,16 +29,16 @@ message P2P_Broadcast // IMessage
 
 message Q2P_New_Node // IRequestProto
 {
-	int32 HashCode = 2;
-	string address = 3;
+	int32  HashCode   = 2;
+	string address    = 3;
 	string ipEndPoint = 4;
-	long sendTime = 5;
+	long   state      = 5;
+	string version    = 6;
 }
 
 message R2P_New_Node // IResponseProto
 {
 	string Nodes = 2;
-	long sendTime = 5;
 	long nodeTime = 6;
 }
 
@@ -117,14 +117,31 @@ message R2P_IP_INFO // IResponseProto
 	string address = 1;
 }
 
+message Q2P_Sync_Height // IRequestProto
+{
+	long height = 1;
+	int  handle = 2;
+	long spacing = 3;
 
+}
 
+message R2P_Sync_Height // IResponseProto
+{
+	long height = 1;
+	int  handle = 2;
+	repeated string blocks = 3;
+	string blockChains = 4;
+}
 
+message Q2P_HasBlock // IRequestProto
+{
+	string hash = 1;
+}
 
-
-
-
-
+message R2P_HasBlock // IResponseProto
+{
+	bool has = 1;
+}
 
 
 

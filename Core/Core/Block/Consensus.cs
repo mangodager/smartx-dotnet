@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json.Linq;
@@ -13,13 +13,13 @@ namespace ETModel
         public string Address;
         public long   Start;
         public long   End;
+        public long   LBH;
     }
 
     // 在裁决时间点向其他裁决服广播视图, 到达2/3的视图视为决议，广播2/3的决议
     public class Consensus : Component
     {
         public CalculatePower calculatePower = new CalculatePower(32L);
-        public Dictionary<string, RuleInfo> ruleInfos = new Dictionary<string, RuleInfo>();
         public string auxiliaryAddress = "";
         public string consAddress = "";
 
@@ -36,8 +36,10 @@ namespace ETModel
         {
             try
             {
-                Boolean.TryParse(jd["transferShow"]?.ToString(), out transferShow);
-                Boolean.TryParse(jd["openSyncFast"]?.ToString(), out openSyncFast);
+                if (jd["transferShow"] != null)
+                    Boolean.TryParse(jd["transferShow"]?.ToString(), out transferShow);
+                if (jd["openSyncFast"] != null)
+                    Boolean.TryParse(jd["openSyncFast"]?.ToString(), out openSyncFast);
                 Log.Info($"Consensus.transferShow = {transferShow}");
                 Log.Info($"Consensus.openSyncFast = {openSyncFast}");
 
@@ -72,29 +74,28 @@ namespace ETModel
             componentNetMsg.registerMsg(NetOpcode.P2P_NewBlock, P2P_NewBlock_Handle);
 
             string genesisText = File.ReadAllText("./Data/genesisBlock.dat");
-            Block blk = JsonHelper.FromJson<Block>(genesisText);
-            auxiliaryAddress = blk.Address;
+            Block  genesisblk = JsonHelper.FromJson<Block>(genesisText);
+            auxiliaryAddress = genesisblk.Address;
+
+            consAddress = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First( (x) => x.type == "contract"));
 
             long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out long UndoHeight);
             if (UndoHeight == 0)
             {
                 if (true)
                 {
-                    blockMgr.AddBlock(blk);
-                    ApplyGenesis(blk);
+                    blockMgr.AddBlock(genesisblk);
+                    ApplyGenesis(genesisblk);
                 }
             }
 
-            string consData = Base58.Encode(FileHelper.GetFileData("./Data/Contract/RuleContract_v1.0.lua").ToByteArray());
-            consAddress = Wallet.ToAddress(CryptoHelper.Sha256(Encoding.UTF8.GetBytes(consData)));
-
+            //debug
             using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
             {
                 LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray() };
                 snapshot.Contracts.Add(consAddress, luaVMScript);
                 snapshot.Commit();
             }
-            ruleInfos = luaVMEnv.GetRules(consAddress, UndoHeight);
 
             if (bRun)
                 Run();
@@ -113,7 +114,7 @@ namespace ETModel
         {
             long half = height / 1025280L / 2; // 2*60*24*356 , half life of 2 year
 
-            long reward = 10240000L;
+            long reward = 1024L;
             while (half-- > 0)
             {
                 reward = reward / 2;
@@ -125,7 +126,7 @@ namespace ETModel
         {
             long half = height / 1025280L / 2; // 2*60*24*356 , half life of 2 year
 
-            long reward = 640000L;
+            long reward = 64L;
             while (half-- > 0)
             {
                 reward = reward / 2;
@@ -160,7 +161,7 @@ namespace ETModel
         public bool IsRule(long height, string Address)
         {
             RuleInfo info = null;
-            if (ruleInfos.TryGetValue(Address, out info))
+            if (GetRule(height).TryGetValue(Address, out info))
             {
                 if (info.Start <= height && (height < info.End || info.End == -1) && info.Address == Address)
                 {
@@ -168,6 +169,26 @@ namespace ETModel
                 }
             }
             return false;
+        }
+
+        public Dictionary<long, Dictionary<string, RuleInfo>> cacheRule = new Dictionary<long, Dictionary<string, RuleInfo>>();
+        public Dictionary<string, RuleInfo> GetRule(long height)
+        {
+            Dictionary<string, RuleInfo> rules = null;
+            if (cacheRule.TryGetValue(height, out rules))
+                return rules;
+
+            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+            {
+                string str = snapshot.Get($"Rule_{height}");
+                if(!string.IsNullOrEmpty(str))
+                {
+                    var ruleInfo = JsonHelper.FromJson<Dictionary<string, RuleInfo>>(str);
+                    cacheRule.Add(height,ruleInfo);
+                    return ruleInfo;
+                }
+            }
+            return transferHeight != 0 ? GetRule(transferHeight) : null;
         }
 
         // 获取某个块链接数
@@ -216,7 +237,7 @@ namespace ETModel
         public int GetRuleCount(long height,long max = 0)
         {
             int count = 0;
-            foreach (RuleInfo info in ruleInfos.Values)
+            foreach (RuleInfo info in GetRule(height).Values)
             {
                 if (info.Start <= height && (height < info.End || info.End == -1))
                     count++;
@@ -244,6 +265,14 @@ namespace ETModel
 
                 dbSnapshot.Commit();
             }
+
+            var ruleInfos = luaVMEnv.GetRules(consAddress, 1);
+            using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshot())
+            {
+                dbSnapshot.Add($"Rule_{mcblk.height}", JsonHelper.ToJson(ruleInfos));
+                dbSnapshot.Commit();
+            }
+
             return true;
         }
 
@@ -266,7 +295,7 @@ namespace ETModel
                 return false;
 
             LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
-            ruleInfos = luaVMEnv.GetRules(consAddress, transferHeight);
+            var ruleInfos = luaVMEnv.GetRules(consAddress, transferHeight);
 
             // --------------------------------------------------
             calculatePower.Insert(mcblk);
@@ -299,6 +328,7 @@ namespace ETModel
                         }
                     }
                 }
+                dbSnapshot.Add($"Rule_{blockChain.height}",JsonHelper.ToJson(ruleInfos));
 
                 dbSnapshot.Commit();
             }
@@ -313,7 +343,7 @@ namespace ETModel
                 return true;
             if (transfer.addressIn == transfer.addressOut)
                 return true;
-            if (BigInt.Less(transfer.amount , "0" , true))
+            if (BigHelper.Less(transfer.amount , "0" , true))
                 return true;
             //if (!transfer.CheckSign() && height != 1)
             //    return true;
@@ -323,29 +353,25 @@ namespace ETModel
                 Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
                 if (accountIn == null)
                     return true;
-                if (BigInt.Less(accountIn.amount , transfer.amount,false))
+                if (BigHelper.Less(accountIn.amount , transfer.amount,false))
                     return true;
                 if (accountIn.nonce + 1 != transfer.nonce)
                     return true;
-                accountIn.amount = BigInt.Sub(accountIn.amount,transfer.amount);
-                accountIn.index  += 1;
+                accountIn.amount = BigHelper.Sub(accountIn.amount,transfer.amount);
                 accountIn.nonce += 1;
                 dbSnapshot.Accounts.Add(accountIn.address, accountIn);
                 if(transferShow)
-                    dbSnapshot.BindTransfer2Account(transfer.addressIn, accountIn.index, transfer.hash);
+                    dbSnapshot.BindTransfer2Account(transfer.addressIn, transfer.hash);
 
             }
 
-            Account accountOut = dbSnapshot.Accounts.Get(transfer.addressOut);
-            if (accountOut == null)
-                accountOut = new Account() { address = transfer.addressOut, amount = "0", index = 0,nonce = 0 };
-            accountOut.amount = BigInt.Add(accountOut.amount,transfer.amount);
-            accountOut.index += 1;
+            Account accountOut = dbSnapshot.Accounts.Get(transfer.addressOut) ?? new Account() { address = transfer.addressOut, amount = "0", nonce = 0 };
+            accountOut.amount = BigHelper.Add(accountOut.amount,transfer.amount);
             dbSnapshot.Accounts.Add(accountOut.address, accountOut);
 
             if (transferShow)
             {
-                dbSnapshot.BindTransfer2Account(transfer.addressOut, accountOut.index, transfer.hash);
+                dbSnapshot.BindTransfer2Account(transfer.addressOut, transfer.hash);
                 transfer.height = height;
                 dbSnapshot.Transfers.Add(transfer.hash, transfer);
             }
@@ -390,27 +416,21 @@ namespace ETModel
                 if (linkblk != null && IsRule(mcblk.height, linkblk.Address))
                 {
                     ruleCount++;
-                    Account linkAccount = dbSnapshot.Accounts.Get(linkblk.Address);
-                    if (linkAccount == null)
-                        linkAccount = new Account() { address = linkblk.Address, amount = "0", index = 0, nonce = 0 };
-                    linkAccount.amount = BigInt.Add(linkAccount.amount, amountRule);
-                    linkAccount.index += 1;
+                    Account linkAccount = dbSnapshot.Accounts.Get(linkblk.Address) ?? new Account() { address = linkblk.Address, amount = "0", nonce = 0 };
+                    linkAccount.amount = BigHelper.Add(linkAccount.amount, amountRule);
                     dbSnapshot.Accounts.Add(linkAccount.address, linkAccount);
                     if (transferShow)
-                        dbSnapshot.BindTransfer2Account(linkAccount.address, linkAccount.index, Reward_Rule.hash);
+                        dbSnapshot.BindTransfer2Account(linkAccount.address, Reward_Rule.hash);
                 }
             }
 
             // 出块奖励
-            Account account = dbSnapshot.Accounts.Get(mcblk.Address);
-            if (account == null)
-                account = new Account() { address = mcblk.Address, amount = "0", index = 0, nonce = 0 };
-            account.amount = BigInt.Add(account.amount, amount);
-            account.index += 1;
+            Account account = dbSnapshot.Accounts.Get(mcblk.Address) ?? new Account() { address = mcblk.Address, amount = "0", nonce = 0 };
+            account.amount = BigHelper.Add(account.amount, amount);
             dbSnapshot.Accounts.Add(account.address, account);
 
             if (transferShow)
-                dbSnapshot.BindTransfer2Account(account.address, account.index, Reward.hash);
+                dbSnapshot.BindTransfer2Account(account.address, Reward.hash);
         }
 
         LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
@@ -420,26 +440,24 @@ namespace ETModel
                 return true;
             if (transfer.addressIn == transfer.addressOut)
                 return true;
-            if (transfer.data == null || transfer.data == "")
-                return true;
+            //if (transfer.data == null || transfer.data == "")
+            //    return true;
             //if (!transfer.CheckSign())
             //    return true;
 
-            luaVMEnv.Execute(dbSnapshot, transfer, height);
+            bool rel = luaVMEnv.Execute(dbSnapshot, transfer, height, out object[] reslut);
 
             // 设置交易index
-            Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
-            if (accountIn == null)
-                accountIn = new Account() { address = transfer.addressIn, amount = "0", index = 0, nonce = 0 };
+            Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn) ?? new Account() { address = transfer.addressIn, amount = "0", nonce = 0 };
             if (accountIn.nonce + 1 != transfer.nonce)
                 return true;
-            accountIn.index  += 1;
             accountIn.nonce += 1;
             dbSnapshot.Accounts.Add(accountIn.address, accountIn);
 
-            if (transferShow)
+            if (transferShow&&rel)
             {
-                dbSnapshot.BindTransfer2Account(transfer.addressIn, accountIn.index, transfer.hash);
+                var consAddressNew = LuaVMEnv.GetContractAddress(transfer);
+                dbSnapshot.BindTransfer2Account($"{transfer.addressIn}{consAddressNew}", transfer.hash);
                 transfer.height = height;
                 dbSnapshot.Transfers.Add(transfer.hash, transfer);
             }
@@ -511,8 +529,15 @@ namespace ETModel
                         bifurcatedReport = "";
                     }
 
-                    if(newBlocks.Count==0)
-                       await Task.Delay(1000);
+                    if (newBlocks.Count == 0)
+                    {
+                        cacheRule.TryGetValue(transferHeight,out Dictionary<string,RuleInfo> ruleInfo);
+                        cacheRule.Clear();
+                        if(ruleInfo!=null) { 
+                            cacheRule.Add(transferHeight,ruleInfo);
+                        }
+                        await Task.Delay(1000);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -627,10 +652,16 @@ namespace ETModel
         string bifurcatedReport = "";
         async Task<bool> SyncHeight(Block otherMcBlk, string ipEndPoint)
         {
-            if (transferHeight + 20 >= otherMcBlk.height)
-                return await SyncHeightNear(otherMcBlk, ipEndPoint);
-            else
-                return await SyncHeightFast(otherMcBlk, ipEndPoint);
+            if (transferHeight + 20 < otherMcBlk.height)
+            {
+                // 随机一个openSyncFast节点
+                string ipEndPoint2 = nodeManager.GetRandomNode(NodeManager.EnumState.openSyncFast);
+                //Log.Info($"SyncHeightFast {ipEndPoint2}");
+                if(string.IsNullOrEmpty(ipEndPoint2))
+                    return await SyncHeightFast(otherMcBlk, ipEndPoint2);
+            }
+
+            return await SyncHeightNear(otherMcBlk, ipEndPoint);
         }
 
         async Task<bool> SyncHeightFast(Block otherMcBlk,string ipEndPoint)
@@ -873,6 +904,9 @@ namespace ETModel
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
 
+            if (string.IsNullOrEmpty(p2p_Block.ipEndPoint))
+                return;
+
             var newBlock = new P2P_NewBlock() { block = p2p_Block.block, ipEndPoint = p2p_Block.ipEndPoint };
             newBlocks.RemoveAll((x) => { return x.ipEndPoint == newBlock.ipEndPoint; });
             newBlocks.Add(newBlock) ;
@@ -951,6 +985,15 @@ namespace ETModel
             Block blk = Entity.Root.GetComponent<BlockMgr>().GetBlock(q2p_Block.hash);
             R2P_Block r2p_Block = new R2P_Block() { block = blk!=null?JsonHelper.ToJson(blk):"" };
             session.Reply(q2p_Block, r2p_Block);
+        }
+
+        [MessageMethod(NetOpcode.Q2P_HasBlock)]
+        public static void Q2P_HasBlock_Handle(Session session, int opcode, object msg)
+        {
+            Q2P_HasBlock q2p_HasBlock = msg as Q2P_HasBlock;
+            Block blk = Entity.Root.GetComponent<BlockMgr>().GetBlock(q2p_HasBlock.hash);
+            R2P_HasBlock r2p_HasBlock = new R2P_HasBlock() { has = blk != null };
+            session.Reply(q2p_HasBlock, r2p_HasBlock);
         }
 
         public async Task<Block> QueryMcBlock(long height, string ipEndPoint=null)
@@ -1157,7 +1200,23 @@ namespace ETModel
                         blockChains.Add(chain1.height, chain1.hash);
                     }
 
-                    List<Block> blks = blockMgr.GetBlock(reply_msg.height);
+                    List<Block> blks;
+                    var blkNext = BlockChainHelper.GetMcBlock(reply_msg.height + 1);
+                    if (blkNext != null)
+                    {
+                        blks = new List<Block>();
+                        foreach (string hash in blkNext.linksblk.Values)
+                        {
+                            Block blk = blockMgr.GetBlock(hash);
+                            if (blk != null)
+                                blks.Add(blk);
+                        }
+                    }
+                    else
+                    {
+                        blks = blockMgr.GetBlock(reply_msg.height);
+                    }
+
                     for (reply_msg.handle = q2p_Sync_Height.handle; reply_msg.handle < blks.Count; reply_msg.handle++)
                     {
                         string temp = JsonHelper.ToJson(blks[reply_msg.handle]);
@@ -1198,7 +1257,7 @@ namespace ETModel
                     BlockSub transfer = new BlockSub();
                     transfer.addressIn = "";
                     transfer.addressOut = blk.Address;
-                    transfer.amount = (3L * 100L * 100 * 10000L * 10000L).ToString();
+                    transfer.amount = (3L * 100L * 10000L).ToString();
                     transfer.nonce = 1;
                     transfer.type = "transfer";
                     transfer.timestamp = blk.timestamp;
@@ -1215,7 +1274,8 @@ namespace ETModel
                     transfer.amount = "0";
                     transfer.nonce = 1;
                     transfer.type = "contract";
-                    transfer.data = Base58.Encode(FileHelper.GetFileData("./Data/Contract/RuleContract_v1.0.lua").ToByteArray());
+                    transfer.depend = "RuleContract_v1.0";
+                    transfer.data   = "create()";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);

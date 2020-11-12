@@ -130,7 +130,7 @@ namespace ETModel
 				{
                     messageLength = this.socket.ReceiveFrom(this.cache, ref this.tempRemoteEndPoint);
 				}
-				catch (Exception e)
+				catch (Exception)
 				{
 					//Log.Error(e);
 					continue;

@@ -128,6 +128,7 @@
     </footer>
 
     <script>
+
         let MinersCurIndex = 0;
         let BillsCurIndex  = 0;
 
@@ -256,7 +257,7 @@
                         for (var key in transfers) {
                             var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
 
-                            var amount = new BigNumber(transfers[key]["amount"]).dividedBy(10000).toFormat();
+                            var amount = new BigNumber(transfers[key]["amount"]).toFormat();
 
                             var state = "完成";
                             var hash = transfers[key]["hash"];
@@ -271,7 +272,7 @@
                         var element = document.getElementById("miner_count");
                         element.innerHTML = " 矿机数: " + minerView.totalMiners;
 
-                        var amount_cur = new BigNumber(minerView["amount_cur"]).dividedBy(10000).toFormat();
+                        var amount_cur = new BigNumber(minerView["amount_cur"]).toFormat();
                         var element = document.getElementById("miner_amount");
                         if ( (""+amount_cur) == "NaN" )
                             amount_cur = "0";

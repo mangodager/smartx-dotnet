@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.Generic;
 
 namespace ETModel
 {
@@ -19,15 +20,38 @@ namespace ETModel
         public long   gas;
         public long   height;
         public long   timestamp;
+        public string remarks;
+        public List<string> extend; // 扩展
+        public List<string> temp;   // 
 
         public override string ToString()
         {
-            return $"{type}#{nonce}#{addressIn}#{addressOut}#{amount}#{data}#{depend}#{timestamp}#{sign.ToHex()}";
+            string str_extend = "";
+            if (extend != null)
+            {
+                str_extend += "#";
+                for (int ii = 0; ii < extend.Count; ii++)
+                {
+                    str_extend = $"{str_extend}#{extend[ii]}";
+                }
+                str_extend += "#";
+            }
+            return $"{type}#{nonce}#{addressIn}#{addressOut}#{amount}#{data}#{depend}#{timestamp}#{remarks}{str_extend}{sign.ToHex()}";
         }
 
         public string ToHash()
         {
-            string temp = $"{type}#{nonce}#{addressIn}#{addressOut}#{amount}#{data}#{depend}#{timestamp}";
+            string str_extend = "";
+            if (extend != null)
+            {
+                str_extend += "#";
+                for (int ii = 0; ii < extend.Count; ii++)
+                {
+                    str_extend = $"{str_extend}#{extend[ii]}";
+                }
+                str_extend += "#";
+            }
+            string temp = $"{type}#{nonce}#{addressIn}#{addressOut}#{amount}#{data}#{depend}#{timestamp}#{remarks}{str_extend}";
             return CryptoHelper.Sha256(temp);
         }
 
@@ -48,7 +72,6 @@ namespace ETModel
         public string address;
         public string amount;
         public long nonce;
-        public long index;  // transferIndex
     }
 
 }

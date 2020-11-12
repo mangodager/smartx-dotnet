@@ -55,9 +55,9 @@ namespace ETModel
                 case "beruler":
                     OnBeRuler(httpMessage);
                     break;
-                case "getmnemonicword":
-                    GetMnemonicWord(httpMessage);
-                    break;
+                //case "getmnemonicword":
+                //    GetMnemonicWord(httpMessage);
+                //    break;
                 case "command":
                     Command(httpMessage);
                     break;
@@ -75,6 +75,12 @@ namespace ETModel
                     break;
                 case "getblock":
                     GetBlock(httpMessage);
+                    break;
+                case "getproperty":
+                    OnProperty(httpMessage);
+                    break;
+                case "balanceof":
+                    balanceOf(httpMessage);
                     break;
                 default:
                     break;
@@ -137,9 +143,9 @@ namespace ETModel
                 case "beruler":
                     OnBeRuler(httpMessage);
                     break;
-                case "getmnemonic":
-                    GetMnemonicWord(httpMessage);
-                    break;
+                //case "getmnemonic":
+                //    GetMnemonicWord(httpMessage);
+                //    break;
                 case "node":
                     OnNode(httpMessage);
                     break;
@@ -160,6 +166,9 @@ namespace ETModel
                     break;
                 case "search":
                     OnSearch(httpMessage);
+                    break;
+                case "contract":
+                    OnContract(httpMessage);
                     break;
                 case "hello":
                     {
@@ -199,7 +208,7 @@ namespace ETModel
             {
                 index = "0";
             }
-            long Index = int.Parse(index);
+            int Index = int.Parse(index);
             List<BlockSub> transactionList = new List<BlockSub>();
             string address = httpMessage.map["1"];
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
@@ -208,11 +217,11 @@ namespace ETModel
 
                 if (account != null)
                 {
-                    Index = account.index - Index * 12;
-
-                    for (long ii = Index; ii > Index - 12 && ii > 0; ii--)
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                    Index = TFA_Count - Index * 12;
+                    for (int ii = Index; ii > Index - 12 && ii > 0; ii--)
                     {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
+                        string hasht = dbSnapshot.List.Get($"TFA__{account}", ii-1);
                         if (hasht != null)
                         {
                             var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -285,34 +294,6 @@ namespace ETModel
 
         }
 
-        private List<string> GetBlockTranHash(string address, string height)
-        {
-            List<string> res = new List<string>();
-            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
-            {
-                var account = dbSnapshot.Accounts.Get(address);
-
-                if (account != null)
-                {
-                    long getIndex = 0;
-                    getIndex = account.index - getIndex;
-                    for (long ii = getIndex; ii > getIndex - 100 && ii > 0; ii--)
-                    {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
-                        if (hasht != null)
-                        {
-                            var transfer = dbSnapshot.Transfers.Get(hasht);
-                            if (transfer.height == long.Parse(height))
-                            {
-                                res.Add(hasht);
-                            }
-                        }
-                    }
-                }
-            }
-            return res;
-        }
-
         public void GetPool(HttpMessage httpMessage)
         {
             Dictionary<string, BlockSub> transfers =  Entity.Root.GetComponent<Rule>().GetTransfers();
@@ -335,13 +316,13 @@ namespace ETModel
 
             var rule = Entity.Root.GetComponent<Rule>();
             var pool = Entity.Root.GetComponent<Pool>();
-            var amount = account != null ? BigInt.Div(account.amount , "10000").ToString() : "0";
+            var amount = account != null ? account.amount : "0";
             long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out long UndoHeight);
             long PoolHeight = rule.height;
             string power1 = rule.calculatePower.GetPower();
             string power2 = Entity.Root.GetComponent<Consensus>().calculatePower.GetPower();
 
-            int NodeCount = Entity.Root.GetComponent<NodeManager>().GetNodeCount();
+            int nodeCount = Entity.Root.GetComponent<NodeManager>().GetNodeCount();
 
             if (style == "")
             {
@@ -349,9 +330,10 @@ namespace ETModel
                                         $"       PoolHeight: {PoolHeight}\n" +
                                         $"  Calculate Power: {power1} of {power2}\n" +
                                         $"          Account: {address}, {amount}\n" +
-                                        $"             Node: {NodeCount}\n" +
+                                        $"             Node: {nodeCount}\n" +
                                         $"    Rule.Transfer: {rule?.GetTransfersCount()}\n" +
-                                        $"    Pool.Transfer: {pool?.GetTransfersCount()}";
+                                        $"    Pool.Transfer: {pool?.GetTransfersCount()}\n" +
+                                        $"     NodeSessions: {Program.jdNode["NodeSessions"]}";
             }
             else
             if (style == "1")
@@ -362,14 +344,15 @@ namespace ETModel
             if (style == "2")
             {
                 var httpPool = Entity.Root.GetComponent<HttpPool>();
-                var miners = httpPool.GetMinerReward(out long miningHeight);
-                httpMessage.result = $"H:{UndoHeight} P:{power2} Miner:{miners?.Count}";
+                var miners = httpPool?.GetMinerReward(out long miningHeight);
+                httpMessage.result = $"H:{UndoHeight} P:{power2} Miner:{miners?.Count} P1:{power1}";
             }
         }
 
         public void OnRules(HttpMessage httpMessage)
         {
-            Dictionary<string, RuleInfo> ruleInfos = Entity.Root.GetComponent<Consensus>().ruleInfos;
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            Dictionary<string, RuleInfo> ruleInfos = consensus.GetRule(consensus.transferHeight);
             httpMessage.result = JsonHelper.ToJson(ruleInfos);
         }
 
@@ -422,7 +405,7 @@ namespace ETModel
                     Account account = dbSnapshot.Accounts.Get(list[i]);
                     if (account == null)
                     {
-                        account = new Account() { address = list[i], amount = "0", index = 0, nonce = 0 };
+                        account = new Account() { address = list[i], amount = "0", nonce = 0 };
                     }
                     accounts.Remove(account.address);
                     accounts.Add(account.address, account);
@@ -443,10 +426,113 @@ namespace ETModel
             {
                 Account account = dbSnapshot.Accounts.Get(address);
                 if (account != null)
-                    httpMessage.result = $"          Account: {account.address}, amount:{account.amount.Insert(account.amount.Length - 4, ".")} , index:{account.index}";
+                    httpMessage.result = $"          Account: {account.address}, amount:{account.amount} , nonce:{account.nonce}";
                 else
                     httpMessage.result = $"          Account: {address}, amount:0 , index:0";
             }
+        }
+
+        public void OnProperty(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "Address", out string address))
+            {
+                httpMessage.result = "command error! \nexample: account address";
+                return;
+            }
+
+            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                var map = new Dictionary<string, string>();
+
+                Account account = dbSnapshot.Accounts.Get(address);
+                map.Add("1",  "SAT:" + (account!=null?account.amount:"0") + ":");
+
+                var abc = dbSnapshot.ABC.Get(address);
+                var blockSub = new BlockSub();
+                var index = 2;
+                if (abc != null)
+                {
+                    var consensus = Entity.Root.GetComponent<Consensus>();
+                    var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+                    var amount = "";
+                    var symbol = "";
+                    object[] result = null;
+                    bool rel;
+                    for (int ii = 0; ii < abc.Count; ii++)
+                    { 
+                        blockSub.addressIn = address;
+                        blockSub.addressOut = abc[ii];
+                        try
+                        {
+                            blockSub.data = "symbol()";
+                            rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight,out result);
+                            if (rel && result != null && result.Length >= 1)
+                            {
+                                symbol = ((string)result[0]) ?? "unknown";
+                            }
+
+                            blockSub.data = $"balanceOf(\"{address}\")";
+                            rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
+                            if (rel && result != null && result.Length >= 1)
+                            {
+                                amount = ((string)result[0]) ?? "0";
+                                map.Add(index++.ToString(),$"{symbol}:{amount}:{blockSub.addressOut}");
+                            }
+                        }
+                        catch(Exception)
+                        {
+                        }
+                    }
+                }
+                httpMessage.result = JsonHelper.ToJson(map);
+            }
+        }
+
+        public void balanceOf(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "Address", out string address))
+            {
+                httpMessage.result = "command error! \nexample: account address";
+                return;
+            }
+            GetParam(httpMessage, "2", "token", out string token);
+
+            var map = new Dictionary<string, string>();
+            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                Account account = dbSnapshot.Accounts.Get(address);
+                map.Add("nonce", account==null?"0":account.nonce.ToString());
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    map.Add("amount", account==null?"0":account.amount);
+                }
+                else
+                {
+                    var consensus = Entity.Root.GetComponent<Consensus>();
+                    var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+                    var amount = "";
+                    object[] result = null;
+                    bool rel;
+                    var blockSub = new BlockSub();
+                    blockSub.addressIn = address;
+                    blockSub.addressOut = token;
+                    try
+                    {
+                        blockSub.data = $"balanceOf(\"{address}\")";
+                        rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
+                        if (rel && result != null && result.Length >= 1)
+                        {
+                            amount = ((string)result[0]) ?? "0";
+                            map.Add("amount", amount);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+            httpMessage.result = JsonHelper.ToJson(map);
         }
 
         public void OnTransfer(HttpMessage httpMessage)
@@ -461,7 +547,8 @@ namespace ETModel
             transfer.data = System.Web.HttpUtility.UrlDecode(httpMessage.map["data"]);
             transfer.timestamp = long.Parse(httpMessage.map["timestamp"]);
             transfer.sign = httpMessage.map["sign"].HexToBytes();
-            transfer.depend = httpMessage.map["depend"];
+            transfer.depend  = System.Web.HttpUtility.UrlDecode(httpMessage.map["depend"]);
+            transfer.remarks = System.Web.HttpUtility.UrlDecode(httpMessage.map["remarks"]);
 
             //string hash = transfer.ToHash();
             //string sign = transfer.ToSign(Wallet.GetWallet().GetCurWallet()).ToHexString();
@@ -478,11 +565,11 @@ namespace ETModel
             }
             else
             {
-                httpMessage.result = "{\"success\":false,\"rel\":{" + rel + "}}";
+                httpMessage.result = "{\"success\":false,\"rel\":" + rel + "}";
             }
         }
 
-        public async void OnTransferAsync(BlockSub transfer)
+        public static async void OnTransferAsync(BlockSub transfer)
         {
             Consensus consensus = Entity.Root.GetComponent<Consensus>();
 
@@ -490,7 +577,7 @@ namespace ETModel
             q2p_Transfer.transfer = JsonHelper.ToJson(transfer);
 
             var networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeList();
+            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeRandomList();
 
             // 遍历node提交交易，直到找个一个可以出块的节点
             for (int i = 0; i < nodeList.Count; i++)
@@ -500,7 +587,7 @@ namespace ETModel
                 if (session != null && session.IsConnect())
                 {
                     var r2p_Transfer = (R2P_Transfer)await session.Query(q2p_Transfer, 5);
-                    if (r2p_Transfer != null && r2p_Transfer.rel != "-1")
+                    if (r2p_Transfer != null && r2p_Transfer.rel == "1")
                     {
                         break;
                     }
@@ -529,26 +616,24 @@ namespace ETModel
                 return;
             }
 
-            long.TryParse(indexStr, out long getIndex);
+            GetParam(httpMessage, "3", "token", out string tokenAddress);
+
+            int.TryParse(indexStr, out int getIndex);
 
             var transfers = new List<BlockSub>();
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
             {
-                var account = dbSnapshot.Accounts.Get(address);
-
-                if (account != null)
+                int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}{tokenAddress}");
+                getIndex = TFA_Count - getIndex;
+                for (int ii = getIndex; ii > getIndex - 20 && ii > 0; ii--)
                 {
-                    getIndex = account.index - getIndex;
-                    for (long ii = getIndex; ii > getIndex - 20 && ii > 0; ii--)
+                    string hasht = dbSnapshot.List.Get($"TFA__{address}{tokenAddress}", ii-1);
+                    if (hasht != null)
                     {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
-                        if (hasht != null)
+                        var transfer = dbSnapshot.Transfers.Get(hasht);
+                        if (transfer != null)
                         {
-                            var transfer = dbSnapshot.Transfers.Get(hasht);
-                            if (transfer != null)
-                            {
-                                transfers.Add(transfer);
-                            }
+                            transfers.Add(transfer);
                         }
                     }
                 }
@@ -591,14 +676,10 @@ namespace ETModel
 
             LuaVMCall luaVMCall = new LuaVMCall();
             luaVMCall.fnName = "Add";
-            luaVMCall.args = new FieldParam[0];
-            //luaVMCall.args[0] = new FieldParam();
-            //luaVMCall.args[0].type = "Int64";
-            //luaVMCall.args[0].value = "999";
-            //long aaa = (long)luaVMCall.args[0].GetValue();
+            luaVMCall.args = new FieldParam[1];
+
             transfer.data = luaVMCall.Encode();
             transfer.timestamp = TimeHelper.Now();
-
             transfer.hash = transfer.ToHash();
             transfer.sign = transfer.ToSign(key);
 
@@ -628,26 +709,92 @@ namespace ETModel
             }
         }
 
-
-        public void GetMnemonicWord(HttpMessage httpMessage)
+        public void OnContract(HttpMessage httpMessage)
         {
-            if (!GetParam(httpMessage, "1", "passwords", out string password))
+            httpMessage.result = "command error! \nexample: contract consAddress callFun";
+            GetParam(httpMessage, "1", "consAddress", out string consAddress);
+            GetParam(httpMessage, "1", "depend", out string depend);
+            if (!GetParam(httpMessage, "2", "callFun", out string callFun))
             {
-                httpMessage.result = "command error! \nexample: getmnemonic password";
                 return;
             }
 
-            if(Wallet.GetWallet().IsPassword(password))
+            WalletKey key = Wallet.GetWallet().GetCurWallet();
+            var sender = key.ToAddress();
+
+            if (callFun.IndexOf("create(")!=-1)
             {
-                var walletKey = Wallet.GetWallet().GetCurWallet();
-                httpMessage.result = walletKey.random.ToHexString();
+                var consensus = Entity.Root.GetComponent<Consensus>();
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+
+                long notice = 1;
+                using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+                {
+                    var account = dbSnapshot.Accounts.Get(sender);
+                    if (account != null)
+                    {
+                        notice = account.nonce + 1;
+                    }
+                }
+
+                BlockSub transfer   = new BlockSub();
+                transfer.addressIn  = sender;
+                transfer.addressOut = null;
+                transfer.amount = "0";
+                transfer.nonce  = notice;
+                transfer.type   = "contract";
+                transfer.depend = depend;
+                transfer.data   = callFun;
+                var luaVMCall = LuaVMCall.Decode(transfer.data);
+                Log.Info(JsonHelper.ToJson(luaVMCall));
+
+                //transfer.timestamp = TimeHelper.Now();
+                //transfer.hash = transfer.ToHash();
+                //transfer.sign = transfer.ToSign(key);
+
+                //var rel = Entity.Root.GetComponent<Rule>().AddTransfer(transfer);
+                //if (rel == -1)
+                //{
+                //    OnTransferAsync(transfer);
+                //}
+                //httpMessage.result = $"accepted transfer:{transfer.hash}";
             }
             else
             {
-                string randomSeed = CryptoHelper.Sha256(password);
-                httpMessage.result = randomSeed;
+                using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+                {
+                    var consensus = Entity.Root.GetComponent<Consensus>();
+                    var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+
+                    var blockSub = new BlockSub();
+                    blockSub.addressIn = sender;
+                    blockSub.addressOut = consAddress;
+                    blockSub.data = callFun;
+                    bool rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight,out object[] result);
+                    httpMessage.result = JsonHelper.ToJson(result);
+                }
             }
         }
+
+        //public void GetMnemonicWord(HttpMessage httpMessage)
+        //{
+        //    if (!GetParam(httpMessage, "1", "passwords", out string password))
+        //    {
+        //        httpMessage.result = "command error! \nexample: getmnemonic password";
+        //        return;
+        //    }
+
+        //    if(Wallet.GetWallet().IsPassword(password))
+        //    {
+        //        var walletKey = Wallet.GetWallet().GetCurWallet();
+        //        httpMessage.result = walletKey.random.ToHexString();
+        //    }
+        //    else
+        //    {
+        //        string randomSeed = CryptoHelper.Sha256(password);
+        //        httpMessage.result = randomSeed;
+        //    }
+        //}
 
         public void GetNearBlock(HttpMessage httpMessage)
         {
@@ -679,7 +826,7 @@ namespace ETModel
                 if (last != null)
                 {
                     var pre = blockMgr.GetBlock(last.prehash);
-                    if (pre.height != consensus.transferHeight)
+                    if (pre!=null&&pre.height != consensus.transferHeight)
                     {
                         list.Insert(0, pre);
                         if(list.Count> showCount)
@@ -855,13 +1002,12 @@ namespace ETModel
             q2p_Transfer.transfer = JsonHelper.ToJson(transfer);
 
             var networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeList();
+            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeRandomList();
 
             // 遍历node提交交易，直到找个一个可以出块的节点
-            int start = RandomHelper.Random();
-            for (int i = start; i < start + nodeList.Count; i++)
+            for (int i = 0; i < nodeList.Count; i++)
             {
-                var node = nodeList[ i % nodeList.Count ];
+                var node = nodeList[ i ];
                 Session session = session2 ?? await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
                 if (session != null && session.IsConnect())
                 {
@@ -894,7 +1040,7 @@ namespace ETModel
             {
                 int random1 = 0;
                 int random2 = ii;
-                int random3 = 1000 * 10000;
+                int random3 = 1000;
 
                 BlockSub transfer = new BlockSub();
                 transfer.type = "transfer";
@@ -931,7 +1077,7 @@ namespace ETModel
                     int random2 = RandomHelper.Range(0, accountCount);
                     while(random1== random2)
                         random2 = RandomHelper.Range(0, accountCount);
-                    int random3 = RandomHelper.Range(1, 100) * 10000;
+                    int random3 = RandomHelper.Range(1, 100);
 
                     BlockSub transfer   = new BlockSub();
                     transfer.type       = "transfer";

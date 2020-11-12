@@ -24,6 +24,8 @@ namespace ETModel
         {
             style = jd["style"]?.ToString();
             float.TryParse(jd["serviceFee"]?.ToString(), out serviceFee);
+            serviceFee = MathF.Max(0, MathF.Min(1, serviceFee));
+
             if (style == "PPLNS")
             {
                 string db_path = jd["db_path"]?.ToString();
@@ -61,7 +63,7 @@ namespace ETModel
 
 
                     }
-
+                    ClearOutTimeDB();
                 }
                 catch (Exception e)
                 {
@@ -228,11 +230,11 @@ namespace ETModel
                                     continue;
 
                                 var v = new BigInteger(CalculatePower.Power(dic.diff));
-                                string pay = BigInt.Round((v * reward / diffsum).ToString());
+                                string pay = BigHelper.Round8((v * reward / diffsum).ToString());
 
                                 if (minerTransfer.TryGetValue(dic.address, out BlockSub transfer))
                                 {
-                                    transfer.amount = BigInt.Add(transfer.amount, pay);
+                                    transfer.amount = BigHelper.Add(transfer.amount, pay);
                                 }
                                 else
                                 {
@@ -403,6 +405,45 @@ namespace ETModel
         public int GetTransfersCount()
         {
             return transferProcess.transfers.Count;
+        }
+
+
+        public void ClearOutTimeDB()
+        {
+            using (DbSnapshot snapshot = PoolDBStore.GetSnapshot())
+            {
+                // Miner
+                string json = snapshot.Get("Pool_H_Miner");
+                long height_miner = -1;
+                if (!string.IsNullOrEmpty(json))
+                    long.TryParse(json, out height_miner);
+
+                for (int ii = 5760; ii < 57600; ii++)
+                {
+                    string key = "Pool_H_" + (height_miner - ii);
+                    if (!string.IsNullOrEmpty(snapshot.Get(key)))
+                        snapshot.Delete("Pool_H_" + (height_miner - ii));
+                    else
+                        break;
+                }
+
+                long counted = 0;
+                string str_Counted = snapshot.Get("Pool_Counted");
+                long.TryParse(str_Counted, out counted);
+                for (int ii = 100; ii < 1000; ii++)
+                {
+                    long index = counted - ii;
+                    if (!string.IsNullOrEmpty(snapshot.Get($"Pool_MR_{index}")))
+                    {
+                        snapshot.Delete($"Pool_MR_{index}");
+                        snapshot.Delete($"Pool_MT_{index}");
+                    }
+                    else
+                        break;
+                }
+
+            }
+
         }
 
     }

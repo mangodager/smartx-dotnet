@@ -191,4 +191,18 @@ namespace ETModel
 
 	}
 
+	[Message(NetOpcode.Q2P_HasBlock,AppType.Core)]
+	public partial class Q2P_HasBlock: IRequestProto
+	{
+		public string hash { get; set; }
+
+	}
+
+	[Message(NetOpcode.R2P_HasBlock,AppType.Core)]
+	public partial class R2P_HasBlock: IResponseProto
+	{
+		public bool has { get; set; }
+
+	}
+
 }

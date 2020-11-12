@@ -1,4 +1,4 @@
-(function (Helper) {
+﻿(function (Helper) {
 'use strict';
 
     Helper.checkPlatform = function() {
@@ -170,6 +170,81 @@
         }
     }
 
+   /** 下载钱包 */
+    Helper.funDownload = function (content, filename) {
+
+        /** 创建隐藏的可下载链接 */
+        let eleLink = document.createElement('a');
+
+        eleLink.download = filename;
+
+        eleLink.style.display = 'none';
+
+        /** 字符内容转变成blob地址 */
+        let blob = new Blob([content]);
+
+        eleLink.href = URL.createObjectURL(blob);
+
+        /** 触发点击 */
+        document.body.appendChild(eleLink);
+
+        eleLink.click();
+
+        /** 然后移除 */
+        document.body.removeChild(eleLink);
+    };
+
+    Helper.SendTransferSubmit = function (e, type, amount, addressOut, data, depend, nonce, remarks)
+    {
+        if (Login.LoadPassword() == null) {
+            alert("password is null!");
+            return;
+        }
+        // 取秘钥
+        var addressKeyPair = Wallet.LoadFromAddress(addressCur, Login.LoadPassword());
+        if (addressKeyPair == null) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        var timestamp = new Date().getTime();
+        var hashdata = type + "#" + nonce + "#" + addressCur + "#" + addressOut + "#" + amount + "#" + data + "#" + depend + "#" + timestamp + "#" + remarks;
+        var hash = new Hashes.SHA256().hex(hashdata);
+        var sign = Wallet.sign(hash, addressKeyPair);
+        var signHex = Wallet.Bytes2Hex(sign);
+
+        var transferdata = { type: type, hash: hash, nonce: nonce, addressIn: addressCur, addressOut: addressOut, amount: amount, data: data, depend: depend, timestamp: timestamp, sign: signHex, remarks: remarks }
+        //console.warn(hash);
+        //console.warn(sign);
+
+        var jsonStr = JSON.stringify(transferdata);
+
+        if (type =="contract")
+            Helper.AddTransfer(addressCur + addressOut, jsonStr);
+        else
+            Helper.AddTransfer(addressCur, jsonStr);
+
+        $.ajax({
+            url: Helper.GetServerIP() + "/Transfer",
+            dataType: "text",
+            type: "get",
+            data: transferdata,
+            success: function (data) {
+                var jsonObj = JSON.parse(data);
+                if (data != "{\"success\":true}") {
+                    alert("提交失败,交易数据出错或者节点无出块权限: " + jsonObj["rel"]);
+                }
+
+                //alert("提交成功!");
+                $("#" + e).modal("hide");
+                window.location.href = window.location.href;
+            },
+            error: function (err) {
+                alert("网络连接错误!");
+            }
+        });
+
+    };
 
 
 })(typeof module !== 'undefined' && module.exports ? module.exports : (self.Helper = self.Helper || {}));

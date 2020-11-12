@@ -57,6 +57,7 @@
                         <th>Address</th>
                         <th>Start</th>
                         <th>End</th>
+                        <th>Last Height</th>
                     </tr>
                 </thead>
             </table>
@@ -72,6 +73,7 @@
                         <th>ipEndPoint</th>
                         <th>kIndex</th>
                         <th>state</th>
+                        <th>version</th>
                     </tr>
                 </thead>
             </table>
@@ -89,6 +91,7 @@
     </footer>
 
     <script>
+
         function liOnclick(e) {
             //alert(e.id);
         };
@@ -128,7 +131,8 @@
                     Helper.TableInsert("myrules", jsonObj[key]["Address"], color,
                         Helper.Simplify(jsonObj[key]["Address"], platform),
                         jsonObj[key]["Start"],
-                        jsonObj[key]["End"]);
+                        jsonObj[key]["End"],
+                        jsonObj[key]["LBH"]);
                 }
 
                 var element = document.getElementById("RulesLabel");
@@ -155,7 +159,8 @@
                         Helper.Simplify(jsonObj[key]["address"], platform),
                         jsonObj[key]["ipEndPoint"],
                         jsonObj[key]["kIndex"],
-                        jsonObj[key]["state"]);
+                        jsonObj[key]["state"],
+                        jsonObj[key]["version"]);
                 }
 
                 var element = document.getElementById("NodeLabel");

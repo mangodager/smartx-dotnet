@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using LevelDB;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace ETModel
 {
     public class DbCache<TValue> where TValue : class
     {
-        private readonly DB db;
-        private readonly ReadOptions options;
-        private readonly WriteBatch  batch;
-        private readonly string      prefix;
-        private readonly DbUndo      undos;
+        protected readonly DB db;
+        protected readonly ReadOptions options;
+        protected readonly WriteBatch  batch;
+        protected readonly string      prefix;
+        protected readonly DbUndo      undos;
 
-        Dictionary<string,TValue> currDic = new Dictionary<string, TValue>();
+        protected readonly Dictionary<string,TValue> currDic = new Dictionary<string, TValue>();
+        bool isString = false;
 
         public class Slice
         {
@@ -31,7 +33,6 @@ namespace ETModel
             this.isString = typeof(TValue).Name == "String";
         }
 
-        bool isString = false;
         public void Add(string key, TValue value)
         {
             // 数据回退
@@ -88,5 +89,8 @@ namespace ETModel
             }
         }
 
+
     }
+
+
 }

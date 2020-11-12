@@ -41,6 +41,9 @@ namespace ETModel
 
             switch (cmd)
             {
+                case "checktran":
+                    checkTran(httpMessage);
+                    break;
                 case "account":
                     OnAccount(httpMessage);
                     break;
@@ -157,13 +160,8 @@ namespace ETModel
             }
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
             {
-                var account = dbSnapshot.Accounts.Get(address);
-                if (account != null)
-                {
-                    httpMessage.result = "{\"count\":" + account.index + "}";
-                    return;
-                }
-                httpMessage.result = "{\"count\":0}";
+                int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                httpMessage.result = "{\"count\":" + TFA_Count + "}";
             }
         }
 
@@ -297,7 +295,7 @@ namespace ETModel
             {
                 index = "0";
             }
-            long Index = int.Parse(index);
+            int Index = int.Parse(index);
             List<BlockSub> transactionList = new List<BlockSub>();
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
             {
@@ -309,11 +307,12 @@ namespace ETModel
 
                 if (account != null)
                 {
-                    Index = account.index - Index * 12;
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                    Index = TFA_Count - Index * 12;
 
-                    for (long ii = Index; ii > Index - 12 && ii > 0; ii--)
+                    for (int ii = Index; ii > Index - 12 && ii > 0; ii--)
                     {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
+                        string hasht = dbSnapshot.List.Get($"TFA__{address}", ii-1);
                         if (hasht != null)
                         {
                             var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -336,6 +335,49 @@ namespace ETModel
                     }
                 }
                 httpMessage.result = JsonHelper.ToJson(transactionList);
+            }
+
+
+
+        }
+
+        private void checkTran(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "accindex", out string index))
+            {
+                httpMessage.result = "please input account.index";
+            }
+            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                if (!GetParam(httpMessage, "1", "address", out string address))
+                {
+                    httpMessage.result = "please input address";
+                }
+                var account = dbSnapshot.Accounts.Get(address);
+
+                if (account != null)
+                {
+                    httpMessage.result = "false";
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                    for (int ii = TFA_Count; ii >= int.Parse(index) && ii > 0; ii--)
+                    {
+                        string hasht = dbSnapshot.List.Get($"TFA__{address}",ii);
+                        if (hasht != null)
+                        {
+                            var transfer = dbSnapshot.Transfers.Get(hasht);
+                            if (transfer != null)
+                            {
+                                if (transfer.hash == httpMessage.map["hash"])
+                                {
+                                    httpMessage.result = "true";
+                                    break;
+                                }
+
+                            }
+                        }
+                    }
+                }
+                
             }
 
 
@@ -415,7 +457,7 @@ namespace ETModel
 
             var rule = Entity.Root.GetComponent<Rule>();
             var pool = Entity.Root.GetComponent<Pool>();
-            var amount = account != null ? BigInt.Div(account.amount, "10000").ToString() : "0";
+            var amount = account != null ? account.amount : "0";
             long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out long UndoHeight);
             long PoolHeight = rule.height;
             string power1 = rule.calculatePower.GetPower();
@@ -465,7 +507,8 @@ namespace ETModel
 
         public void OnRules(HttpMessage httpMessage)
         {
-            Dictionary<string, RuleInfo> ruleInfos = Entity.Root.GetComponent<Consensus>().ruleInfos;
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            Dictionary<string, RuleInfo> ruleInfos = consensus.GetRule(consensus.transferHeight);
             httpMessage.result = JsonHelper.ToJson(ruleInfos);
         }
 
@@ -520,15 +563,15 @@ namespace ETModel
                 if (account != null)
                 {
                     result.Add("Account", account.address);
-                    result.Add("amount", account.amount.Insert(account.amount.Length-4,"."));
-                    result.Add("index",account.index);
+                    result.Add("amount", account.amount);
+                    result.Add("nonce", account.nonce);
                     httpMessage.result = JsonHelper.ToJson(result);
                 }
                 else
                 {
                     result.Add("Account", address);
                     result.Add("amount", 0);
-                    result.Add("index", 0);
+                    result.Add("nonce", 0);
                     httpMessage.result = JsonHelper.ToJson(result);
                 }
                    // httpMessage.result = $"          Account: {address}, amount:0 , index:0";
@@ -548,6 +591,7 @@ namespace ETModel
             transfer.timestamp = long.Parse(httpMessage.map["timestamp"]);
             transfer.sign = httpMessage.map["sign"].HexToBytes();
             transfer.depend = httpMessage.map["depend"];
+            transfer.remarks = System.Web.HttpUtility.UrlDecode(httpMessage.map["remarks"]);
 
             //string hash = transfer.ToHash();
             //string sign = transfer.ToSign(Wallet.GetWallet().GetCurWallet()).ToHexString();
@@ -560,7 +604,13 @@ namespace ETModel
 
             if (rel == -1 || rel == 1)
             {
-                httpMessage.result = "{\"success\":true}";
+                using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+                {
+                    long index = dbSnapshot.List.GetCount($"TFA__{transfer.addressIn}{""}");
+                    httpMessage.result = "{\"success\":true,\"accindex\":" + index + "} ";
+
+                }
+                
             }
             else
             {
@@ -576,7 +626,7 @@ namespace ETModel
             q2p_Transfer.transfer = JsonHelper.ToJson(transfer);
 
             var networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeList();
+            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeRandomList();
 
             // 遍历node提交交易，直到找个一个可以出块的节点
             for (int i = 0; i < nodeList.Count; i++)
@@ -617,7 +667,7 @@ namespace ETModel
                 return;
             }
 
-            long.TryParse(indexStr, out long getIndex);
+            int.TryParse(indexStr, out int getIndex);
 
             var transfers = new List<BlockSub>();
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
@@ -626,10 +676,11 @@ namespace ETModel
 
                 if (account != null)
                 {
-                    getIndex = account.index - getIndex;
-                    for (long ii = getIndex; ii > getIndex - 20 && ii > 0; ii--)
+                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                    getIndex = TFA_Count - getIndex;
+                    for (int ii = getIndex; ii > getIndex - 20 && ii > 0; ii--)
                     {
-                        string hasht = dbSnapshot.TFA.Get($"{address}_{ii}");
+                        string hasht = dbSnapshot.List.Get($"TFA__{address}", ii-1);
                         if (hasht != null)
                         {
                             var transfer = dbSnapshot.Transfers.Get(hasht);

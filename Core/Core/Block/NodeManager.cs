@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Linq.Expressions;
+using MongoDB.Bson;
 
 namespace ETModel
 {
@@ -25,11 +26,12 @@ namespace ETModel
 
         public class NodeData
         {
-            public long nodeId;
+            public long   nodeId;
             public string address;
             public string ipEndPoint;
-            public int kIndex; // K桶序号
-            public long state;
+            public int    kIndex; // K桶序号
+            public long   state;
+            public string version;
         }
 
         public static string GetIpV4()
@@ -91,19 +93,17 @@ namespace ETModel
 
             List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
             // Get Internet IP
+            try
             {
                 Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
                 Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
                 R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
                 networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
-                try
-                {
-                    if(rIPNode!=null)
-                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
-                }
-                catch(Exception)
-                {
-                }
+                if(rIPNode!=null)
+                networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+            }
+            catch(Exception)
+            {
             }
             Log.Info($"NodeManager  {networkInner.ipEndPoint.ToString()}");
             Log.Info($"NodeSessions {list[0]}");
@@ -122,8 +122,8 @@ namespace ETModel
                 state |= consensus.openSyncFast ? EnumState.openSyncFast : 0;
             }
             state |= Entity.Root.GetComponentInChild<RelayNetwork>() != null ? EnumState.RelayNetwork : 0;
-            new_Node.state    = state;
-            new_Node.version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            new_Node.state   = state;
+            new_Node.version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
 
             while (true && list.Count>0)
             {
@@ -145,9 +145,13 @@ namespace ETModel
                             {
                                 long timeNow = TimeHelper.Now() ;
                                 nodeTimeOffset = (timeNow - sendTime) / 2 + r2P_New_Node.nodeTime - timeNow;
-                                if (r2P_New_Node.Nodes != "")
+                                if (!string.IsNullOrEmpty(r2P_New_Node.Nodes))
                                 {
                                     nodes = JsonHelper.FromJson<List<NodeData>>(r2P_New_Node.Nodes);
+                                }
+                                if(!string.IsNullOrEmpty(r2P_New_Node.Message))
+                                {
+                                    Log.Warning($"NodeSessions: {r2P_New_Node.Message}");
                                 }
                                 bResponse = true;
                             }
@@ -181,9 +185,9 @@ namespace ETModel
         //[MessageMethod(NetOpcode.Q2P_New_Node)]
         async void Q2P_New_Node_Handle(Session session, int opcode, object msg)
         {
+            Q2P_New_Node new_Node = msg as Q2P_New_Node;
             try
             {
-                Q2P_New_Node new_Node = msg as Q2P_New_Node;
 
                 //Log.Debug($"Q2P_New_Node_Handle {new_Node.ActorId} ipEndPoint: {new_Node.ipEndPoint}");
                 Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 2);
@@ -197,6 +201,7 @@ namespace ETModel
                     data.address    = new_Node.address;
                     data.ipEndPoint = new_Node.ipEndPoint;
                     data.state      = new_Node.state;
+                    data.version    = new_Node.version;
                     data.kIndex = GetkIndex();
                     AddNode(data);
 
@@ -212,6 +217,9 @@ namespace ETModel
             }
             catch(Exception)
             {
+                R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
+                response.Message = "LAN not supported or Your network has a firewall";
+                session.Reply(new_Node, response);
             }
         }
 
@@ -304,16 +312,42 @@ namespace ETModel
             return nodes.Count;
         }
 
+        public NodeData GetMyNode()
+        {
+            NodeData[] nodesTemp = nodes.Where(a => a.ipEndPoint == networkInner.ipEndPoint.ToString()).ToArray();
+            if (nodesTemp.Length != 0)
+                return nodesTemp[RandomHelper.Random() % nodesTemp.Length];
+            return null;
+        }
+
         public List<NodeData> GetNodeList()
         {
             return nodes;
         }
 
+        public List<NodeData> GetNodeRandomList()
+        {
+            var lists = new List<NodeData>();
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                lists.Insert( RandomHelper.Range(0, lists.Count) , nodes[i]);
+            }
+            return lists;
+        }
+
         public NodeData GetRandomNode()
         {
-            NodeData[] nodesTemp = nodes.Where( a => a.ipEndPoint != networkInner.ipEndPoint.ToString()).ToArray();
+            NodeData[] nodesTemp = nodes.Where( a => a.ipEndPoint != networkInner.ipEndPoint.ToString() ).ToArray();
             if(nodesTemp.Length!=0)
                 return nodesTemp[RandomHelper.Random() % nodesTemp.Length];
+            return null;
+        }
+
+        public string GetRandomNode(long state)
+        {
+            NodeData[] nodesTemp = nodes.Where(a => a.ipEndPoint != networkInner.ipEndPoint.ToString() && (a.state & state) == state ).ToArray();
+            if (nodesTemp.Length != 0)
+                return nodesTemp[RandomHelper.Random() % nodesTemp.Length].ipEndPoint.ToString();
             return null;
         }
 
@@ -329,6 +363,23 @@ namespace ETModel
                 }
             }
             return result;
+        }
+
+        public async void Broadcast(P2P_NewBlock p2p_Block, Block block)
+        {
+            var myNodeId = GetMyNodeId();
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                NodeData node = nodes[i];
+                if (node.nodeId != myNodeId)
+                {
+                    Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
+                    if (session != null && session.IsConnect())
+                    {
+                        session.Send(p2p_Block);
+                    }
+                }
+            }
         }
 
         public async void Broadcast(IMessage message)
@@ -386,11 +437,31 @@ namespace ETModel
             }
 
         }
+        public async void Broadcast2Kad(int kIndex, IMessage message)
+        {
+            List<NodeData> result = GetkList(kIndex);
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                NodeData node = result[i];
+                Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
+                if (session != null && session.IsConnect())
+                {
+                    session.Send(message);
+                }
+            }
+
+        }
 
         // 如果收到的是桶外的数据 , 向K桶内进行一次广播
-        public bool IsNeedBroadcast2Kad(IPEndPoint ipEndPoint)
+        public bool IsNeedBroadcast2Kad(string _ipEndPoint)
         {
-            NodeData nodetarget = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(ipEndPoint.ToString()); });
+            if (string.IsNullOrEmpty(_ipEndPoint))
+                return false;
+
+            var ipEndPoint = NetworkHelper.ToIPEndPoint(_ipEndPoint);
+
+            NodeData nodetarget = nodes.Find((n) => { return n.nodeId == StringHelper.HashCode(_ipEndPoint); });
             NodeData nodeSelf   = nodes.Find((n) => { return n.nodeId == GetMyNodeId(); });
             if (nodetarget != null && nodeSelf != null)
             {

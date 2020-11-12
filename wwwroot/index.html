@@ -32,6 +32,7 @@
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
     <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src="js/aes256.min.js"></script>
     <script src='js/forge-sha256.min.js'></script>
     <script src='js/hashes.js'></script>
     <script src='js/wallet.js'></script>
@@ -44,24 +45,23 @@
         <div class="jumbotron">
             <h1>SmartX-dotnet <small id="statsLabel" style="font-size: 50%"></small></h1>
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ModalCreate">创建</button>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalImport">导入</button>
-            <!--<button type="button" class="btn btn-danger" onclick="OnClear()">清空</button>-->
+            <button type="button" class="btn btn-success" onclick="OnImport()" >导入</button>
+            <!--&nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()">清空账号</button>-->
         </div>
 
         <h4></h4>
-        <div class="col-lg-6">
-            <h4>账户:</h4>
-            <h4></h4>
-        </div>
-        <div class="col-lg-6">
+
+        <div style="width: 60%" class="container">
             <div class="input-group">
+                <span class="input-group-addon">账户</span>
                 <input type="text" id="searchText" class="form-control">
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
                 </span>
             </div>
-            <h4></h4>
         </div>
+
+        <h5>&nbsp;</h5>
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="mytable">
@@ -126,15 +126,15 @@
                     </h4>
                 </div>
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">请输入私钥</span>
-                    <input type="text" class="form-control" id="ImportText" aria-describedby="basic-addon3">
+                    <span class="input-group-addon" id="basic-addon3">请输入密码</span>
+                    <input type="password" class="form-control" id="ImportText" aria-describedby="basic-addon3">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">
                         取消
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="OnImport('ImportText')">
-                        提交
+                    <button type="button" class="btn btn-primary" onclick="OnImportPassword('ImportText')">
+                        导入
                     </button>
                 </div>
             </div>
@@ -146,7 +146,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title" id="myModalLabel">
-                        创建账号
+                        初始化账本
                     </h4>
                 </div>
                 <div class="input-group">
@@ -159,7 +159,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="Login.OnCreate('PasswprdText')">
-                        创建
+                        确定
                     </button>
                 </div>
             </div>
@@ -185,10 +185,11 @@
                 </div>
             </div>
         </div>
+        <input type="file" id="files" style="display: none" onchange="fileImport();">
     </div>
 
     <script>
-        //console.log("aJkFxRaJ2j5Qm8queLbjc2CkKHi7G7WQH = " + Wallet.CheckAddress("aJkFxRaJ2j5Qm8queLbjc2CkKHi7G7WQH"));
+        setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
 
         Login.Init();
 
@@ -221,23 +222,55 @@
             window.location.href = "index.html";
         };
 
-        function OnImport(e) {
+        // 
+        let selectedFile = null;
+        function fileImport() {
+            selectedFile = document.getElementById('files').files[0];
+            $("#ModalImport").modal('show');
+        }
+
+        function OnImport() {
+            document.getElementById('files').value = '';
+            $("#files").click();
+        }
+
+        function OnImportPassword(e) {
             var value = document.getElementById(e).value;
-            var text = $('#' + e).val();
+            importPassword = $('#' + e).val();
             $('#' + e).val(""); // clear
 
-            var keyPair = Wallet.ImportKeyPair(text);
+            var reader = new FileReader(); //这是核心,读取操作就是由它完成.
+            reader.readAsText(selectedFile); //读取文件的内容,也可以读取文件的URL
+            reader.onload = function () {
+                //当读取完成后回调这个函数,然后此时文件的内容存储到了result中,直接操作即可
+                var jsonObj = JSON.parse(this.result);
+                var password = importPassword;
+                var address = jsonObj["accounts"][0]["address"];
+                console.log("import: " + address);
+                var MnemonicWord = CryptoJS.AES.decrypt(jsonObj["accounts"][0]["encrypted"], password).toString(CryptoJS.enc.Utf8);// Decrypt
+                var keyPair = Wallet.ImportKeyPair(MnemonicWord);
+                var index = Wallet.GetCount(Login.LoadPassword());
+                if (index > 100) {
+                    alert("数量超出限制");
+                    return;
+                }
 
-            var index = Wallet.GetCount(Login.LoadPassword());
-            if (index > 100) {
-                alert("数量超出限制");
-                return;
+                if (Wallet.ToAddress(keyPair.publicKey) != address) {
+                    alert("密码错误!");
+                    return;
+                }
+
+                var keyPairOld = Wallet.LoadFromAddress(address, Login.LoadPassword());
+                if (keyPairOld != null) {
+                    alert("已存在");
+                    return;
+                }
+
+                Wallet.Save(index, keyPair, Login.LoadPassword());
+                window.location.href = window.location.href;
+                importPassword = null;
+                $("#ModalImport").modal('hide');
             }
-
-            Wallet.Save(index, keyPair, Login.LoadPassword());
-
-            $("#ModalImport").modal('hide');
-            window.location.href = "index.html";
         };
 
         //// show address
@@ -276,7 +309,7 @@
 
                     var address = arrayoAddress[index];
                     var account = jsonObj[address];
-                    var amount = new BigNumber(account["amount"]).dividedBy(10000).toFormat();
+                    var amount = new BigNumber(account["amount"]).toFormat();
 
                     var color = colorlist[(index - 0) % colorlist.length];
                     Helper.TableInsert2("mytable", address + "&amount=" + amount, color, Helper.Simplify(address, platform), amount)
@@ -288,12 +321,12 @@
         });
 
         function liOnclick(e) {
-            window.location.href = "transfer.html?address=" + e.id;
+            window.location.href = "property.html?address=" + e.id;
         };
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
-            window.location.href = "transfer.html?address=" + text;
+            window.location.href = "property.html?address=" + text;
         }
 
         function QueryStats() {

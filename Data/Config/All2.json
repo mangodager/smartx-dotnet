@@ -3,7 +3,7 @@
     "appType": "All",
 
     "NodeSessions": [
-      "192.168.1.103:58601"
+      "seednode.smartx.one:57601"
     ],
 
     "ComponentNetworkInner": {
@@ -32,6 +32,7 @@
 
 
     "Consensus": {
+      "transferShow" : true
     },
 
     "Rule": {
@@ -39,11 +40,20 @@
 
     },
 
+    "SmartxRpc": {
+      "Entity": "SmartxRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:5000/"
+      }
+    },
+
     "HttpRpc": {
       "Entity": "HttpRpc",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:8001/"
+        "address": "http://0.0.0.0:8101/",
+        "website":true
       }
 
     },
@@ -51,10 +61,25 @@
       "Entity": "HttpRule",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
-        "address": "http://192.168.1.103:9001/"
+        "address": "http://0.0.0.0:9101/"
       }
+    },
+    "Pool": {
+      "style": "PPLNS",
+      "db_path": "Data/PoolDB",
+    },
 
-    }
+    "RelayNetwork": {
+      "Entity": "RelayNetwork",
+      "ComponentNetworkInner": {
+        "protocol": "TCP",
+        "address": "0:57601",
+        "CheckHearBeat": false,
+        "CheckKcpWaitsnd": false
+      },
+     "ComponentNetMsg": {
+     }
+    },
 
   }
 
