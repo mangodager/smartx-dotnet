@@ -55,7 +55,7 @@ namespace ETModel
             Log.Debug($"Rule.Run at height {height}");
 
             Wallet wallet = Wallet.GetWallet();
-            P2P_NewBlock p2p_NewBlock = new P2P_NewBlock();
+            P2P_NewBlock p2p_NewBlock = new P2P_NewBlock() { networkID = BlockMgr.networkID };
             Block blk    = null;
             Block preblk = null;
             TimePass timePass = new TimePass(1);
@@ -155,9 +155,10 @@ namespace ETModel
             {
                 chain1 = chain2;
                 chain2 = chain2.GetMcBlockNext();
+                if(chain1.height>= transferHeight+10)
+                    return chain1.GetMcBlock();
             }
 
-            blockMgr.DelBlockWithHeight(consensus,chain1.hash,chain1.height);
             Block blk1 = chain1.GetMcBlock();
 
             // 2F1
@@ -247,8 +248,6 @@ namespace ETModel
         {
             if(preblk==null)
                 return null;
-
-            blockMgr.DelBlockWithHeight(consensus,preblk.hash, preblk.height);
 
             Block myblk = new Block();
             myblk.Address    = Wallet.GetWallet().GetCurWallet().ToAddress();

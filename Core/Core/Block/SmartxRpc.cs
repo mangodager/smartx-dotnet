@@ -361,7 +361,7 @@ namespace ETModel
                     int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
                     for (int ii = TFA_Count; ii >= int.Parse(index) && ii > 0; ii--)
                     {
-                        string hasht = dbSnapshot.List.Get($"TFA__{address}",ii);
+                        string hasht = dbSnapshot.List.Get($"TFA__{address}",ii-1);
                         if (hasht != null)
                         {
                             var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -719,12 +719,8 @@ namespace ETModel
             transfer.type = "contract";
 
             LuaVMCall luaVMCall = new LuaVMCall();
-            luaVMCall.fnName = "Add";
+            luaVMCall.fnName = "add";
             luaVMCall.args = new FieldParam[0];
-            //luaVMCall.args[0] = new FieldParam();
-            //luaVMCall.args[0].type = "Int64";
-            //luaVMCall.args[0].value = "999";
-            //long aaa = (long)luaVMCall.args[0].GetValue();
             transfer.data = luaVMCall.Encode();
             transfer.timestamp = TimeHelper.Now();
 

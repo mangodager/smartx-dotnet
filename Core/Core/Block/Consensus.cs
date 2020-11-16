@@ -46,6 +46,34 @@ namespace ETModel
                 if (jd["Run"] != null)
                     bool.TryParse(jd["Run"].ToString(), out bRun);
 
+
+                ComponentNetMsg componentNetMsg = Entity.Root.GetComponent<ComponentNetMsg>();
+                componentNetMsg.registerMsg(NetOpcode.P2P_NewBlock, P2P_NewBlock_Handle);
+
+                string genesisText = File.ReadAllText("./Data/genesisBlock.dat");
+                Block genesisblk = JsonHelper.FromJson<Block>(genesisText);
+                auxiliaryAddress = genesisblk.Address;
+
+                consAddress = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.type == "contract"));
+
+                long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out transferHeight);
+                if (transferHeight == 0)
+                {
+                    if (true)
+                    {
+                        blockMgr.AddBlock(genesisblk);
+                        ApplyGenesis(genesisblk);
+                    }
+                }
+
+                //debug
+                using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+                {
+                    LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray() };
+                    snapshot.Contracts.Add(consAddress, luaVMScript);
+                    snapshot.Commit();
+                }
+
                 if (jd["height"] != null)
                 {
                     long height = long.Parse(jd["height"].ToString());
@@ -56,6 +84,7 @@ namespace ETModel
                         levelDBStore.UndoTransfers(height_total);
                         Log.Debug($"UndoTransfers height = {height_total}");
                     }
+                    ApplyBlockChain(height);
                 }
 
                 //string aa = BigInt.Div("1000,1000","1000");
@@ -70,35 +99,10 @@ namespace ETModel
         public override void Start()
         {
             rule = Entity.Root.GetComponent<Rule>();
-            ComponentNetMsg componentNetMsg = Entity.Root.GetComponent<ComponentNetMsg>();
-            componentNetMsg.registerMsg(NetOpcode.P2P_NewBlock, P2P_NewBlock_Handle);
 
-            string genesisText = File.ReadAllText("./Data/genesisBlock.dat");
-            Block  genesisblk = JsonHelper.FromJson<Block>(genesisText);
-            auxiliaryAddress = genesisblk.Address;
-
-            consAddress = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First( (x) => x.type == "contract"));
-
-            long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out long UndoHeight);
-            if (UndoHeight == 0)
-            {
-                if (true)
-                {
-                    blockMgr.AddBlock(genesisblk);
-                    ApplyGenesis(genesisblk);
-                }
-            }
-
-            //debug
-            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
-            {
-                LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray() };
-                snapshot.Contracts.Add(consAddress, luaVMScript);
-                snapshot.Commit();
-            }
-
-            if (bRun)
+            if (bRun) {
                 Run();
+            }
         }
 
         private Action runAction;
@@ -174,12 +178,16 @@ namespace ETModel
         public Dictionary<long, Dictionary<string, RuleInfo>> cacheRule = new Dictionary<long, Dictionary<string, RuleInfo>>();
         public Dictionary<string, RuleInfo> GetRule(long height)
         {
-            Dictionary<string, RuleInfo> rules = null;
-            if (cacheRule.TryGetValue(height, out rules))
-                return rules;
+            long target = cacheRule.Keys.FirstOrDefault( (x) => { return Math.Abs(x - height) <= 5; }  );
+            if (target != 0)
+                return cacheRule[target];
+
+            if (transferHeight!=height&&Math.Abs(transferHeight - height)<= 5)
+                return GetRule(transferHeight);
 
             using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
             {
+                //Log.Debug($"GetRule {height}");
                 string str = snapshot.Get($"Rule_{height}");
                 if(!string.IsNullOrEmpty(str))
                 {
@@ -266,9 +274,9 @@ namespace ETModel
                 dbSnapshot.Commit();
             }
 
-            var ruleInfos = luaVMEnv.GetRules(consAddress, 1);
             using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshot())
             {
+                var ruleInfos = luaVMEnv.GetRules(consAddress, 1, dbSnapshot);
                 dbSnapshot.Add($"Rule_{mcblk.height}", JsonHelper.ToJson(ruleInfos));
                 dbSnapshot.Commit();
             }
@@ -295,7 +303,6 @@ namespace ETModel
                 return false;
 
             LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
-            var ruleInfos = luaVMEnv.GetRules(consAddress, transferHeight);
 
             // --------------------------------------------------
             calculatePower.Insert(mcblk);
@@ -328,12 +335,12 @@ namespace ETModel
                         }
                     }
                 }
-                dbSnapshot.Add($"Rule_{blockChain.height}",JsonHelper.ToJson(ruleInfos));
+                var ruleInfos = luaVMEnv.GetRules(consAddress, mcblk.height, dbSnapshot);
+                dbSnapshot.Add($"Rule_{mcblk.height}",JsonHelper.ToJson(ruleInfos));
 
                 dbSnapshot.Commit();
             }
 
-            ruleInfos = luaVMEnv.GetRules(consAddress, mcblk.height, true);
             return true;
         }
 
@@ -445,14 +452,15 @@ namespace ETModel
             //if (!transfer.CheckSign())
             //    return true;
 
-            bool rel = luaVMEnv.Execute(dbSnapshot, transfer, height, out object[] reslut);
-
             // 设置交易index
             Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn) ?? new Account() { address = transfer.addressIn, amount = "0", nonce = 0 };
             if (accountIn.nonce + 1 != transfer.nonce)
                 return true;
+
             accountIn.nonce += 1;
             dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+
+            bool rel = luaVMEnv.Execute(dbSnapshot, transfer, height, out object[] reslut);
 
             if (transferShow&&rel)
             {
@@ -531,10 +539,11 @@ namespace ETModel
 
                     if (newBlocks.Count == 0)
                     {
-                        cacheRule.TryGetValue(transferHeight,out Dictionary<string,RuleInfo> ruleInfo);
+                        cacheRule.TryGetValue(transferHeight, out Dictionary<string, RuleInfo> ruleInfo);
                         cacheRule.Clear();
-                        if(ruleInfo!=null) { 
-                            cacheRule.Add(transferHeight,ruleInfo);
+                        if (ruleInfo != null)
+                        {
+                            cacheRule.Add(transferHeight, ruleInfo);
                         }
                         await Task.Delay(1000);
                     }
@@ -590,7 +599,7 @@ namespace ETModel
         }
 
         // 解决分叉链
-        public BlockChain ApplyBlockChainMost()
+        public BlockChain ApplyBlockChainMost(long targetHeight = -1)
         {
             long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
             var chain1 = BlockChainHelper.GetBlockChain(transferHeight);
@@ -621,7 +630,7 @@ namespace ETModel
                 // 应用账本到T-1周期
                 chain1 = chain1.GetMcBlockNext(blockMgr, this);
                 chain2 = chain1 == null ? null : chain1.GetMcBlockNext(blockMgr, this);
-                if (chain1 != null && chain2 != null)
+                if (chain1 != null && chain2 != null && (targetHeight==-1||chain1.height<=targetHeight) )
                 {
                     if (ApplyHeight(chain1))
                         return chain1;
@@ -630,16 +639,16 @@ namespace ETModel
             return null;
         }
 
-        public void ApplyBlockChain()
+        public void ApplyBlockChain(long targetHeight=-1)
         {
             // 应用账本到T-1周期
             long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
             var before = transferHeight;
 
-            var chain1 = ApplyBlockChainMost();
+            var chain1 = ApplyBlockChainMost(targetHeight);
             while (chain1 != null)
             {
-                chain1 = ApplyBlockChainMost();
+                chain1 = ApplyBlockChainMost(targetHeight);
                 if (before != transferHeight && chain1 != null && chain1.height % 100 == 0)
                     Log.Debug($"ApplyHeight {chain1.height}");
             }
@@ -657,7 +666,7 @@ namespace ETModel
                 // 随机一个openSyncFast节点
                 string ipEndPoint2 = nodeManager.GetRandomNode(NodeManager.EnumState.openSyncFast);
                 //Log.Info($"SyncHeightFast {ipEndPoint2}");
-                if(string.IsNullOrEmpty(ipEndPoint2))
+                if(!string.IsNullOrEmpty(ipEndPoint2))
                     return await SyncHeightFast(otherMcBlk, ipEndPoint2);
             }
 
@@ -705,7 +714,7 @@ namespace ETModel
             Dictionary<long, string> blockChains = new Dictionary<long, string>();
             bool error = false;
             var q2p_Sync_Height = new Q2P_Sync_Height();
-            q2p_Sync_Height.spacing = 103;
+            q2p_Sync_Height.spacing = 23;
             q2p_Sync_Height.height  = currHeight;
             var reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint,15);
             if (reply != null)
@@ -736,7 +745,7 @@ namespace ETModel
             //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
             bool bUndoHeight = false;
             long ii = currHeight;
-            for ( ; ii < syncHeight + 1 && ii < currHeight + 100; ii++)
+            for ( ; ii < syncHeight + 1 && ii < currHeight + 20; ii++)
             {
                 blockChains.TryGetValue(ii, out string hash);
                 Block syncMcBlk = blockMgr.GetBlock(hash);
@@ -817,7 +826,7 @@ namespace ETModel
             //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
             bool bUndoHeight = false;
             long ii = currHeight;
-            for (; ii < syncHeight + 1 && ii < currHeight + 100; ii++)
+            for (; ii < syncHeight + 1 && ii < currHeight + 10; ii++)
             {
                 Block syncMcBlk = null;
                 if (ii == otherMcBlk.height - 1) // 同步prehash， 先查
@@ -903,11 +912,13 @@ namespace ETModel
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
+            if (p2p_Block.networkID != BlockMgr.networkID)
+                return;
 
             if (string.IsNullOrEmpty(p2p_Block.ipEndPoint))
                 return;
 
-            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, ipEndPoint = p2p_Block.ipEndPoint };
+            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = BlockMgr.networkID, ipEndPoint = p2p_Block.ipEndPoint };
             newBlocks.RemoveAll((x) => { return x.ipEndPoint == newBlock.ipEndPoint; });
             newBlocks.Add(newBlock) ;
         }
@@ -1186,6 +1197,8 @@ namespace ETModel
                 R2P_Sync_Height reply_msg = new R2P_Sync_Height();
                 var blockMgr = Entity.Root.GetComponent<BlockMgr>();
 
+                Log.Info($"Q2P_Sync_Height: {session.RemoteAddress} H:{q2p_Sync_Height.height} S:{q2p_Sync_Height.spacing}");
+
                 long max = 1 * 1024 * 1024;
                 long size = 0;
                 reply_msg.height = q2p_Sync_Height.height;
@@ -1257,7 +1270,7 @@ namespace ETModel
                     BlockSub transfer = new BlockSub();
                     transfer.addressIn = "";
                     transfer.addressOut = blk.Address;
-                    transfer.amount = (3L * 100L * 10000L).ToString();
+                    transfer.amount = (3L * 10000L * 10000L).ToString();
                     transfer.nonce = 1;
                     transfer.type = "transfer";
                     transfer.timestamp = blk.timestamp;

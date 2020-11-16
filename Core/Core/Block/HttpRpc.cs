@@ -675,9 +675,8 @@ namespace ETModel
             transfer.type = "contract";
 
             LuaVMCall luaVMCall = new LuaVMCall();
-            luaVMCall.fnName = "Add";
-            luaVMCall.args = new FieldParam[1];
-
+            luaVMCall.fnName = "add";
+            luaVMCall.args = new FieldParam[0];
             transfer.data = luaVMCall.Encode();
             transfer.timestamp = TimeHelper.Now();
             transfer.hash = transfer.ToHash();

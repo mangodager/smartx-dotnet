@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using LevelDB;
@@ -66,6 +67,7 @@ namespace ETModel
         // ------------------------------------------
         public void UndoTransfers(long height)
         {
+            height = Math.Max(height,1);
             long.TryParse(Get("UndoHeight"),out long height_total);
             if (height == height_total)
                 return;

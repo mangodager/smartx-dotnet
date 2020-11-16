@@ -21,7 +21,7 @@ function sort(a,b)
 	if b.Address == Storages.Publisher then
 		return false
 	end
-	if biglib.Equal(a.Amount , b.Amount) then
+	if biglib.Equals(a.Amount , b.Amount) then
 		return lualib.StringCompare(a.Address , b.Address) > 0;
 	end
 
@@ -54,8 +54,7 @@ function add()
 end
 
 
-function update()
-
+function update_1_5_2()
 	-- delete height out
 	for i = #Storages.Rules , 1 , -1 do
 		if Storages.Rules[i].End ~= -1 and Storages.Rules[i].End < curHeight then
@@ -68,7 +67,7 @@ function update()
 		Storages.Rules[i].Amount = lualib.GetAmount(Storages.Rules[i].Address)
 	end
 
-	table.sort(Storages.Rules,Sort)
+	table.sort(Storages.Rules,sort)
 
 	for i=1,25 do
 		if Storages.Rules[i] == nil then
@@ -81,7 +80,7 @@ function update()
 			Storages.Rules[i].End = -1
 		end
 		if lualib.IsRuleOnline(curHeight,Storages.Rules[i].Address) then
-			Storages.Rules[i].LBH = curHeight
+			Storages.Rules[i].LBH = curHeight - 1
 		end
 		if curHeight - Storages.Rules[i].LBH > 120 and Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
 			Storages.Rules[i].End = curHeight + 10
@@ -99,5 +98,52 @@ function update()
 
 end
 
+function update_1_5_3()
 
+	-- delete height out
+	for i = #Storages.Rules , 1 , -1 do
+		if Storages.Rules[i].End ~= -1 and Storages.Rules[i].End < curHeight then
+			table.remove(Storages.Rules,i)
+		end
+	end
 
+	-- updata and check amount
+	for i=1,#Storages.Rules do
+		Storages.Rules[i].Amount = lualib.GetAmount(Storages.Rules[i].Address)
+	end
+
+	table.sort(Storages.Rules,sort)
+
+	for i=1,25 do
+		if Storages.Rules[i] == nil then
+			break;
+		end
+		if lualib.IsRuleOnline(curHeight,Storages.Rules[i].Address) then
+			Storages.Rules[i].LBH = curHeight - 1
+		end
+		if Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
+			if biglib.Less(Storages.Rules[i].Amount , "1000000") then
+				Storages.Rules[i].End = curHeight + 10
+			end
+			if curHeight - Storages.Rules[i].LBH > 120 then
+				Storages.Rules[i].End = curHeight + 10
+			end
+		end
+	end
+
+	-- kickout the last
+	for i=26,#Storages.Rules do
+		if Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
+			Storages.Rules[i].End = curHeight + 10
+		end
+	end
+
+end
+
+function update()
+	if curHeight > 1000000 then
+		update_1_5_3();
+	else
+		update_1_5_2();
+	end
+end

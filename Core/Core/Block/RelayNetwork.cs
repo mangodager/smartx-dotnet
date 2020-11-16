@@ -35,9 +35,11 @@ namespace ETModel
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
+            if (p2p_Block.networkID != BlockMgr.networkID)
+                return;
 
-            //var newBlock = new P2P_NewBlock() { block = p2p_Block.block, ipEndPoint = p2p_Block.ipEndPoint };
-            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString() };
+            //var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = BlockMgr.networkID,ipEndPoint = p2p_Block.ipEndPoint };
+            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = BlockMgr.networkID, ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString() };
 
             relayNetworkInner.BroadcastToAll(newBlock);
         }

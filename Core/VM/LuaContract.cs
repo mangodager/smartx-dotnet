@@ -62,7 +62,7 @@ namespace ETModel
 
         static public bool IsRuleOnline(long height,string address)
         {
-            var mcblk = BlockChainHelper.GetMcBlock(height);
+            var mcblk = BlockChainHelper.GetMcBlock(height-1);
             if(mcblk != null)
             {
                 var blockMgr = Entity.Root.GetComponent<BlockMgr>();

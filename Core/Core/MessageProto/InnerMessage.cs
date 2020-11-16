@@ -111,6 +111,8 @@ namespace ETModel
 
 		public string ipEndPoint { get; set; }
 
+		public string networkID { get; set; }
+
 	}
 
 	[Message(NetOpcode.Q2P_Transfer,AppType.Core)]

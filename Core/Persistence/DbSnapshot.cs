@@ -85,11 +85,6 @@ namespace ETModel
             db.Write(batch, new WriteOptions { Sync = true });
         }
 
-        public void Delete(string key)
-        {
-            batch?.Delete("key");
-        }
-
         public virtual void Dispose()
         {
             if (snapshot != null)
@@ -122,6 +117,11 @@ namespace ETModel
         public string Get(string key)
         {
             return Snap.Get(key);
+        }
+
+        public void Delete(string key)
+        {
+            Snap.Delete(key);
         }
 
     }

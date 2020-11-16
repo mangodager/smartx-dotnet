@@ -21,7 +21,7 @@ function sort(a,b)
 	if b.Address == Storages.Publisher then
 		return false
 	end
-	if biglib.Equal(a.Amount , b.Amount) then
+	if biglib.Equals(a.Amount , b.Amount) then
 		return lualib.StringCompare(a.Address , b.Address) > 0;
 	end
 
@@ -68,7 +68,7 @@ function update()
 		Storages.Rules[i].Amount = lualib.GetAmount(Storages.Rules[i].Address)
 	end
 
-	table.sort(Storages.Rules,Sort)
+	table.sort(Storages.Rules,sort)
 
 	for i=1,25 do
 		if Storages.Rules[i] == nil then

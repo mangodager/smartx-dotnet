@@ -71,10 +71,7 @@ namespace ETModel
             {
                 bool.TryParse(jd["AddSelfToNodes"].ToString(), out bRun);
             }
-            if (bRun)
-            {
-                Run();
-            }
+            Run(bRun);
         }
 
         public long GetMyNodeId()
@@ -87,7 +84,7 @@ namespace ETModel
             return TimeHelper.Now() + nodeTimeOffset;
         }
 
-        public async void Run()
+        public async void Run(bool bRun)
         {
             await Task.Delay(1 * 1000);
 
@@ -123,9 +120,9 @@ namespace ETModel
             }
             state |= Entity.Root.GetComponentInChild<RelayNetwork>() != null ? EnumState.RelayNetwork : 0;
             new_Node.state   = state;
-            new_Node.version = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+            new_Node.version = BlockMgr.networkID;
 
-            while (true && list.Count>0)
+            while (bRun && list.Count>0)
             {
                 try
                 {
@@ -188,8 +185,15 @@ namespace ETModel
             Q2P_New_Node new_Node = msg as Q2P_New_Node;
             try
             {
+                if(new_Node.version!=BlockMgr.networkID)
+                {
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
+                    response.Message = $"Network Version Not Compatible your:{new_Node.version} cur:{BlockMgr.networkID}";
+                    session.Reply(new_Node, response);
+                    return;
+                }
 
-                //Log.Debug($"Q2P_New_Node_Handle {new_Node.ActorId} ipEndPoint: {new_Node.ipEndPoint}");
+                //Log.Debug($"Q2P_New_Node_Handle {new_Node.address} ipEndPoint: {new_Node.ipEndPoint}  1");
                 Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 2);
                 Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
                 R2P_IP_INFO rIPNode = (R2P_IP_INFO)await sessionNew.Query(qIPNode, 0.3f);
@@ -213,9 +217,12 @@ namespace ETModel
                         //session.Send(response);
                     }
                     session.Reply(new_Node, response);
+                    return;
                 }
             }
             catch(Exception)
+            {
+            }
             {
                 R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
                 response.Message = "LAN not supported or Your network has a firewall";
@@ -267,13 +274,13 @@ namespace ETModel
                     NodeData node = nodes[i];
                     if (nodesLastTime.TryGetValue(node.nodeId, out lastTime))
                     {
-                        if (TimeHelper.time - lastTime > 30f )
+                        if (TimeHelper.time - lastTime > 60f )
                         {
                             nodes.Remove(node);
                             nodesLastTime.Remove(node.nodeId);
                             i--;
 
-                            Log.Debug($"nodes.Remove {node.nodeId} {nodes.Count}");
+                            Log.Debug($"nodes.Remove {node.address} {node.nodeId} {nodes.Count}");
                         }
                     }
                 }

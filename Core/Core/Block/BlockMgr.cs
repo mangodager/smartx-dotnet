@@ -81,32 +81,6 @@ namespace ETModel
             }
         }
 
-        public void DelBlockWithHeight(Consensus consensus, string prehash,long perheight)
-        {
-            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
-            {
-                List<Block> blks = GetBlock(perheight + 1);
-                blks = BlockChainHelper.GetRuleBlk(consensus, blks, prehash);
-
-                List<string> list = snapshot.Heights.Get((perheight + 1).ToString());
-                if (list != null)
-                {
-                    for (int ii = list.Count - 1; ii >= 0; ii--)
-                    {
-                        if (blks.Find(x => x.hash == list[ii]) == null)
-                        {
-                            snapshot.Blocks.Delete(list[ii]);
-                            cacheDict.Remove(list[ii]);
-                            cacheList.Remove(list[ii]);
-                            list.RemoveAt(ii);
-                        }
-                    }
-                    snapshot.Heights.Add((perheight + 1).ToString(), list);
-                    snapshot.Commit();
-                }
-            }
-        }
-
         Dictionary<string, Block> cacheDict = new Dictionary<string, Block>();
         List<string> cacheList = new List<string>();
 
@@ -153,11 +127,19 @@ namespace ETModel
             return blks;
         }
 
-        public long newBlockHeight = 0;
+        public long   newBlockHeight = 0;
+        public static string networkID = "alpha_1.5.2";
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
             Block blk = JsonHelper.FromJson<Block>(p2p_Block.block);
+
+            if (p2p_Block.networkID != BlockMgr.networkID)
+            {
+                Log.Warning($"NewBlock:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
+                return;
+            }
+
             //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
             Log.Debug($"NewBlock:{blk.Address} H:{blk.height} prehash:{blk.prehash}");
 
@@ -169,12 +151,12 @@ namespace ETModel
                 AddBlock(blk);
             }
 
-            // 如果收到的是桶外的数据 , 向K桶内进行一次广播
-            if (nodeManager.IsNeedBroadcast2Kad(p2p_Block.ipEndPoint))
-            {
-                p2p_Block.ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString();
-                nodeManager.Broadcast2Kad(p2p_Block);
-            }
+            //// 如果收到的是桶外的数据 , 向K桶内进行一次广播
+            //if (nodeManager.IsNeedBroadcast2Kad(p2p_Block.ipEndPoint))
+            //{
+            //    p2p_Block.ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString();
+            //    nodeManager.Broadcast2Kad(p2p_Block);
+            //}
 
         }
 

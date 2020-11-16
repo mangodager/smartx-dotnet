@@ -76,6 +76,7 @@ message P2P_NewBlock // IMessage
 {
 	string block = 1;
 	string ipEndPoint = 2;
+	string networkID = 3;
 }
 
 message Q2P_Transfer // IRequestProto

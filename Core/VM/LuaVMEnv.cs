@@ -101,7 +101,7 @@ namespace ETModel
             }
             catch (Exception)
             {
-                return "";
+                return "error_call";
             }
         }
 
@@ -288,7 +288,7 @@ end";
             public RuleInfo[] RuleInfo;
         }
 
-        public Dictionary<string, RuleInfo> GetRules(string address, long height,bool bCommit=false)
+        public Dictionary<string, RuleInfo> GetRules(string address, long height, DbSnapshot dbSnapshot)
         {
             Dictionary<string, RuleInfo> rules = new Dictionary<string, RuleInfo>();
             try
@@ -298,48 +298,41 @@ end";
                 LuaVMScript luaVMScript = null;
                 LuaVMContext LuaVMContext = null;
 
-                using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+                s_dbSnapshot = dbSnapshot;
+                LuaVMContext Storages = dbSnapshot?.Storages.Get(address);
+                // rapidjson
+                luaenv.DoString(initScript);
+                luaVMScript = dbSnapshot.Contracts.Get(address);
+                LuaVMContext = dbSnapshot.Storages.Get(address);
+                luaenv.DoString(luaVMScript.script, address);
+                luaenv.DoString($"Storages = rapidjson.decode('{LuaVMContext.jsonData.ToStr()}')\n");
+                luaVMCall.fnName = "update";
+                luaVMCall.args = new FieldParam[0];
+
+                object[] args = luaVMCall.args.Select(a => a.GetValue()).ToArray();
+                LuaFunction luaFun = luaenv.Global.Get<LuaFunction>(luaVMCall.fnName);
+
+                luaenv.DoString($"curHeight    =  {height}\n");
+                luaFun.Call(args);
+
+                // rapidjson
+                luaenv.DoString("StoragesJson = rapidjson.encode(Storages)\n");
+                LuaVMContext.jsonData = luaenv.Global.Get<string>("StoragesJson").ToByteArray();
+                dbSnapshot.Storages.Add(address, LuaVMContext);
+
+                JToken jdStorages = JToken.Parse(LuaVMContext.jsonData.ToStr());
+                JToken[] jdRule = jdStorages["Rules"].ToArray();
+                for (int ii = 0; ii < jdRule.Length; ii++)
                 {
-                    s_dbSnapshot = dbSnapshot;
-                    LuaVMContext Storages = dbSnapshot?.Storages.Get(address);
-                    // rapidjson
-                    luaenv.DoString(initScript);
-                    luaVMScript = dbSnapshot.Contracts.Get(address);
-                    LuaVMContext = dbSnapshot.Storages.Get(address);
-                    luaenv.DoString(luaVMScript.script, address);
-                    luaenv.DoString($"Storages = rapidjson.decode('{LuaVMContext.jsonData.ToStr()}')\n");
-                    luaVMCall.fnName = "update";
-                    luaVMCall.args = new FieldParam[0];
-
-                    object[] args = luaVMCall.args.Select(a => a.GetValue()).ToArray();
-                    LuaFunction luaFun = luaenv.Global.Get<LuaFunction>(luaVMCall.fnName);
-
-                    luaenv.DoString($"curHeight    =  {height}\n");
-                    luaFun.Call(args);
-
-                    // rapidjson
-                    luaenv.DoString("StoragesJson = rapidjson.encode(Storages)\n");
-                    LuaVMContext.jsonData = luaenv.Global.Get<string>("StoragesJson").ToByteArray();
-                    if (bCommit)
-                    {
-                        dbSnapshot.Storages.Add(address, LuaVMContext);
-                        dbSnapshot.Commit();
-                    }
-
-                    JToken jdStorages = JToken.Parse(LuaVMContext.jsonData.ToStr());
-                    JToken[] jdRule = jdStorages["Rules"].ToArray();
-                    for (int ii = 0; ii < jdRule.Length; ii++)
-                    {
-                        RuleInfo rule = new RuleInfo();
-                        rule.Address = jdRule[ii]["Address"].ToString();
-                        rule.Start = long.Parse(jdRule[ii]["Start"].ToString());
-                        rule.End = long.Parse(jdRule[ii]["End"].ToString());
-                        rule.LBH = long.Parse(jdRule[ii]["LBH"].ToString());
-                        rules.Remove(rule.Address);
-                        rules.Add(rule.Address, rule);
-                    }
-                    luaenv.GC();
+                    RuleInfo rule = new RuleInfo();
+                    rule.Address = jdRule[ii]["Address"].ToString();
+                    rule.Start = long.Parse(jdRule[ii]["Start"].ToString());
+                    rule.End = long.Parse(jdRule[ii]["End"].ToString());
+                    rule.LBH = long.Parse(jdRule[ii]["LBH"].ToString());
+                    rules.Remove(rule.Address);
+                    rules.Add(rule.Address, rule);
                 }
+                luaenv.GC();
             }
             catch (Exception e)
             {

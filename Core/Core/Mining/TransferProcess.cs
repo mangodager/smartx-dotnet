@@ -66,9 +66,9 @@ namespace ETModel
                     {
                         int TFA_Count = dbSnapshot.List.GetCount($"TFA__{transfers[ii].addressIn}");
                         if (transfers[ii].miniindex != 0)
-                        for (long jj = transfers[ii].miniindex; jj <= TFA_Count; jj++)
+                        for (int jj = (int)transfers[ii].miniindex; jj <= TFA_Count; jj++)
                         {
-                            string hasht = dbSnapshot.List.Get($"TFA__{transfers[ii].addressIn}",ii);
+                            string hasht = dbSnapshot.List.Get($"TFA__{transfers[ii].addressIn}",jj);
                             if (hasht != null)
                             {
                                 var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -104,7 +104,7 @@ namespace ETModel
                     // Start a new deal
                     for (int ii = 0; ii < transfers.Count; ii++)
                     {
-                        if (transfers[ii].lastHeight < rule.height + 6)
+                        if (transfers[ii].lastHeight < rule.height + 6 && transfers[ii].sendCount <= 5)
                         {
                             transfers[ii].lastHeight = rule.height;
                             transfers[ii].sendCount++;

@@ -19,6 +19,9 @@ namespace ETModel
         public LevelDBStore PoolDBStore = new LevelDBStore();
         public string style = "SOLO";
         public float  serviceFee = 0; // 矿池手续费
+        public long   OutTimeDBMiner   = 5760;
+        public long   OutTimeDBCounted = 100;
+        public long   RewardInterval   = 32;
 
         public override void Awake(JToken jd = null)
         {
@@ -32,6 +35,12 @@ namespace ETModel
                 var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), db_path);
                 PoolDBStore.Init(DatabasePath);
             }
+            if (jd["OutTimeDBMiner"] != null)
+                long.TryParse(jd["OutTimeDBMiner"]?.ToString(), out OutTimeDBMiner);
+            if (jd["OutTimeDBCounted"] != null)
+                long.TryParse(jd["OutTimeDBCounted"]?.ToString(), out OutTimeDBCounted);
+            if (jd["RewardInterval"] != null)
+                long.TryParse(jd["RewardInterval"]?.ToString(), out RewardInterval);
 
             httpPool = Entity.Root.GetComponentInChild<HttpPool>();
             transferProcess = Entity.Root.AddComponent<TransferProcess>();
@@ -142,7 +151,7 @@ namespace ETModel
                     long.TryParse(json, out maxHeight);
             }
 
-            if ( maxHeight - minHeight < 10 && saveDB )
+            if ( maxHeight - minHeight < RewardInterval && saveDB )
                 return null;
 
             var minerTransfer = MinerReward_PPLNS(today, minHeight, maxHeight);
@@ -201,8 +210,8 @@ namespace ETModel
                         var mcblk = BlockChainHelper.GetMcBlock(rewardheight);
                         if (mcblk != null && mcblk.Address == ownerAddress)
                         {
-                            long reward = Consensus.GetReward(rewardheight);
-                            reward = (long)(reward * (1.0f-serviceFee));
+                            BigFloat reward = new BigFloat(Consensus.GetReward(rewardheight));
+                            reward = reward * (1.0f-serviceFee);
 
                             var miner = miners.Values.FirstOrDefault(c => c.random == mcblk.random);
                             if (miner == null)
@@ -211,14 +220,14 @@ namespace ETModel
                             }
 
                             // Total power
-                            BigInteger diffsum = new BigInteger();
+                            BigFloat diffsum = new BigFloat();
                             foreach (var dic in miners.Values)
                             {
                                 if (string.IsNullOrEmpty(dic.address))
                                     continue;
                                 if (dic.diff < 0.99999f)
                                     continue;
-                                diffsum += new BigInteger(CalculatePower.Power(dic.diff));
+                                diffsum += new BigFloat(dic.diff);
                             }
 
                             // Reward for participation
@@ -229,7 +238,7 @@ namespace ETModel
                                 if (dic.diff < 0.99999f)
                                     continue;
 
-                                var v = new BigInteger(CalculatePower.Power(dic.diff));
+                                var v = new BigFloat(dic.diff);
                                 string pay = BigHelper.Round8((v * reward / diffsum).ToString());
 
                                 if (minerTransfer.TryGetValue(dic.address, out BlockSub transfer))
@@ -418,7 +427,7 @@ namespace ETModel
                 if (!string.IsNullOrEmpty(json))
                     long.TryParse(json, out height_miner);
 
-                for (int ii = 5760; ii < 57600; ii++)
+                for (long ii = OutTimeDBMiner; ii < OutTimeDBMiner*3; ii++)
                 {
                     string key = "Pool_H_" + (height_miner - ii);
                     if (!string.IsNullOrEmpty(snapshot.Get(key)))
@@ -430,7 +439,7 @@ namespace ETModel
                 long counted = 0;
                 string str_Counted = snapshot.Get("Pool_Counted");
                 long.TryParse(str_Counted, out counted);
-                for (int ii = 100; ii < 1000; ii++)
+                for (long ii = OutTimeDBCounted; ii < OutTimeDBCounted*3; ii++)
                 {
                     long index = counted - ii;
                     if (!string.IsNullOrEmpty(snapshot.Get($"Pool_MR_{index}")))
@@ -441,7 +450,7 @@ namespace ETModel
                     else
                         break;
                 }
-
+                snapshot.Commit();
             }
 
         }
