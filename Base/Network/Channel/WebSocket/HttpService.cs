@@ -52,34 +52,54 @@ namespace ETModel
         {
         }
 
+        HttpMessage hearbeat = null;
         public override void Update()
         {
-            if(httpListener==null)
+            if (timepassHearBeat.IsPassSet())
             {
-                StartAccept(this.prefix);
+                if (hearbeat == null)
+                {
+                    hearbeat = new HttpMessage();
+                    hearbeat.map = new Dictionary<string, string>();
+                    hearbeat.map.Add("cmd", "hearbeat");
+                }
+                _ = ComponentNetworkHttp.Query(this.prefix, hearbeat);
             }
 
+            if(httpThread == null)
+            {
+                httpListener.Abort();
+                httpListener.Close();
+                StartAccept(this.prefix);
+            }
         }
 
-        TimePass timepass = new TimePass(0,5*60);
+        TimePass timepassHearBeat = new TimePass(0,10);
+        TimePass timepassKill     = new TimePass(0,5*60);
         HttpListener httpListener = null;
+        Thread httpThread = null;
         public void StartAccept(string uriPrefix)
         {
             httpListener = new HttpListener();
             httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             httpListener.Prefixes.Add(uriPrefix);
             httpListener.Start();
-            new Thread(new ThreadStart(delegate
+            httpThread = new Thread(new ThreadStart(delegate
             {
-                while (!timepass.IsPassSet())
+                try
                 {
-                    HttpListenerContext httpListenerContext = httpListener.GetContext();
-                    Result(httpListenerContext);
+                    while (!timepassKill.IsPassSet())
+                    {
+                        HttpListenerContext httpListenerContext = httpListener.GetContext();
+                        Result(httpListenerContext);
+                    }
                 }
-                httpListener.Abort();
-                httpListener.Close();
-                httpListener = null;
-            })).Start();
+                catch(Exception)
+                {
+                }
+                httpThread = null;
+            }));
+            httpThread.Start();
         }
 
         private void Result(HttpListenerContext context)
