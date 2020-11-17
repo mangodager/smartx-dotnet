@@ -22,3 +22,15 @@ E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
 E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
 E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
 E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
+E:\github\smartx-dotnet\Proto\Proto2CS.deps.json
+E:\github\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
+E:\github\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
+E:\github\smartx-dotnet\Proto\Proto2CS.dll
+E:\github\smartx-dotnet\Proto\Proto2CS.pdb
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
+E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache

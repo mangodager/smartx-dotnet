@@ -694,11 +694,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\smartx_dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+      "projectUniqueName": "E:\\github\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
       "projectName": "Proto2CS",
-      "projectPath": "E:\\smartx_dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+      "projectPath": "E:\\github\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\smartx_dotnet\\Tools\\Proto2CS\\obj\\",
+      "outputPath": "E:\\github\\smartx-dotnet\\Tools\\Proto2CS\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
