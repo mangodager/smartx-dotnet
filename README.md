@@ -1,9 +1,9 @@
 # smartx-dotnet
 The redesign and re implementation of smartx is different from the consensus and storage of java version, which is implemented by C#
 
-#中文开发日志：
+# 中文开发日志：
 
-#2020-10-29 项目公告
+# 2020-10-29 项目公告
 Smartx-dotnet的竞价节点挖矿教程
 https://smartx.one/archives/4387
 满足云服务器和长时间运行（1-2个月）的条件之后，可以先学习教程。等学习好了，之后跟群主申请100w的测试币
