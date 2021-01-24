@@ -62,7 +62,7 @@ smartx-dotnet测试网更新到1.5.3版本，超过120个高度不出块的竞�
 1、优化了同步拉块逻辑
 2、超过130个高度竞价验证分片不出块，会自动退出rules列表，需要手动再加入
 
-### 2020-12-03项目公告
+### 2020-12-03 项目公告
 smartx-dotnet升级了一个最新版本1.5.3b，兼容1.5.3a版本，如果拉块速度不慢，可以不用更新。主要优化：
 1、多协程拉块，拉块速度增加几倍
 2、优化内存，cpu占用
@@ -70,7 +70,7 @@ smartx-dotnet升级了一个最新版本1.5.3b，兼容1.5.3a版本，如果拉�
 已经开放github下载
 https://github.com/mangodager/smartx-dotnet/releases/download/1.5.3b/smartx-dotnet-1.5.3b.zip
 
-### 2020-12-07项目公告
+### 2020-12-07 项目公告
 测试网1.5.3b版本在测试其他用例，暂时停掉团队PoW矿池pool.smartx.one，请周知！
 
 ### 2020-12-09 项目公告
@@ -94,7 +94,7 @@ smartx-dotnet-1.5.3c版本已经完成分叉链mergechain测试和PoW矿池轮�
 smartx-dotnet-1.5.3c版本已经上线最新的区块浏览器和web钱包，地址：https://testnet.smartx.one/browser   和   https://testnet.smartx.one
 请周知
 
-### 2020-12-30
+### 2020-12-30 项目公告
 第三方钱包已支持智图，官网是：
 https://hebe.cc/sat/sat.htmlat.html
 
