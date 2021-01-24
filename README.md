@@ -3,7 +3,7 @@ The redesign and re implementation of smartx is different from the consensus and
 
 # 中文开发日志：
 
-# 2020-10-29 项目公告
+## 2020-10-29 项目公告
 Smartx-dotnet的竞价分片链挖矿教程
 https://smartx.one/archives/4387
 满足云服务器和长时间运行（1-2个月）的条件之后，可以先学习教程。等学习好了，之后跟群主申请100w的测试币
@@ -24,7 +24,7 @@ https://github.com/mangodager/smartx-dotnet/releases/download/1.4/smartx-dotnet-
 # 2020-11-12 项目公告
 有两家第三方的社区矿池已经支持了smartx智图PoW矿池挖矿，欢迎大家测试，地址分别是，jnpool.com，smartx.news，目前smartx的PoW矿池数达到3家
 
-# 2020-11-13
+# 2020-11-13 项目公告
 测试网1.5.0于11-14日重磅发布，核心是支持智能合约和合约模板商店，届时测试网数据会被清理，请用户做好准备。
 
 # 2020-11-14 项目公告
