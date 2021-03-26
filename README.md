@@ -130,6 +130,12 @@ smartx-dotnet-2.0.1版本发布，19号数据已经清理。修改了pos和pow�
 ### 2021-01-21 项目公告
 smartx-dotnet-2.0.2版本发布，修复了satswap交易所的一些bug，并且测试数据已经清理。请知悉。
 
+### 2021-03-25 项目公告
+smartx-dotnet-2.0.2b版本发布。
+1、改进智图代币对账功能
+2、区块浏览器代币显示
+3、区块浏览器的代币转账交易排序功能
+
 # English development logger
 
 ### 2020-10-29 Project announcement
@@ -246,3 +252,8 @@ Pledge contract mining tutorial: https://bbs.smartx.one/t/topic/548
 
 ### 2021-01-21 Project announcement
 The smartx-dotnet-2.0.2 version is released, which fixes some bugs of the satswap exchange, and the test data has been cleaned up. Please note.
+
+### 2021-03-25 Project announcement
+1. Improve the reconciliation function of Zhitu token
+2. Token display in block browser
+3. Token transfer transaction sorting function of block browser
