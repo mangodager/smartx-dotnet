@@ -136,6 +136,18 @@ smartx-dotnet-2.0.2b版本发布。
 2、区块浏览器代币显示
 3、区块浏览器的代币转账交易排序功能
 
+## 2021-04-02 项目公告
+1、测试新的动态Satdag挖矿算法
+2、增加质押合约转移功能，转移合约需要万一手续费
+3、自动beruler
+4、POS节点限制必须创建质押合约才能成为出块节点
+5、合约存储优化
+6、增加锁仓合约功能
+7、增加默认转账手续费0.002个SAT
+8、优化全网PoW算力统计和单台机器PoW算法统计
+9、增加合约对账功能
+10、创建交易对需要100个SAT
+
 # English development logger
 
 ### 2020-10-29 Project announcement
@@ -257,3 +269,15 @@ The smartx-dotnet-2.0.2 version is released, which fixes some bugs of the satswa
 1. Improve the reconciliation function of Zhitu token
 2. Token display in block browser
 3. Token transfer transaction sorting function of block browser
+
+## 2021-04-02 Project announcement
+1. Test new dynamic satdag mining algorithm
+2. The transfer function of pledge contract is added, and the transfer contract needs handling fee
+3. Automatic beruler
+4. POS node limits that a pledge contract must be created to become a block out node
+5. Contract storage optimization
+6. Add lock in contract function
+7. Increase default transfer fee by 0.002 sat
+8. Optimization of pow power statistics of the whole network and POW algorithm statistics of single machine
+9. Add contract reconciliation function
+10. It takes 100 sats to create a trading pair
