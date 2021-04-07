@@ -136,7 +136,7 @@ smartx-dotnet-2.0.2b版本发布。
 2、区块浏览器代币显示
 3、区块浏览器的代币转账交易排序功能
 
-## 2021-04-02 项目公告
+## 2021-04-02 2.1.0版项目公告
 1、测试新的动态Satdag挖矿算法
 2、增加质押合约转移功能，转移合约需要万一手续费
 3、自动beruler
@@ -147,6 +147,10 @@ smartx-dotnet-2.0.2b版本发布。
 8、优化全网PoW算力统计和单台机器PoW算法统计
 9、增加合约对账功能
 10、创建交易对需要100个SAT
+
+## 2021-04-07 2.1.0a版项目公告
+1、通过增加cache优化合约调用
+2、修改命令启动行
 
 # English development logger
 
@@ -281,3 +285,7 @@ The smartx-dotnet-2.0.2 version is released, which fixes some bugs of the satswa
 8. Optimization of pow power statistics of the whole network and POW algorithm statistics of single machine
 9. Add contract reconciliation function
 10. It takes 100 sats to create a trading pair
+
+## 2021-04-07 Project announcement
+1. Optimizing contract calls by adding cache
+2. Modify command start line
