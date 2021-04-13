@@ -32,3 +32,15 @@ E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.Ass
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
 E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+E:\www\smartx-dotnet\Bin\snappy32.dll
+E:\www\smartx-dotnet\Bin\snappy64.dll
+E:\www\smartx-dotnet\Bin\libzstd.dll
+E:\www\smartx-dotnet\Bin\Google.Protobuf.deps.json
+E:\www\smartx-dotnet\Bin\Google.Protobuf.dll
+E:\www\smartx-dotnet\Bin\Google.Protobuf.pdb
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
+E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
