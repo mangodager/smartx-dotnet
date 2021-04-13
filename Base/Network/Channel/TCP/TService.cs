@@ -15,9 +15,11 @@ namespace ETModel
 		private Socket acceptor;
 		
 		public RecyclableMemoryStreamManager MemoryStreamManager = new RecyclableMemoryStreamManager();
-		
-		public HashSet<long> needStartSendChannel = new HashSet<long>();
-        public override IPEndPoint GetEndPoint() { return (IPEndPoint)this.acceptor?.LocalEndPoint; }
+
+		public HashSet<long> needStartSendChannel_1 = new HashSet<long>();
+		public HashSet<long> needStartSendChannel_2 = new HashSet<long>();
+		public HashSet<long> needStartSendChannel   = new HashSet<long>();
+		public override IPEndPoint GetEndPoint() { return (IPEndPoint)this.acceptor?.LocalEndPoint; }
 
         /// <summary>
         /// 即可做client也可做server
@@ -157,7 +159,13 @@ namespace ETModel
 
 		public override void Update()
 		{
-			foreach (long id in this.needStartSendChannel)
+			var sendChannel = this.needStartSendChannel;
+			if (!this.needStartSendChannel.Equals(this.needStartSendChannel_1))
+				this.needStartSendChannel = this.needStartSendChannel_1;
+			else
+				this.needStartSendChannel = this.needStartSendChannel_2;
+
+			foreach (long id in sendChannel)
 			{
 				TChannel channel;
 				if (!this.idChannels.TryGetValue(id, out channel))
@@ -179,8 +187,8 @@ namespace ETModel
 					Log.Error(e);
 				}
 			}
-			
-			this.needStartSendChannel.Clear();
+
+			sendChannel.Clear();
 		}
 	}
 }

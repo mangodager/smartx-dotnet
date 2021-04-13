@@ -24,7 +24,24 @@ namespace ETModel
         {
             networkHttp = this.entity.GetComponent<ComponentNetworkHttp>();
             Log.Info($"HttpRpc http://{networkHttp.ipEndPoint}/");
+            HttpService.ReplaceFunc = ReplaceFunc;
+        }
 
+        public byte[] ReplaceFunc(byte[] RawUrlFileByte, HttpListenerRequest request)
+        {
+            var RawUrlFileText = System.Text.Encoding.UTF8.GetString(RawUrlFileByte);
+
+            RawUrlFileText = RawUrlFileText.Replace("\"http://www.SmartX.com:8004\"", $"\"http://{request.Url.Authority}\"");
+
+            var cons = Entity.Root.GetComponent<Consensus>();
+            if (cons != null)
+            {
+                RawUrlFileText = RawUrlFileText.Replace("\"dsoZAxn4GEiGycq2sFc24CAQn4SRCgDuS\"", $"\"{cons.SatswapFactory}\"");
+                RawUrlFileText = RawUrlFileText.Replace("\"RnnUBgzrzv2z7YrEz5ZhuzVtbkCbspKpV\"", $"\"{cons.ERCSat}\"");
+                RawUrlFileText = RawUrlFileText.Replace("\"SWipqG94LJXXx9E8sYbSpZVa8n5TSUD2B\"", $"\"{cons.PledgeFactory}\"");
+                RawUrlFileText = RawUrlFileText.Replace("\"RXF5eSnpEGNgRsUZdx9t2o5ByB511NzrT\"", $"\"{cons.LockFactory}\"");
+            }
+            return System.Text.Encoding.UTF8.GetBytes(RawUrlFileText);
         }
 
         public void OnHttpMessage(Session session, int opcode, object msg)
@@ -79,8 +96,14 @@ namespace ETModel
                 case "getproperty":
                     OnProperty(httpMessage);
                     break;
+                case "getliquidity":
+                    OnLiquidityOf(httpMessage);
+                    break;
                 case "balanceof":
                     balanceOf(httpMessage);
+                    break;
+                case "callfun":
+                    callFun(httpMessage);
                     break;
                 default:
                     break;
@@ -161,14 +184,23 @@ namespace ETModel
                 case "delblock":
                     DelBlock(httpMessage);
                     break;
+                case "mergechain":
+                    MergeChain(httpMessage);
+                    break;
+                case "dbreset":
+                    onDBReset(httpMessage);
+                    break;
                 case "pool":
                     GetPool(httpMessage);
                     break;
                 case "search":
                     OnSearch(httpMessage);
                     break;
-                case "contract":
-                    OnContract(httpMessage);
+                case "callFun":
+                    callFun(httpMessage);
+                    break;
+                case "outleveldb":
+                    OutLeveldb(httpMessage);
                     break;
                 case "hello":
                     {
@@ -185,6 +217,31 @@ namespace ETModel
             }
 
             //httpMessage.result = "ok";
+        }
+
+        private void OutLeveldb(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "passwords", out string password))
+            {
+                httpMessage.result = "command error! \nexample: wallet password";
+                return;
+            }
+
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                if (!GetParam(httpMessage, "2", "height", out string height))
+                {
+                    httpMessage.result = "command error! \nexample: outleveldb password height filename";
+                    return;
+                }
+                if (!GetParam(httpMessage, "3", "filename", out string filename))
+                {
+                    httpMessage.result = "command error! \nexample: outleveldb password height filename";
+                    return;
+                }
+                LevelDBStore.test_ergodic2(long.Parse(height), filename);
+                httpMessage.result = "导出完成";
+            }
         }
 
         public void OnSearch(HttpMessage httpMessage)
@@ -333,7 +390,8 @@ namespace ETModel
                                         $"             Node: {nodeCount}\n" +
                                         $"    Rule.Transfer: {rule?.GetTransfersCount()}\n" +
                                         $"    Pool.Transfer: {pool?.GetTransfersCount()}\n" +
-                                        $"     NodeSessions: {Program.jdNode["NodeSessions"]}";
+                                        $"     NodeSessions: {Program.jdNode["NodeSessions"]}\n" +
+                                        $"           IsRule: {Entity.Root.GetComponent<Consensus>().IsRule(PoolHeight, address)}";
             }
             else
             if (style == "1")
@@ -464,6 +522,8 @@ namespace ETModel
                         blockSub.addressOut = abc[ii];
                         try
                         {
+                            if (!luaVMEnv.IsERC(dbSnapshot, blockSub.addressOut,"ERC20"))
+                                continue;
                             blockSub.data = "symbol()";
                             rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight,out result);
                             if (rel && result != null && result.Length >= 1)
@@ -473,13 +533,72 @@ namespace ETModel
 
                             blockSub.data = $"balanceOf(\"{address}\")";
                             rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
-                            if (rel && result != null && result.Length >= 1)
+                            if (rel && result != null && result.Length == 1)
                             {
                                 amount = ((string)result[0]) ?? "0";
                                 map.Add(index++.ToString(),$"{symbol}:{amount}:{blockSub.addressOut}");
                             }
                         }
                         catch(Exception)
+                        {
+                        }
+                    }
+                }
+                httpMessage.result = JsonHelper.ToJson(map);
+            }
+        }
+
+
+        public void OnLiquidityOf(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "Address", out string address))
+            {
+                httpMessage.result = "command error! \nexample: GetLiquidity address factory";
+                return;
+            }
+
+            if (!GetParam(httpMessage, "2", "Factory", out string factory))
+            {
+                httpMessage.result = "command error! \nexample: GetLiquidity address factory";
+                return;
+            }
+
+            if (!GetParam(httpMessage, "3", "Pair", out string pair))
+            {
+                httpMessage.result = "command error! \nexample: GetLiquidity address factory pair";
+                return;
+            }
+
+            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                var map = new Dictionary<string, string>();
+
+                var abc = dbSnapshot.ABC.Get(address);
+                var blockSub = new BlockSub();
+                var index = 1;
+                if (abc != null)
+                {
+                    var consensus = Entity.Root.GetComponent<Consensus>();
+                    var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+                    object[] result = null;
+                    bool rel;
+                    for (int ii = 0; ii < abc.Count; ii++)
+                    {
+                        blockSub.addressIn = address;
+                        blockSub.addressOut = abc[ii];
+                        try
+                        {
+                            if (!luaVMEnv.IsERC(dbSnapshot, blockSub.addressOut, pair))
+                                continue;
+
+                            blockSub.data = $"liquidityOf(\"{address}\",\"{factory}\")";
+                            rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
+                            if (rel && result != null && result.Length >= 1)
+                            {
+                                map.Add(index++.ToString(), JsonHelper.ToJson(result));
+                            }
+                        }
+                        catch (Exception)
                         {
                         }
                     }
@@ -702,75 +821,60 @@ namespace ETModel
             {
                 var transfer = dbSnapshot.Transfers.Get(hash);
                 if (transfer != null)
+                {
                     httpMessage.result = JsonHelper.ToJson(transfer);
+                }
                 else
                     httpMessage.result = "";
             }
         }
 
-        public void OnContract(HttpMessage httpMessage)
+        public void callFun(HttpMessage httpMessage)
         {
             httpMessage.result = "command error! \nexample: contract consAddress callFun";
             GetParam(httpMessage, "1", "consAddress", out string consAddress);
-            GetParam(httpMessage, "1", "depend", out string depend);
-            if (!GetParam(httpMessage, "2", "callFun", out string callFun))
+            if (!GetParam(httpMessage, "2", "data", out string data))
             {
                 return;
             }
+            data = System.Web.HttpUtility.UrlDecode(data);
 
             WalletKey key = Wallet.GetWallet().GetCurWallet();
             var sender = key.ToAddress();
 
-            if (callFun.IndexOf("create(")!=-1)
+            using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
             {
                 var consensus = Entity.Root.GetComponent<Consensus>();
-                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+                var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
 
-                long notice = 1;
-                using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+                var blockSub = new BlockSub();
+                blockSub.addressIn  = sender;
+                blockSub.addressOut = consAddress;
+                blockSub.data       = data;
+
+                try
                 {
-                    var account = dbSnapshot.Accounts.Get(sender);
-                    if (account != null)
+                    if (luaVMEnv.IsERC(dbSnapshot, consAddress, ""))
                     {
-                        notice = account.nonce + 1;
+                        bool rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out object[] result);
+                        if (rel)
+                        {
+                            if (result != null)
+                            {
+                                if (result.Length == 1)
+                                    httpMessage.result = JsonHelper.ToJson(result[0]);
+                                else
+                                    httpMessage.result = JsonHelper.ToJson(result);
+                            }
+                        }
+                        else
+                        {
+                            httpMessage.result = "error";
+                        }
                     }
                 }
-
-                BlockSub transfer   = new BlockSub();
-                transfer.addressIn  = sender;
-                transfer.addressOut = null;
-                transfer.amount = "0";
-                transfer.nonce  = notice;
-                transfer.type   = "contract";
-                transfer.depend = depend;
-                transfer.data   = callFun;
-                var luaVMCall = LuaVMCall.Decode(transfer.data);
-                Log.Info(JsonHelper.ToJson(luaVMCall));
-
-                //transfer.timestamp = TimeHelper.Now();
-                //transfer.hash = transfer.ToHash();
-                //transfer.sign = transfer.ToSign(key);
-
-                //var rel = Entity.Root.GetComponent<Rule>().AddTransfer(transfer);
-                //if (rel == -1)
-                //{
-                //    OnTransferAsync(transfer);
-                //}
-                //httpMessage.result = $"accepted transfer:{transfer.hash}";
-            }
-            else
-            {
-                using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+                catch(Exception)
                 {
-                    var consensus = Entity.Root.GetComponent<Consensus>();
-                    var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
-
-                    var blockSub = new BlockSub();
-                    blockSub.addressIn = sender;
-                    blockSub.addressOut = consAddress;
-                    blockSub.data = callFun;
-                    bool rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight,out object[] result);
-                    httpMessage.result = JsonHelper.ToJson(result);
                 }
             }
         }
@@ -864,7 +968,15 @@ namespace ETModel
 
         public void Test(HttpMessage httpMessage)
         {
-            if (!GetParam(httpMessage, "1", "style", out string style))
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                httpMessage.result = "command error! \nexample: test 1 Address C:\\Address.csv";
+                return;
+            }
+            if (!Wallet.GetWallet().IsPassword(password))
+                return;
+
+            if (!GetParam(httpMessage, "2", "style", out string style))
             {
                 httpMessage.result = "command error! \nexample: test 1 Address C:\\Address.csv";
                 return;
@@ -873,12 +985,12 @@ namespace ETModel
             httpMessage.result = "";
             if (style == "1")
             {
-                if (!GetParam(httpMessage, "2", "Address", out string Address))
+                if (!GetParam(httpMessage, "3", "Address", out string Address))
                 {
                     httpMessage.result = "command error! \nexample: test 1 Address C:\\Address.csv";
                     return;
                 }
-                if (!GetParam(httpMessage, "3", "file", out string file))
+                if (!GetParam(httpMessage, "4", "file", out string file))
                 {
                     httpMessage.result = "command error! \nexample: test 1 Address C:\\Address.csv";
                     return;
@@ -907,12 +1019,12 @@ namespace ETModel
             else
             if (style == "5")
             {
-                if (!GetParam(httpMessage, "2", "Address", out string Address))
+                if (!GetParam(httpMessage, "3", "Address", out string Address))
                 {
                     httpMessage.result = "command error! \nexample: test 5 Address C:\\Address.csv";
                     return;
                 }
-                if (!GetParam(httpMessage, "3", "file", out string file))
+                if (!GetParam(httpMessage, "4", "file", out string file))
                 {
                     httpMessage.result = "command error! \nexample: test 5 Address C:\\Address.csv";
                     return;
@@ -932,21 +1044,29 @@ namespace ETModel
         public void DelBlock(HttpMessage httpMessage)
         {
             httpMessage.result = "";
-            if (!GetParam(httpMessage, "1", "from", out string from))
+            if (!GetParam(httpMessage, "1", "password", out string password))
             {
-                httpMessage.result = "command error! \nexample: DelBlock 100 1";
+                httpMessage.result = "command error! \nexample: mergechain 123 100 1";
                 return;
             }
-            if (!GetParam(httpMessage, "2", "to", out string to))
+            if (!GetParam(httpMessage, "2", "from", out string from))
             {
-                httpMessage.result = "command error! \nexample: DelBlock 1 100 ";
+                httpMessage.result = "command error! \nexample: mergechain 123 100 1";
+                return;
+            }
+            if (!GetParam(httpMessage, "3", "to", out string to))
+            {
+                httpMessage.result = "command error! \nexample: mergechain 123 1 100 ";
                 return;
             }
 
-            DelBlock_max = Math.Max(long.Parse(from), long.Parse(to));
-            DelBlock_min = Math.Min(long.Parse(from), long.Parse(to));
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                DelBlock_max = Math.Max(long.Parse(from), long.Parse(to));
+                DelBlock_min = Math.Min(long.Parse(from), long.Parse(to));
 
-            Entity.Root.GetComponent<Consensus>().AddRunAction(DelBlockAsync);
+                Entity.Root.GetComponent<Consensus>().AddRunAction(DelBlockAsync);
+            }
         }
 
         public void DelBlockAsync()
@@ -954,7 +1074,7 @@ namespace ETModel
             long max = DelBlock_max;
             long min = DelBlock_min;
 
-            Log.Info($"DelBlock {min} {max}");
+            Log.Info($"mergechain {min} {max}");
 
             Entity.Root.GetComponent<Consensus>().transferHeight = min;
             Entity.Root.GetComponent<LevelDBStore>().UndoTransfers(min);
@@ -963,7 +1083,40 @@ namespace ETModel
                 Entity.Root.GetComponent<BlockMgr>().DelBlock(ii);
             }
 
-            Log.Info("DelBlock finish");
+            Log.Info("mergechain finish");
+        }
+
+        public void MergeChain(HttpMessage httpMessage)
+        {
+            httpMessage.result = "";
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                httpMessage.result = "command error! \nexample: MergeChain password";
+                return;
+            }
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                Log.Info("MergeChain");
+                DelBlock_min = Entity.Root.GetComponent<Consensus>().transferHeight - 6;
+                DelBlock_max = DelBlock_min + 13;
+
+                Entity.Root.GetComponent<Consensus>().AddRunAction(DelBlockAsync);
+            }
+        }
+
+        public void onDBReset(HttpMessage httpMessage)
+        {
+            httpMessage.result = "";
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                httpMessage.result = "command error! \nexample: DBReset password";
+                return;
+            }
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                Log.Info("LevelDBStore.Reset");
+                Entity.Root.GetComponent<LevelDBStore>().Reset();
+            }
         }
 
         Dictionary<string, long> AccountNotice = new Dictionary<string, long>();

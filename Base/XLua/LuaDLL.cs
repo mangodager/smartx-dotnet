@@ -36,7 +36,8 @@ namespace XLua.LuaDLL
 #if (UNITY_IPHONE || UNITY_WEBGL || UNITY_SWITCH) && !UNITY_EDITOR
         const string LUADLL = "__Internal";
 #else
-        const string LUADLL = "xlua";
+        //const string LUADLL = "libxlua.so";
+        const string LUADLL = "XLua.dll";        
 #endif
 
         [DllImport(LUADLL, CallingConvention = CallingConvention.Cdecl)]

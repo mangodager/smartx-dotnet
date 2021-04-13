@@ -63,6 +63,7 @@
     <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
+    <script src='js/bignumber.min.js'></script>
     <script type="text/javascript" src="js/crypto-js.js"></script>
     <script src="js/aes256.min.js"></script>
     <script src='js/forge-sha256.min.js'></script>
@@ -72,7 +73,6 @@
     <script src='js/Login.js'></script>
     <script type="text/javascript" src="js/qrcode.min.js"></script>
     <script src="js/reqrcode.js"></script>
-    <script src='js/bignumber.min.js'></script>
 
     <div class="container">
 
@@ -86,7 +86,7 @@
                     data-content="地址已复制到剪切板">
                 复制地址
             </button>
-            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#ModalExport">导出</button>
+            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#ModalLock">发起锁仓</button>
             &nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()">清空交易</button>
 
         </div>
@@ -138,8 +138,14 @@
 
     </div>
 
-    <footer class="navbar-fixed-bottom navbar-inverse">
-        <div class="row nav_box">
+    <footer class="navbar-fixed-bottom ">
+        <center>
+            <div style="width:50%;height:100%;overflow-x:auto;">
+                <table class="table table-hover" id="statusbar" style='background:#ffffff'>
+                </table>
+            </div>
+        </center>
+        <div class="row nav_box navbar-inverse">
             <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
             <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
             <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
@@ -168,7 +174,7 @@
                     <p>
                         <label for="title">转账金额:</label>
                         <input type="text" id="input_amount" name="amount" align="left">
-                        <label for="title" id="tokenname" ></label>
+                        <label for="title" id="tokenname"></label>
                     </p>
                     <p>
                         <label for="username">转入地址:</label>
@@ -184,7 +190,7 @@
                     </p>
                     <p>
                         <label for="username">矿工费:</label>
-                        <input type="text" id="gas" name="gas" align="left" value="0" disabled="disabled">
+                        <input type="text" id="gas" name="gas" align="left" value="0.002" disabled="disabled">
                     </p>
                 </fieldset>
 
@@ -194,39 +200,6 @@
                     </button>
                     <button type="button" class="btn btn-primary" onclick="onTransferSubmit('ModalTransfer')">
                         提交
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="TransferInfo" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="TransferInfoLabel" aria-hidden="true" style="top:10%">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                        ×
-                    </button>
-                    <h4 class="modal-title" id="myModalLabel">
-                        Transfer
-                    </h4>
-                </div>
-                <div style="width:100%;height:100%;overflow-x:auto;">
-                    <table class="table table-hover" id="TransferInfoTable">
-                        <thead id="thead_mytable111">
-                            <tr>
-                                <th>key</th>
-                                <th>value</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="liOnTransferInfoDelete()">
-                        删除
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="liOnTransferInfoLeave()">
-                        离开
                     </button>
                 </div>
             </div>
@@ -290,8 +263,7 @@
                     </p>
                 </fieldset>
                 <input type="text" id="scan_nonce" align="left" style="display:none">
-                <input type="text" id="scan_depend" align="left" style="display:none">
-                <input type="text" id="scan_remarks" align="left" style="display:none">
+                <input type="text" id="scan_remarks" align="left">
 
                 <h4></h4>
                 <div class="modal-footer">
@@ -303,63 +275,75 @@
         </div>
     </div>
 
-    <div class="modal fade" id="ModalExport" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalExportLabel" aria-hidden="true">
+    <div class="modal fade" id="ModalLock" tabindex="-1" role="dialog" aria-labelledby="ModalTransferLabel" aria-hidden="true" onload="onTransferLoad()">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="myModalLabel">
-                        导出Keystore
-                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h5 class="modal-title" id="myModalLabel">
+                        正在申请交易
+                    </h5>
                 </div>
-                <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">输密码</span>
-                    <input type="password" class="form-control" id="ModalExportText" aria-describedby="basic-addon3" onchange="OnExportChange()">
-                </div>
+
+                <fieldset>
+                    <p> </p>
+                    <p>
+                        <label for="title">转出地址:</label>
+                        <input type="text" id="input_addressIn" name="addressIn" align="left" disabled="disabled">
+                    </p>
+                    <p>
+                        <label for="title">转账金额:</label>
+                        <input type="text" id="input_amount" name="amount" align="left">
+                        <label for="title" id="tokenname"></label>
+                    </p>
+                    <p>
+                        <label for="username">转入地址:</label>
+                        <input type="text" id="input_addressOut" name="addressOut" align="left">
+                    </p>
+                    <p>
+                        <label for="username">锁仓时间:</label>
+                        <input type="text" id="input_LockTime" name="lockTime" align="left">
+                        <label for="username" id="LockTimeUnit">小时数</label>
+                    </p>
+                    <p>
+                        <label for="username">锁仓名称:</label>
+                        <input type="text" id="input_LockName" name="lockName" align="left">
+                    </p>
+                    <p>
+                        <label for="username">nonce:</label>
+                        <input type="text" id="input_nonce" name="nonce" align="left">
+                    </p>
+                    <p>
+                        <label for="username">矿工费:</label>
+                        <input type="text" id="gas" name="gas" align="left" value="0.002" disabled="disabled">
+                    </p>
+                </fieldset>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="OnExportLeave()">
-                        导出
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="onLockSubmit('ModalLock')">
+                        提交
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-
     <script>
-        setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+        //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
 
         if (Login.LoadPassword() == null)
             window.location.href = "index.html";
-
-        function OnExportChange() {
-        };
-
-        function OnExportLeave(e) {
-            $("#MnemonicWord").val("");
-            var password = $("#ModalExportText").val();
-            if (Login.checkPassword(password)) {
-                var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
-                var MnemonicWord = Wallet.GetMnemonicWord(addressKeyPair);
-
-                var encrypted = AES256.encrypt(MnemonicWord, password);// Encrypt
-                var jsonObj = { version: 101, curIndex: 0, accounts: [{ address: addressCur, encrypted: encrypted }] };
-                var jsonStr = JSON.stringify(jsonObj);
-
-                Helper.funDownload(jsonStr, "Smart-Wallet.json");
-                $("#MnemonicWord").val("");
-                $("#ModalExport").modal('hide');
-            }
-            else
-            {
-                alert("密码错误!");
-            }
-        }
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
 
             if (text != "") {
-                ShowTransfer(text)
+                Helper.ShowTransfer(text)
             }
         }
 
@@ -391,13 +375,13 @@
 
         var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
         var platform = Helper.checkPlatform();
-        var colorindex = 1
+        var colorindex = 1;
 
-        var addressCur   = getQueryVariable("address");
+        var addressCur = getQueryVariable("address");
         var tokenAddress = getQueryVariable("token");
-        var symbol       = getQueryVariable("symbol");
-        var amountCur    = 0;
-        var nonceCur     = 0;
+        var symbol = getQueryVariable("symbol");
+        var amountCur = 0;
+        var nonceCur = 0;
         // show address
         var element = document.getElementById("address");
         element.innerHTML = " 余额: " + amountCur;
@@ -408,10 +392,20 @@
                 //var element = document.getElementById("myModalLabel");
                 //element.innerHTML = "转出地址: " + addressCur;
                 locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
-                $('#input_addressIn').val(addressCur);
-                $('#input_nonce').val(nonceCur);
-                document.getElementById("tokenname").innerHTML = symbol;
+                $("#ModalTransfer #input_addressIn").val(addressCur);
+                $('#ModalTransfer #input_nonce').val(nonceCur);
+                $('#ModalTransfer #tokenname')[0].innerHTML = symbol;
             })
+
+            $('#ModalLock').on('show.bs.modal', function () {
+                //var element = document.getElementById("myModalLabel");
+                //element.innerHTML = "转出地址: " + addressCur;
+                locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
+                $("#ModalLock #input_addressIn").val(addressCur);
+                $('#ModalLock #input_nonce').val(nonceCur);
+                $('#ModalLock #tokenname')[0].innerHTML = symbol;
+            })
+
         });
 
         // 复制到剪切板
@@ -451,24 +445,29 @@
         }
 
         function onTransferSubmit(e) {
-            if (tokenAddress != null && tokenAddress!="") {
-                var amount = new BigNumber((new BigNumber($('#input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
+            if (tokenAddress != null && tokenAddress != "") {
+                var amount = new BigNumber((new BigNumber($('#ModalTransfer #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
                 var addressOut = tokenAddress;
-                var data = "transfer(\"" + $('#input_addressOut').val() + "\",\"" + amount.toString() +"\")";
-                var nonce = parseInt($('#input_nonce').val());
-                var remarks = $('#input_remarks').val();
-                if (CheckTransfer(amount, addressOut, "", remarks, nonce))
-                    Helper.SendTransferSubmit(e, "contract", "", addressOut, data, "", nonce, remarks);
+                var data = "transfer(\"" + $('#ModalTransfer #input_addressOut').val() + "\",\"" + amount.toString() + "\")";
+                var nonce = parseInt($('#ModalTransfer #input_nonce').val());
+                var remarks = $('#ModalTransfer #input_remarks').val();
+                if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
+                    var hash = Helper.SendTransferSubmit(e, "contract", "", addressOut, data, "", nonce, remarks);
+                    Helper.Statusbar("statusbar", hash, "", "合约交易: " + $('#ModalTransfer #input_addressOut').val() + " 转出: " + Helper.Fix(amount), 1, nonceCur);
+                    Helper.MessageBox('交易已提交');
+                }
             }
             else {
-                var amount = new BigNumber((new BigNumber($('#input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
-                var addressOut = $('#input_addressOut').val();
-                var remarks = $('#input_remarks').val();
-                var nonce = parseInt($('#input_nonce').val());
+                var amount = new BigNumber((new BigNumber($('#ModalTransfer #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
+                var addressOut = $('#ModalTransfer #input_addressOut').val();
+                var remarks = $('#ModalTransfer #input_remarks').val();
+                var nonce = parseInt($('#ModalTransfer #input_nonce').val());
 
-                if (CheckTransfer(amount, addressOut, "", remarks, nonce))
-                    Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
-
+                if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
+                    var hash = Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
+                    Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonceCur);
+                    Helper.MessageBox('交易已提交');
+                }
             }
 
         };
@@ -476,10 +475,6 @@
         function CheckTransfer(amount, addressOut, nonce, depend, remarks) {
             if (addressOut == "") {
                 alert('addressOut Can not be empty');
-                return false;
-            }
-            if ($('#input_amount').val() == "") {
-                alert('amount Can not be empty');
                 return false;
             }
             if (amount.isLessThanOrEqualTo(0)) {
@@ -499,7 +494,6 @@
 
         var transferIndex = 0;
         function onTransferInit() {
-            colorindex = 1;
 
             $.ajax({
                 url: Helper.GetServerIP() + "/GetTransfers",
@@ -507,7 +501,7 @@
                 type: "get",
                 data: { address: addressCur, index: transferIndex, token: tokenAddress },
                 success: function (data) {
-
+                    colorindex = 1;
                     // 删除之前的数据
                     var mytableEle = document.getElementById("mytable");
                     for (var i = mytableEle.children.length - 1; i >= 0; i--) {
@@ -523,7 +517,7 @@
 
                         var hash = jsonObj[key]["hash"];
 
-                        var color  = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                        var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
                         var amount = GetAmountFormat(jsonObj[key]);
 
                         Helper.TableInsert2("mytable", hash, color, Helper.Simplify(hash, platform), amount)
@@ -575,7 +569,7 @@
         function onTransferWaitInit() {
             colorindex = 1;
             var count = Helper.GetTransferCount(addressCur + tokenAddress);
-            for (var index = 1; index <= count; index++) {
+            for (var index = count; index >= 1; index--) {
                 var str = Helper.LoadTransfer(addressCur + tokenAddress, index);
                 var jsonObj = JSON.parse(str);
                 if (jsonObj == null)
@@ -602,84 +596,9 @@
             }
         };
 
-        var curshottransferHash = "";
-        function ShowTransfer(text) {
-            if (text != "") {
-                $.ajax({
-                    url: Helper.GetServerIP() + "/TransferState",
-                    dataType: "text",
-                    type: "get",
-                    data: { hash: text },
-                    success: function (data) {
-                        if (data != "") {
-                            // 删除之前的数据
-                            var mytableEle = document.getElementById("TransferInfoTable");
-                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
-                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
-                                    mytableEle.children[i].remove();
-                            }
-
-                            var jsonObj = JSON.parse(data);
-                            for (var key in jsonObj) {
-                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                                if (key != "linksblk" && key != "linkstran") {
-                                    Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
-                                }
-                            }
-                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                            Helper.TableInsert("TransferInfoTable", "state", color, "状态", "交易已完成")
-
-                            curshottransferHash = text;
-                            $("#TransferInfo").modal('show');
-                        }
-                        else {
-                            // transferWait
-                            str = Helper.GetTransfer(addressCur + tokenAddress, text);
-                            var jsonObj = JSON.parse(str);
-
-                            // 删除之前的数据
-                            var mytableEle = document.getElementById("TransferInfoTable");
-                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
-                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
-                                    mytableEle.children[i].remove();
-                            }
-
-                            for (var key in jsonObj) {
-                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                                if (key != "linksblk" && key != "linkstran") {
-                                    Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
-                                }
-                            }
-
-                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                            Helper.TableInsert("TransferInfoTable", "state", color, "状态", "交易未确认")
-                            curshottransferHash = text;
-                            $("#TransferInfo").modal('show');
-                        }
-                    },
-                    error: function (err) {
-                        alert("网络连接错误!");
-                    }
-                });
-            }
-        };
-
         function liOnclick(e) {
             //alert(e.id);
-            ShowTransfer(e.id)
-        };
-
-        function liOnTransferInfoLeave(e) {
-            $("#TransferInfo").modal('hide');
-        };
-
-        // 删除处理中的交易
-        function liOnTransferInfoDelete(e) {
-            if (curshottransferHash != "") {
-                Helper.DelTransfer(addressCur + tokenAddress, curshottransferHash)
-                curshottransferHash = "";
-                window.location.href = window.location.href;
-            }
+            Helper.ShowTransfer(e.id)
         };
 
         function liOnModalQRCodeLeave(e) {
@@ -755,8 +674,11 @@
             var remarks = $('#scan_remarks').val();
             var nonce = parseInt($('#scan_nonce').val());
 
-            if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
-                Helper.SendTransferSubmit(e, "transfer",amount.toString(), addressOut, remarks, depend, nonce);
+            if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
+                var hash = Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
+                Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonceCur);
+                Helper.MessageBox('交易已提交');
+            }
         }
 
         function OnRefreshAmount() {
@@ -771,16 +693,64 @@
                     var nonce = parseInt(jsonObj["nonce"]);
 
                     var element = document.getElementById("address");
-                    element.innerHTML = symbol +" : " + amount;
+                    element.innerHTML = symbol + " : " + amount;
                     amountCur = amount;
                     nonceCur = nonce + 1;
                 },
                 error: function (err) {
                 }
             });
+            setTimeout(function () { OnRefreshAmount(); }, 5000);
         }
         OnRefreshAmount();
 
+        function liOnSatswap() {
+            window.location.href = "Satswap.html?address=" + addressCur + "&symbol=" + symbol + "&token=" + tokenAddress;
+        };
+
+        function onLockSubmit(e) {
+            var lockTime = parseInt($('#ModalLock #input_LockTime').val());
+            if (typeof (lockTime) != 'number'){
+                alert("LockTime must be a Number");
+                return;
+            }
+
+            var lockHeight = lockTime * 4 * 60;
+            if (typeof (lockHeight) != 'number') {
+                alert("LockTime must be a Number");
+                return;
+            }
+
+            var input_nonce      = parseInt($('#ModalLock #input_nonce').val());
+            var input_amount     = new BigNumber((new BigNumber($('#ModalLock #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN));
+            var input_tokenA     = tokenAddress != "" ? tokenAddress : Helper.ERCSat();
+            var input_LockName   = $('#ModalLock #input_LockName').val();
+            var input_addressOut = $('#ModalLock #input_addressOut').val();
+
+            if (input_LockName.indexOf(" ") != -1 || input_LockName.indexOf("   ") != -1) {
+                alert("LockName No spaces or tabs are allowed");
+                return;
+            }
+
+            if (CheckTransfer(input_amount, input_addressOut, input_nonce, "", input_LockName))
+            {
+                let addressOut = Helper.LockFactory();
+                let data = Helper.StringFormat("approve(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\")", input_addressOut, input_tokenA, input_amount, lockHeight, input_LockName);
+                let depend = '';
+                let remarks = '';
+
+                console.log(addressCur + ' ' + data);
+
+                var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, input_nonce, remarks);
+
+                $("#ModalLock").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", "发起锁仓: " + input_addressOut + " 序号: " + lockHeight, 1, input_nonce);
+
+                Helper.MessageBox('发起锁仓已提交');
+            }
+        }
+
+        Helper.Statusbar();
 
 
     </script>

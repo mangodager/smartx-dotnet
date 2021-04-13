@@ -11,7 +11,7 @@ namespace ETModel
 		/// <returns></returns>
 		public static long ClientNow()
 		{
-			return (DateTime.Now.Ticks - epoch) / 10000;
+			return (DateTime.UtcNow.Ticks - epoch) / 10000;
 		}
 
 		public static long NowSeconds()
@@ -21,12 +21,12 @@ namespace ETModel
 
 		public static long Now()
 		{
-            return (DateTime.Now.Ticks - epoch) / 10000;
+            return (DateTime.UtcNow.Ticks - epoch) / 10000;
         }
 
 		public static long NowTicks()
 		{
-            return (DateTime.Now.Ticks - epoch);
+            return (DateTime.UtcNow.Ticks - epoch);
         }
 
         static long startTime = 0;

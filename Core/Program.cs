@@ -47,6 +47,20 @@ namespace ETModel
                 return;
             }
 
+            //// DAG 创建测试
+            //char[] dag = new char[1024*1024*10];
+            //var hash = CryptoHelper.Sha256("sat dag");
+            //var count = dag.Length / hash.Length;
+            //int dagIndex = 0;
+            //for (int ii = 0; ii < count; ii++)
+            //{
+            //    hash = CryptoHelper.Sha256(hash);
+            //    for (int jj = 0; jj < hash.Length; jj++)
+            //    {
+            //        dag[dagIndex++] = hash[jj];
+            //    }
+            //}
+
             //BigHelper.Test();
             //return;
 
@@ -195,7 +209,7 @@ namespace ETModel
 
                     Thread.Sleep(1);
 
-                    lock (Entity.Root)
+                    //lock (Entity.Root)
                     {
                         OneThreadSynchronizationContext.Instance.Update();
                         Entity.Root.Update();

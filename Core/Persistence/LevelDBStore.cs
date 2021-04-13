@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using LevelDB;
 using MongoDB.Bson.Serialization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace ETModel
@@ -12,10 +14,11 @@ namespace ETModel
         private DB db;
         public DbCache<Block> Blocks;
         public DbCache<List<string>> Heights;
+        public string db_path;
 
         public override void Awake(JToken jd = null)
         {
-            string db_path = jd["db_path"]?.ToString();
+            db_path = jd["db_path"]?.ToString();
             var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), db_path);
             Init(DatabasePath);
         }
@@ -23,6 +26,23 @@ namespace ETModel
         public override void Start()
         {
 
+        }
+
+        public void Reset()
+        {
+            var temp = db;
+            lock (temp)
+            {
+                var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), db_path);
+                Init(DatabasePath);
+            }
+
+            System.Threading.Thread.Sleep(3000);
+
+            lock (temp)
+            {
+                temp?.Dispose();
+            }
         }
 
         public override void Dispose()
@@ -475,6 +495,80 @@ namespace ETModel
             }
         }
 
+        static public string StortJson(string json)
+        {
+            var dic = JsonConvert.DeserializeObject<SortedDictionary<string, object>>(json);
+            SortedDictionary<string, object> keyValues = new SortedDictionary<string, object>(dic);
+            keyValues.OrderBy(m => m.Key);//升序 把Key换成Value 就是对Value进行排序
+                                          //keyValues.OrderByDescending(m => m.Key);//降序
+            return JsonConvert.SerializeObject(keyValues);
+        }
+
+        static public void test_ergodic2(long height, string filename)
+        {
+            // 
+            //DBTests tests = new DBTests();
+            //tests.SetUp();
+            //tests.Snapshot();
+            //var tempPath = System.IO.Directory.GetCurrentDirectory();
+            //var randName = "Data\\LevelDB1";
+            //var DatabasePath = System.IO.Path.Combine(tempPath, randName);
+            //LevelDBStore dbstore = new LevelDBStore().Init(DatabasePath);
+            LevelDBStore dbstore = Entity.Root.GetComponent<LevelDBStore>();
+            // Create new iterator
+            lock (dbstore.db)
+            {
+                dbstore.UndoTransfers(height);
+                using (var it = dbstore.db.CreateIterator())
+                {
+                    File.Delete("./" + filename + ".csv");
+                    var NodeData  = new NodeManager.NodeData();
+                    File.AppendAllText("./" + filename + ".csv", "height："+ height+"版本："+NodeData.version + "\n");
+                    // Iterate in reverse to print the values as strings
+                    for (it.SeekToFirst(); it.IsValid(); it.Next())
+                    {
+                        //Log.Info($"Value as string: {it.KeyAsString()}");
+                        if ((!it.KeyAsString().Contains("undo")) && (!it.KeyAsString().Contains("Undo")))
+                        {
+                            if (it.KeyAsString().IndexOf("Accounts___") == 0)
+                            {
+                                try
+                                {
+                                    Console.WriteLine($"Value as string: {it.ValueAsString()}");
+                                    Dictionary<string, Dictionary<string, object>> kv = JsonHelper.FromJson<Dictionary<string, Dictionary<string, object>>>(it.ValueAsString());
+                                    //all += long.Parse(kv["obj"]["amount"].ToString());
+                                    File.AppendAllText("./" + filename + ".csv", kv["obj"]["address"].ToString() + "," + kv["obj"]["amount"].ToString() + "\n");
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(it.KeyAsString());
+                                    Console.WriteLine($"出错了: {it.ValueAsString()}");
+                                    Console.WriteLine(e.Message);
+                                    break;
+                                }
+                            }
+                            else
+                            if (it.KeyAsString().Contains("Storages"))
+                            {
+                                var kv = JsonHelper.FromJson<Dictionary<string, Dictionary<string, byte[]>>>(it.ValueAsString());
+                                var json = StortJson(kv["obj"]["jsonData"].ToStr());
+
+                                Console.WriteLine(it.KeyAsString() + ":" + json);
+
+                                File.AppendAllText("./" + filename + ".csv", it.KeyAsString().Replace("Storages___", "") + "," + CryptoHelper.Sha256(json) + "\n");
+                            }
+                            else
+                            if (it.KeyAsString().Contains("StgMap"))
+                            {
+                                Console.WriteLine($"Value as string: {it.ValueAsString()}");
+                                File.AppendAllText("./" + filename + ".csv", $"{it.KeyAsString()},{it.ValueAsString()}\n");
+                            }
+                        }
+                    }
+                    //Console.WriteLine("导出完成");
+                }
+            }
+        }
 
     }
 }

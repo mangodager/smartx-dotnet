@@ -72,8 +72,12 @@ namespace ETModel
         public static string GetFileData(string file)
         {
             StreamReader streamReader = File.OpenText(file);
-            return streamReader.ReadToEnd();
-        }
+			var str = streamReader.ReadToEnd();
+			streamReader.Close();
+			streamReader.Dispose();
+			return str;
+
+		}
 
 	}
 }

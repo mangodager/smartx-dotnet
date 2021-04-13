@@ -71,7 +71,8 @@ namespace ETModel
                 {
                     if (timePassInfo.IsPassSet())
                     {
-                        string hash = CryptoHelper.Sha256(hashmining + random);
+                        //string hash = CryptoHelper.Sha256(hashmining + random);
+                        string hash = BlockDag.ToHash(height, hashmining, random);
                         Log.Info($"\n height:{height}, taskid:{taskid}, random:{random}, diff:{diff_max}, power:{calculatePower.GetPower()} hash:{hash}");
                     }
 
@@ -112,7 +113,7 @@ namespace ETModel
                             if (temphash == null || temphash == "" || temphash != hashmining)
                             {
                                 if (diff_max!=0)
-                                    calculatePower.Insert(diff_max);
+                                    calculatePower.InsertPower(CalculatePower.Power(diff_max));
 
                                 diff_max = 0;
                                 hashmining = temphash;
@@ -141,15 +142,16 @@ namespace ETModel
                 if (This.hashmining != "")
                 {
                     string randomTemp;
-                    if (This.taskid != "")
-                        randomTemp = This.taskid + System.Guid.NewGuid().ToString("N").Substring(0, 13);
-                    else
+                    //if (This.taskid != "")
+                    //    randomTemp = This.taskid + System.Guid.NewGuid().ToString("N").Substring(0, 13);
+                    //else
                         randomTemp = System.Guid.NewGuid().ToString("N").Substring(0, 16);
 
                     if (randomTemp == "0")
                         Log.Debug("random==\"0\"");
 
-                    string hash = CryptoHelper.Sha256(This.hashmining + randomTemp);
+                    //string hash = CryptoHelper.Sha256(This.hashmining + randomTemp);
+                    string hash = BlockDag.ToHash(This.height, This.hashmining, randomTemp);
 
                     double diff = Helper.GetDiff(hash);
                     if (diff > This.diff_max)

@@ -1,4 +1,4 @@
-
+﻿
 Storages = {}
 Storages.Rules = {}
 
@@ -29,7 +29,20 @@ function sort(a,b)
 end
 
 function add()
-	if biglib.Less(lualib.GetAmount(sender) , "1000000") then
+	local data = string.format("getPair(\"%s\")",sender);
+	local contract = lualib.Call(lualib.PledgeFactory(),data);
+
+	local Address  = sender;
+	if contract ~= nil and contract[0] ~= nil then
+		Address  = contract[0];
+		contract = contract[0]; 
+	else
+		contract = nil;
+	end
+
+	lualib.Assert( Address ~= sender, "No Find Pledge Contract");
+
+	if biglib.Less(lualib.GetAmount(Address) , "3000000") then
 		return
 	end
 
@@ -44,58 +57,22 @@ function add()
 	-- else add
 	if find == false then
 		local Rule = {}
-		Rule.Address = sender
-		Rule.Start   = curHeight + 10
-		Rule.End     = -1
-		Rule.LBH     = curHeight
+		Rule.Address  = sender
+		Rule.Contract = contract
+		Rule.Start    = curHeight + 10
+		Rule.End      = -1
+		Rule.LBH      = curHeight
 		table.insert(Storages.Rules,Rule)
 	end
 
 end
 
-
-function update_1_5_2()
-	-- delete height out
-	for i = #Storages.Rules , 1 , -1 do
-		if Storages.Rules[i].End ~= -1 and Storages.Rules[i].End < curHeight then
-			table.remove(Storages.Rules,i)
-		end
+function RuleAddress(Rule)
+	if Rule.Contract ~= nil and Rule.Contract ~= "" then
+		return Rule.Contract;
+	else
+		return Rule.Address;
 	end
-
-	-- updata and check amount
-	for i=1,#Storages.Rules do
-		Storages.Rules[i].Amount = lualib.GetAmount(Storages.Rules[i].Address)
-	end
-
-	table.sort(Storages.Rules,sort)
-
-	for i=1,25 do
-		if Storages.Rules[i] == nil then
-			break;
-		end
-		if biglib.Less(Storages.Rules[i].Amount , "1000000") and Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
-			Storages.Rules[i].End = curHeight + 10
-		end
-		if biglib.Greater(Storages.Rules[i].Amount , "1000000",true) and Storages.Rules[i].End ~= -1 then
-			Storages.Rules[i].End = -1
-		end
-		if lualib.IsRuleOnline(curHeight,Storages.Rules[i].Address) then
-			Storages.Rules[i].LBH = curHeight - 1
-		end
-		if curHeight - Storages.Rules[i].LBH > 120 and Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
-			Storages.Rules[i].End = curHeight + 10
-		end
-
-	end
-
-	-- kickout the last
-	for i=26,#Storages.Rules do
-		if Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
-			Storages.Rules[i].End = curHeight + 10
-		end
-	end
-
-
 end
 
 function update_1_5_3()
@@ -109,7 +86,7 @@ function update_1_5_3()
 
 	-- updata and check amount
 	for i=1,#Storages.Rules do
-		Storages.Rules[i].Amount = lualib.GetAmount(Storages.Rules[i].Address)
+		Storages.Rules[i].Amount = lualib.GetAmount(RuleAddress(Storages.Rules[i]))
 	end
 
 	table.sort(Storages.Rules,sort)
@@ -122,7 +99,7 @@ function update_1_5_3()
 			Storages.Rules[i].LBH = curHeight - 1
 		end
 		if Storages.Rules[i].End == -1 and Storages.Rules[i].Address ~= Storages.Publisher then
-			if biglib.Less(Storages.Rules[i].Amount , "1000000") then
+			if biglib.Less(Storages.Rules[i].Amount , "3000000") then
 				Storages.Rules[i].End = curHeight + 10
 			end
 			if curHeight - Storages.Rules[i].LBH > 120 then
@@ -141,9 +118,6 @@ function update_1_5_3()
 end
 
 function update()
-	if curHeight > 1000000 then
-		update_1_5_3();
-	else
-		update_1_5_2();
-	end
+	update_1_5_3();
+
 end

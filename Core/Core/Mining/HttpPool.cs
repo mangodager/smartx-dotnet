@@ -18,6 +18,7 @@ namespace ETModel
         public float  time;
         public string taskid;
 
+        public double power;
         public string power_cur;
         public string power_average;
     }
@@ -45,7 +46,7 @@ namespace ETModel
         {
             HttpMessage httpMessage = msg as HttpMessage;
             if (httpMessage == null || httpMessage.request == null || networkHttp == null
-             || httpMessage.request.LocalEndPoint.ToString() != networkHttp.ipEndPoint.ToString())
+                || httpMessage.request.LocalEndPoint.ToString() != networkHttp.ipEndPoint.ToString())
                 return;
             switch (httpMessage.map["cmd"].ToLower())
             {
@@ -62,9 +63,12 @@ namespace ETModel
         protected string power = "";
         public void SetMinging(long h, string hash, string p)
         {
-            height = h;
-            hashmining = hash;
-            power = p;
+            lock (this)
+            {
+                height = h;
+                hashmining = hash;
+                power = p;
+            }
         }
 
         // http://127.0.0.1:8088/mining?cmd=Submit
@@ -86,9 +90,9 @@ namespace ETModel
                     {
                         minerTask.time = TimeHelper.time;
                         string random = httpMessage.map["random"];
-                        string hash = CryptoHelper.Sha256(hashmining + random);
+                        string hash = BlockDag.ToHash(height, hashmining, random);
                         double diff = Helper.GetDiff(hash);
-                        if (diff > minerTask.diff)
+                        if (diff > minerTask.diff&&!string.IsNullOrEmpty(random))
                         {
                             minerTask.diff = diff;
                             minerTask.random = random;
@@ -122,73 +126,88 @@ namespace ETModel
 
         public Dictionary<string, MinerTask> GetMiner(long height)
         {
-            Miners.TryGetValue(height, out Dictionary<string, MinerTask> value);
-            return value;
+            lock (this)
+            {
+                Miners.TryGetValue(height, out Dictionary<string, MinerTask> value);
+                return value;
+            }
         }
 
         public Dictionary<string, MinerTask> GetMinerReward(out long height)
         {
-            if (Miners.Keys.Count > 0)
+            lock (this)
             {
-                height = Miners.Keys.Min(t => t);
-                Miners.TryGetValue(height, out Dictionary<string, MinerTask> value);
-                return value;
+                if (Miners.Keys.Count > 0)
+                {
+                    height = Miners.Keys.Min(t => t);
+                    Miners.TryGetValue(height, out Dictionary<string, MinerTask> value);
+                    return value;
+                }
+                height = 0;
+                return null;
             }
-            height = 0;
-            return null;
         }
 
         public void DelMiner(long height)
         {
-            Miners.Remove(height);
+            lock (this)
+            {
+                Miners.Remove(height);
+            }
         }
 
 
         uint auto_takid = 1;
         public MinerTask NewNextTakID(long height, string address, string number)
         {
-            Miners.TryGetValue(height, out Dictionary<string, MinerTask> list);
-            if (list == null)
+            lock (this)
             {
-                list = new Dictionary<string, MinerTask>();
-                Miners.Add(height, list);
-            }
-
-            var minerTask = new MinerTask();
-            minerTask.height = height;
-            minerTask.address = address;
-            minerTask.number = number;
-            minerTask.taskid = (auto_takid++).ToString();
-
-            while(true)
-            {
-                string address_number = $"{minerTask.address}_{minerTask.number}";
-                if (list.TryGetValue(address_number, out MinerTask temp))
+                Miners.TryGetValue(height, out Dictionary<string, MinerTask> list);
+                if (list == null)
                 {
-                    minerTask.number = System.Guid.NewGuid().ToString("N").Substring(0, 6);
+                    list = new Dictionary<string, MinerTask>();
+                    Miners.Add(height, list);
                 }
-                else
+
+                var minerTask = new MinerTask();
+                minerTask.height = height;
+                minerTask.address = address;
+                minerTask.number = number;
+                minerTask.taskid = (auto_takid++).ToString();
+
+                while (true)
                 {
-                    list.Add(address_number, minerTask);
-                    break;
+                    string address_number = $"{minerTask.address}_{minerTask.number}";
+                    if (list.TryGetValue(address_number, out MinerTask temp))
+                    {
+                        minerTask.number = System.Guid.NewGuid().ToString("N").Substring(0, 6);
+                    }
+                    else
+                    {
+                        list.Add(address_number, minerTask);
+                        break;
+                    }
                 }
+                return minerTask;
             }
-            return minerTask;
         }
 
         public MinerTask GetMyTaskID(long height, string address, string number, string taskid)
         {
-            Miners.TryGetValue(height, out Dictionary<string, MinerTask> list);
-            if (list != null)
+            lock (this)
             {
-                string address_number = $"{address}_{number}";
-                list.TryGetValue(address_number, out MinerTask minerTask);
-                if (minerTask!=null&&minerTask.address == address && minerTask.height == height && minerTask.number == number && minerTask.taskid == taskid)
+                Miners.TryGetValue(height, out Dictionary<string, MinerTask> list);
+                if (list != null)
                 {
-                    return minerTask;
+                    string address_number = $"{address}_{number}";
+                    list.TryGetValue(address_number, out MinerTask minerTask);
+                    if (minerTask != null && minerTask.address == address && minerTask.height == height && minerTask.number == number && minerTask.taskid == taskid)
+                    {
+                        return minerTask;
+                    }
                 }
+                return null;
             }
-            return null;
         }
 
     }

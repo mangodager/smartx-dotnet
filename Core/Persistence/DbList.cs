@@ -75,7 +75,7 @@ namespace ETModel
             Set(table, index, value);
         }
 
-        void SetCount(string table, int count)
+        public void SetCount(string table, int count)
         {
             string table_key = $"{prefix}___{table}__Count";
 
@@ -90,7 +90,7 @@ namespace ETModel
             currIndex.Add(table_key, count);
         }
 
-        void Set(string table, int index, TValue value)
+        public void Set(string table, int index, TValue value)
         {
             string table_index = $"{prefix}___{table}__{index}";
             // 数据回退

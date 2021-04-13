@@ -10,11 +10,10 @@ namespace ETModel
     public class CalculatePower
     {
         List<double> diffs = new List<double>();
-        double difftotal = 0L;
-        public double ratio = 1L;
-        public int statistic = 2 * 60;
-
-        public double diffWhole = 0L; // 全网难度值
+        private double difftotal = 0L;
+        public  double ratio     = 1L;
+        public  int    statistic = 4*10;
+        public  double diffWhole = 0L; // 全网难度值
 
         public CalculatePower(double ratio=1L)
         {
@@ -27,12 +26,67 @@ namespace ETModel
             difftotal = 0;
         }
 
+        // 算力统计
+        static public void SetDT(Block myblk, Block preblk, HttpPool httpRule)
+        {
+            if (httpRule == null || myblk == null || preblk == null)
+                return;
+
+            Dictionary<string, MinerTask> miners = httpRule?.GetMiner(preblk.height);
+            if (miners == null)
+                return;
+
+            double difftotal = 0;
+            foreach (var miner in miners.Values)
+            {
+                double.TryParse(miner.power_average, out double diff);
+                difftotal += diff;
+            }
+            if (difftotal != 0)
+            {
+                if (myblk.extend == null)
+                    myblk.extend = new Dictionary<int, string>();
+                myblk.extend.Add(1,"" + difftotal);
+            }
+        }
+
         public void Insert(Block blk)
         {
             if (blk == null)
                 return;
+
+            if (blk.extend != null&& blk.extend.Count>=1)
+            {
+                double.TryParse(blk.extend[1],out double dt);
+                if (dt != 0)
+                {
+                    InsertPower(dt);
+                }
+                return;
+            }
             diffWhole = blk.GetDiff();
-            Insert(blk.GetDiff());
+            double power = Power(diffWhole);
+            InsertPower(power);
+        }
+        
+        public void InsertLink(Block mcblk, BlockMgr blockMgr)
+        {
+            if (mcblk == null)
+                return;
+
+            diffWhole = 0;
+
+            for (int ii = 0; ii < mcblk.linksblk.Count; ii++)
+            {
+                Block blk = blockMgr.GetBlock(mcblk.linksblk[ii]);
+                if (blk!=null&&blk.extend!=null && blk.extend.Count >= 1)
+                {
+                    double.TryParse(blk.extend[1], out double dt);
+                    diffWhole += dt;
+                }
+            }
+
+            InsertPower(diffWhole);
         }
 
         public static double Power(double tempdiff)
@@ -45,7 +99,8 @@ namespace ETModel
             }
 
             double power = 1;
-            for (int ii = 0; ii < str.Length; ii++)
+            int ii = 0;
+            for (; ii < str.Length; ii++)
             {
                 double value1 = double.Parse("" + str[ii]);
                 double value2 = value1 / (10 - value1);
@@ -56,12 +111,16 @@ namespace ETModel
                     break;
             }
 
+            var acc = str.Substring(ii+1,Math.Min(4, str.Length-(ii + 1)));
+            double.TryParse(acc,out double accd);
+
+            power = power + accd;
+
             return power;
         }
 
-        public void Insert(double tempdiff)
+        public void InsertPower(double power)
         {
-            double power = Power(tempdiff);
             if (power == 0)
                 return ;
             //if (difftotal != 0)

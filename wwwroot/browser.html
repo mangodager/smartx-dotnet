@@ -31,6 +31,7 @@
     <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
+    <script src='js/bignumber.min.js'></script>
     <script type="text/javascript" src="js/crypto-js.js"></script>
     <script src='js/forge-sha256.min.js'></script>
     <script src='js/hashes.js'></script>
@@ -138,7 +139,18 @@
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
-            ShowBlock(text);
+            var index = new BigNumber(text);
+            if( index.isFinite() )
+            {
+                browserIndexCur = index.toNumber();
+                if (browserIndexCur > browserIndexMax)
+                    browserIndexCur = 0;
+                onBrowserInit();
+            }
+            else
+            {
+                ShowBlock(text);
+            }
         }
 
         function ShowBlock(text) {
@@ -161,7 +173,10 @@
                             for (var key in jsonObj) {
                                 var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
                                 if (key != "linksblk" && key != "linkstran") {
-                                    Helper.TableInsert("BlockInfoTable", key, color, key, jsonObj[key])
+                                    var tempValue = jsonObj[key];
+                                    if (typeof (tempValue) == 'object')
+                                        tempValue = JSON.stringify(tempValue);
+                                    Helper.TableInsert("BlockInfoTable", key, color, key, tempValue)
                                 }
                             }
 
@@ -175,6 +190,10 @@
                                 Helper.TableInsert("BlockInfoTable", "linkstran_" + jsonObj["linkstran"][key]["hash"], color, "linkstran_" + key, jsonObj["linkstran"][key]["hash"])
                             }
                             $("#BlockInfo").modal('show');
+                        }
+                        else
+                        {
+                            Helper.ShowTransfer(text);
                         }
                     },
                     error: function (err) {

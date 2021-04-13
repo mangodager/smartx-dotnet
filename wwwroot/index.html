@@ -31,6 +31,7 @@
     <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
+    <script src='js/bignumber.min.js'></script>
     <script type="text/javascript" src="js/crypto-js.js"></script>
     <script src="js/aes256.min.js"></script>
     <script src='js/forge-sha256.min.js'></script>
@@ -38,7 +39,6 @@
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
-    <script src='js/bignumber.min.js'></script>
 
     <div class="container" id="body_container">
 
@@ -77,8 +77,14 @@
 
     </div>
 
-    <footer class="navbar-fixed-bottom navbar-inverse">
-        <div class="row nav_box">
+    <footer class="navbar-fixed-bottom ">
+        <center >
+            <div style="width:50%;height:100%;overflow-x:auto;">
+                <table class="table table-hover" id="statusbar" style='background:#ffffff'>
+                </table>
+            </div>
+        </center>
+        <div class="row nav_box navbar-inverse">
             <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
             <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
             <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
@@ -189,7 +195,7 @@
     </div>
 
     <script>
-        setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+        //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
 
         Login.Init();
 
@@ -276,7 +282,10 @@
         //// show address
         //var element = document.getElementById("address");
         //element.innerHTML = address;
-
+        var addressCur   = "";
+        var tokenAddress = "";
+        var nonceCur     = 0;
+        
         var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
         var colorindex = 0;
 
@@ -326,7 +335,12 @@
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
-            window.location.href = "property.html?address=" + text;
+
+            if(Wallet.CheckAddress(text))
+                window.location.href = "property.html?address=" + text;
+            else
+            if(text.length==64)
+                Helper.ShowTransfer(text);
         }
 
         function QueryStats() {
@@ -347,6 +361,7 @@
         }
         QueryStats();
 
+        Helper.Statusbar();
     </script>
 
 </body>

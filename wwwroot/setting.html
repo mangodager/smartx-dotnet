@@ -82,6 +82,7 @@
     <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
+    <script src='js/bignumber.min.js'></script>
     <script src='js/forge-sha256.min.js'></script>
     <script src='js/hashes.js'></script>
     <script src='js/wallet.js'></script>
@@ -109,6 +110,14 @@
 
         </fieldset>
 
+        <fieldset>
+            <p> </p>
+            <p>
+                <label for="title">SatswapFactory:</label>
+                <input type="text" id="SSFAddress" name="SatswapFactory" align="left">
+            </p>
+
+        </fieldset>
 
     </div>
 
@@ -132,10 +141,15 @@
                 serverIP = serverIP.substring(0, serverIP.length - 1);
 
             Helper.SetServerIP(serverIP)
+
+            var SSFAddress = $('#SSFAddress').val();
+            Helper.SetSSFAddress(SSFAddress)
+
+            
         };
 
         $('#serverIP').val(Helper.GetServerIP());
-
+        $('#SSFAddress').val(Helper.GetSSFAddress());
 
 
     </script>

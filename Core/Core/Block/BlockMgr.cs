@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace ETModel
@@ -20,10 +22,9 @@ namespace ETModel
 
 
         }
-
-        public bool AddBlock(Block blk)
+        public bool AddBlock(Block blk,bool replace=false)
         {
-            if (blk != null && GetBlock(blk.hash) == null)
+            if (blk != null && (replace || GetBlock(blk.hash) == null))
             {
                 if (!Entity.Root.GetComponent<Consensus>().Check(blk))
                     return false;
@@ -34,8 +35,8 @@ namespace ETModel
                         list = new List<string>();
                     list.Remove(blk.hash);
                     list.Add(blk.hash);
-                    snapshot.Heights.Add(blk.height.ToString(), list);
 
+                    snapshot.Heights.Add(blk.height.ToString(), list);
                     snapshot.Blocks.Add(blk.hash, blk);
                     snapshot.Commit();
                 }
@@ -62,6 +63,8 @@ namespace ETModel
             }
         }
 
+        BlockMgrCache blockCache = new BlockMgrCache();
+
         public void DelBlock(long height)
         {
             using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
@@ -72,8 +75,7 @@ namespace ETModel
                     for (int ii = 0; ii < list.Count; ii++)
                     {
                         snapshot.Blocks.Delete(list[ii]);
-                        cacheDict.Remove(list[ii]);
-                        cacheList.Remove(list[ii]);
+                        blockCache.Remove(list[ii]);
                     }
                     snapshot.Heights.Delete(height.ToString());
                 }
@@ -81,29 +83,16 @@ namespace ETModel
             }
         }
 
-        Dictionary<string, Block> cacheDict = new Dictionary<string, Block>();
-        List<string> cacheList = new List<string>();
-
         public Block GetBlock(string hash)
         {
             if (hash==null||hash=="")
                 return null;
 
-            if (cacheDict.TryGetValue(hash, out Block currValue))
+            if (blockCache.Get(hash, out Block currValue))
                 return currValue;
 
             currValue = levelDBStore.Blocks.Get(hash);
-            if (currValue != null)
-            {
-                cacheDict.Add(hash, currValue);
-                cacheList.Insert(cacheList.Count, hash);
-
-                if (cacheList.Count > 1000)
-                {
-                    cacheDict.Remove(cacheList[0]);
-                    cacheList.RemoveAt(0);
-                }
-            }
+            blockCache.Add(currValue);
             return currValue;
         }
 
@@ -127,14 +116,78 @@ namespace ETModel
             return blks;
         }
 
+        public void DelBlockWithHeight(Consensus consensus, long start)
+        {
+            //Log.Info($"DelBlockWithHeight {start} {start + 4}");
+
+            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+            {
+                bool bCommit = false;
+                for (long height = start; height <= start + 4; height++)
+                {
+                    List<string> list = snapshot.Heights.Get(height.ToString());
+                    if (list==null||list.Count <= 100)
+                        continue;
+
+                    var blks = GetBlock(height);
+                    var blksMap = new Dictionary<string, Block>();
+                    var ruleBlks = consensus.GetRule(height);
+                    foreach (var ruleinfo in ruleBlks.Values)
+                    {
+                        for (int ii = 0; ii < blks.Count; ii++)
+                        {
+                            if (blksMap.TryGetValue(blks[ii].Address, out Block blkr))
+                            {
+                                if (blkr.timestamp > blks[ii].timestamp)
+                                {
+                                    blksMap.Remove(blks[ii].Address);
+                                    blksMap.Add(blks[ii].Address, blks[ii]);
+                                }
+                                else if (blkr.timestamp == blks[ii].timestamp && blkr.hash.CompareTo(blks[ii].hash) < 0)
+                                {
+                                    blksMap.Remove(blks[ii].Address);
+                                    blksMap.Add(blks[ii].Address, blks[ii]);
+                                }
+                            }
+                            else
+                            {
+                                blksMap.Add(blks[ii].Address, blks[ii]);
+                            }
+                        }
+                    }
+
+                    var blkRules = blksMap.Values.ToList();
+                    if (list != null)
+                    {
+                        for (int ii = blks.Count - 1; ii >= 0; ii--)
+                        {
+                            bool syncFlag = false;
+                            if(blks[ii].temp != null)
+                                syncFlag = blks[ii].temp.Find(x=>x=="SyncFlag") != null;
+
+                            if (blks.Find(x => x.hash == list[ii] ) == null && !syncFlag)
+                            {
+                                list.RemoveAt(ii);
+                                bCommit = true;
+                            }
+                        }
+                        snapshot.Heights.Add(height.ToString(), list);
+                    }
+                }
+                if (bCommit)
+                {
+                    snapshot.Commit();
+                }
+            }
+        }
+
         public long   newBlockHeight = 0;
-        public static string networkID = "alpha_1.5.2";
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
             Block blk = JsonHelper.FromJson<Block>(p2p_Block.block);
 
-            if (p2p_Block.networkID != BlockMgr.networkID)
+            if (!NodeManager.CheckNetworkID(p2p_Block.networkID))
             {
                 Log.Warning($"NewBlock:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
                 return;

@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v3.1": {
-      "Core/1.5.2": {
+      "Core/2.0.2": {
         "dependencies": {
           "Base": "1.0.0",
           "LevelDB.Standard": "2.1.6.1",
@@ -951,7 +951,7 @@
     }
   },
   "libraries": {
-    "Core/1.5.2": {
+    "Core/2.0.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

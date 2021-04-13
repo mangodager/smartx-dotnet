@@ -33,6 +33,7 @@
     <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
     <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
 
+    <script src='js/bignumber.min.js'></script>
     <script type="text/javascript" src="js/crypto-js.js"></script>
     <script src='js/forge-sha256.min.js'></script>
     <script src='js/hashes.js'></script>
@@ -55,6 +56,7 @@
                 <thead>
                     <tr>
                         <th>Address</th>
+                        <th>Contract</th>
                         <th>Start</th>
                         <th>End</th>
                         <th>Last Height</th>
@@ -130,6 +132,7 @@
                     var color = colorlist[colorindex % colorlist.length]; colorindex++;
                     Helper.TableInsert("myrules", jsonObj[key]["Address"], color,
                         Helper.Simplify(jsonObj[key]["Address"], platform),
+                        jsonObj[key]["Contract"]==null?"":Helper.Simplify(jsonObj[key]["Contract"], platform),
                         jsonObj[key]["Start"],
                         jsonObj[key]["End"],
                         jsonObj[key]["LBH"]);

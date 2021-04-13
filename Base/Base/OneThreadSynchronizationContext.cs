@@ -30,9 +30,9 @@ namespace ETModel
 					a();
 				}
 			}
-            catch(Exception)
+            catch(Exception e)
 			{
-				Log.Error("OneThreadSynchronizationContext.Update");
+				Log.Error(e);
 			}
 		}
 
@@ -44,9 +44,9 @@ namespace ETModel
 				{
 					callback(state);
 				}
-				catch (Exception)
+				catch (Exception e)
 				{
-					Log.Error("OneThreadSynchronizationContext.Post callback");
+					Log.Error(e);
 				}
 				return;
 			}
@@ -56,9 +56,9 @@ namespace ETModel
 				{
 					callback(state);
 				}
-				catch (Exception)
+				catch (Exception e)
 				{
-					Log.Error("OneThreadSynchronizationContext.Post Enqueue");
+					Log.Error(e);
 				}
 			});
 		}

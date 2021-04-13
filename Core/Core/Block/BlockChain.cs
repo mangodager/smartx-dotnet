@@ -90,7 +90,7 @@ namespace ETModel
                 else
                 if (weight == mcWeight)
                 {
-                    if (blk.hash.CompareTo(mcBlk.hash) > 0)
+                    if (blk.hash.CompareTo(mcBlk.hash) < 0)
                     {
                         mcBlk = blk;
                         mcWeight = weight;
@@ -138,14 +138,14 @@ namespace ETModel
         }
 
 
-        static public BlockChain GetMcBlockNextNotBeLink(this BlockChain chain, float timestamp,float pooltime)
+        static public BlockChain GetMcBlockNextNotBeLink(this BlockChain chain)
         {
             var blockMgr = Entity.Root.GetComponent<BlockMgr>();
             var consensus = Entity.Root.GetComponent<Consensus>();
             List<Block> blks = blockMgr.GetBlock(chain.height + 1);
             for (int ii = blks.Count - 1; ii >= 0; ii--)
             {
-                if (chain.hash != blks[ii].prehash && blks[ii].timestamp - timestamp < pooltime)
+                if (chain.hash != blks[ii].prehash)
                 {
                     blks.RemoveAt(ii);
                 }
@@ -167,7 +167,7 @@ namespace ETModel
                 else
                 if (weight == mcWeight)
                 {
-                    if (blk.hash.CompareTo(mcBlk.hash) > 0)
+                    if (blk.hash.CompareTo(mcBlk.hash) < 0)
                     {
                         mcBlk = blk;
                         mcWeight = weight;
@@ -260,10 +260,11 @@ namespace ETModel
             blks2 = blks2 ?? blockMgr.GetBlock(chain.height + 1);
 
             int rel = IsIrreversible(consensus, chain.GetMcBlock(), blks2) ? 2 : 0;
-
             var blksRule = BlockChainHelper.GetRuleBlk(consensus, blks2, chain.hash);
+
             var blkAuxiliary = blksRule.Find((x) => { return x.Address == consensus.auxiliaryAddress; });
             //if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blksRule.Count >= Math.Min(2, consensus.GetRuleCount(chain.height + 1)))
+
             var t_2max = consensus.GetRuleCount(chain.height + 1);
             if (blkAuxiliary != null && blkAuxiliary.Address == consensus.auxiliaryAddress && blksRule.Count >= Math.Max(2,(BlockChainHelper.Get2F1(t_2max) / 2)) )
             {
@@ -303,6 +304,7 @@ namespace ETModel
 
             List<Block> blks1 = blockMgr.GetBlock(chain.height + 1);
             List<Block> blks2 = blockMgr.GetBlock(chain.height + 2);
+
             FindtChain(chain, blks1, blks2, ref list1, blockMgr, consensus);
             if (list1.Count <= 1) {
                 return null;
@@ -331,7 +333,7 @@ namespace ETModel
                 height++;
             }
 
-            if(list1.Count==1) {
+            if (list1.Count==1) {
                 return list1[0];
             }
 

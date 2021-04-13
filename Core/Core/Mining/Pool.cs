@@ -19,7 +19,7 @@ namespace ETModel
         public LevelDBStore PoolDBStore = new LevelDBStore();
         public string style = "SOLO";
         public float  serviceFee = 0; // 矿池手续费
-        public long   OutTimeDBMiner   = 5760;
+        public long   OutTimeDBMiner   = 5760*3;
         public long   OutTimeDBCounted = 100;
         public long   RewardInterval   = 32;
 
@@ -118,8 +118,7 @@ namespace ETModel
 
         public Dictionary<string, BlockSub> MinerReward_PPLNS(bool saveDB = true)
         {
-            var lastday = DateTime.Now.AddHours(-36).ToString("yyyy-MM-dd");
-            var today = DateTime.Now.ToString("yyyy-MM-dd");
+            var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
             long counted = 0;
             long minHeight = -1;
@@ -171,9 +170,16 @@ namespace ETModel
                     minerRewardNew.counted = counted;
                     minerRewardNew.minHeight = minHeight;
                     minerRewardNew.maxHeight = maxHeight;
-                    minerRewardNew.time = DateTime.Now.Ticks.ToString();
+                    minerRewardNew.time = DateTime.UtcNow.Ticks.ToString();
                     snapshot.Add($"Pool_MR_{counted}", JsonHelper.ToJson(minerRewardNew));
-                    snapshot.Add($"Pool_MT_{counted}", JsonHelper.ToJson(minerTransfer));
+
+                    // Pool_MT
+                    var depend = new DateTime(DateTime.UtcNow.Ticks, DateTimeKind.Utc).ToString("yyyy-MM-dd HH:mm:ss");
+                    foreach (var it in minerTransfer)
+                    {
+                        it.Value.depend = depend;
+                        snapshot.Queue.Push($"Pool_MT_{it.Value.addressOut}", JsonHelper.ToJson(it.Value));
+                    }
 
                     snapshot.Commit();
                 }
@@ -220,7 +226,7 @@ namespace ETModel
                             }
 
                             // Total power
-                            BigFloat diffsum = new BigFloat();
+                            BigFloat diffsum = new BigFloat(0);
                             foreach (var dic in miners.Values)
                             {
                                 if (string.IsNullOrEmpty(dic.address))
@@ -246,11 +252,12 @@ namespace ETModel
                                     transfer.amount = BigHelper.Add(transfer.amount, pay);
                                 }
                                 else
+                                if(BigHelper.Greater(pay, "0.002",false))
                                 {
                                     transfer = new BlockSub();
                                     transfer.addressIn = ownerAddress;
                                     transfer.addressOut = dic.address;
-                                    transfer.amount = pay;
+                                    transfer.amount = BigHelper.Sub(pay,"0.002"); // 扣除交易手续费
                                     transfer.type = "transfer";
                                     transfer.data = CryptoHelper.Sha256($"{today}_{maxHeight}_{ownerAddress}_{dic.address}_MinerReward");
                                     minerTransfer.Add(transfer.addressOut, transfer);
@@ -320,6 +327,9 @@ namespace ETModel
 
         public MinerView GetMinerView(string address,long transferIndex,long transferColumn, long minerIndex,  long minerColumn)
         {
+            transferColumn = Math.Min(transferColumn, 100);
+            minerColumn    = Math.Min(minerColumn, 100);
+
             var minerView = new MinerView();
             minerView.address = address;
 
@@ -329,46 +339,29 @@ namespace ETModel
                 minerView.amount_cur = transfers_cur.amount;
             }
 
-            long counted = 0;
             using (DbSnapshot snapshot = PoolDBStore.GetSnapshot())
             {
-                string str_Counted = snapshot.Get("Pool_Counted");
-                if (long.TryParse(str_Counted, out counted))
+                int TopIndex = snapshot.Queue.GetTopIndex($"Pool_MT_{address}");
+                for (int ii = 1; ii <= (int)transferColumn; ii++)
                 {
-                    counted = counted - transferIndex;
-                    for (int i = 0; i < transferColumn; i++)
+                    var value = snapshot.Queue.Get($"Pool_MT_{address}", TopIndex - (int)transferIndex - ii);
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        string str_MT = snapshot.Get($"Pool_MT_{counted-i}");
-                        Dictionary<string, BlockSub> minerTransfer = null;
-                        if (!string.IsNullOrEmpty(str_MT))
+                        var transfer = JsonHelper.FromJson<BlockSub>(value);
+                        if (transfer != null)
                         {
-                            minerTransfer = JsonHelper.FromJson<Dictionary<string, BlockSub>>(str_MT);
-                            if (minerTransfer != null)
-                            {
-                                var transfer = minerTransfer?.Values.FirstOrDefault(c => c.addressOut == address);
-                                if (transfer != null)
-                                {
-                                    string str_MR = snapshot.Get($"Pool_MR_{counted - i}");
-                                    MinerRewardDB minerRewardLast = null;
-                                    if (!string.IsNullOrEmpty(str_MR))
-                                        minerRewardLast = JsonHelper.FromJson<MinerRewardDB>(str_MR);
-
-                                    long.TryParse(minerRewardLast.time, out long time);
-                                    transfer.depend = new DateTime(time).ToString("yyyy-MM-dd HH:mm:ss");
-                                    minerView.transfers.Add(transfer);
-                                }
-                            }
+                            minerView.transfers.Add(transfer);
                         }
                     }
                 }
-            }
 
-            // Is the query successful
-            using (var dbSnapshot = PoolDBStore.GetSnapshot(0))
-            {
                 foreach (var transfer in minerView.transfers)
                 {
-                    transfer.hash = transferProcess.GetMinerTansfer(dbSnapshot,transfer.data);
+                    // 节点使用自己的地址挖矿
+                    if (transfer.addressIn == transfer.addressOut)
+                        transfer.hash = transfer.addressIn;
+                    else
+                        transfer.hash = transferProcess.GetMinerTansfer(snapshot, transfer.data);
                 }
             }
 
@@ -445,7 +438,6 @@ namespace ETModel
                     if (!string.IsNullOrEmpty(snapshot.Get($"Pool_MR_{index}")))
                     {
                         snapshot.Delete($"Pool_MR_{index}");
-                        snapshot.Delete($"Pool_MT_{index}");
                     }
                     else
                         break;

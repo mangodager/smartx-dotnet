@@ -18,9 +18,12 @@ namespace ETModel
 
     public class HttpService : AService
     {
+        public delegate byte[] Action<in T1, in T2>(T1 arg1, T2 arg2);
+
         public  override  IPEndPoint GetEndPoint() { return NetworkHelper.ToIPEndPoint(prefix.ToLower().Replace("http://", "").Replace("/", "")); }
         public  readonly string prefix;
         public  readonly bool   website;
+        public  static Action<byte[],HttpListenerRequest>  ReplaceFunc = null;
 
         public HttpService(string _prefix, bool website, Action<AChannel> acceptCallback)
         {
@@ -115,7 +118,7 @@ namespace ETModel
                 response.ContentType = "text/plain;charset=UTF-8";//告诉客户端返回的ContentType类型为纯文本格式，编码为UTF-8
                 response.AddHeader("Content-type", "text/plain");//添加响应头信息
                 response.ContentEncoding = Encoding.UTF8;
-                string returnObj = null;//定义返回客户端的信息
+                byte[] returnObj = null;//定义返回客户端的信息
                 if (request.HttpMethod == "POST" && request.InputStream != null)
                 {
                     //处理客户端发送的请求并返回处理信息
@@ -125,14 +128,8 @@ namespace ETModel
                 {
                     returnObj = OnGet(request, response);
                 }
-                var returnByteArr = Encoding.UTF8.GetBytes(returnObj);//设置客户端返回信息的编码
-                using (var stream = response.OutputStream)
-                {
-                    //把处理信息返回到客户端
-                    stream.Write(returnByteArr, 0, returnByteArr.Length);
-                    stream.Close();
-                }
-                response.Close();
+
+                OutputStream(returnObj, response);
             }
             catch (Exception )
             {
@@ -141,7 +138,35 @@ namespace ETModel
             }
         }
 
-        private string OnGet(HttpListenerRequest request, HttpListenerResponse response)
+        // 异步回复,避免恶意卡死http服务
+        private async void OutputStream(byte[] returnObj,HttpListenerResponse response)
+        {
+            try
+            {
+                if (returnObj != null)
+                {
+                    //var returnByteArr = Encoding.UTF8.GetBytes(returnObj);//设置客户端返回信息的编码
+                    using (var stream = response.OutputStream)
+                    {
+                        await stream.WriteAsync(returnObj, 0, returnObj.Length).ConfigureAwait(false);
+                        stream.Close();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                response.Close();
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private byte[] OnGet(HttpListenerRequest request, HttpListenerResponse response)
         {
             try
             {
@@ -166,7 +191,7 @@ namespace ETModel
                         }
                     }
 
-                    return OnMessage(map, request, response);
+                    return Encoding.UTF8.GetBytes(OnMessage(map, request, response));
                 }
                 else
                 // http服务
@@ -199,29 +224,33 @@ namespace ETModel
                     // 安全检查
                     var fileInfo = new FileInfo("./wwwroot" + RawUrl);
                     if (fileInfo.DirectoryName.IndexOf(System.Environment.CurrentDirectory+"\\wwwroot")==-1)
-                        return "";
+                        return Encoding.UTF8.GetBytes("");
 
-                    string RawUrlFileText = null;
+                    byte[] RawUrlFileText = null;
                     if (File.Exists("./wwwroot" + RawUrl))
-                        RawUrlFileText = File.ReadAllText( "./wwwroot" + RawUrl);
-                    else
-                    if (File.Exists("./wwwroot" + RawUrl+".html"))
-                        RawUrlFileText = File.ReadAllText("./wwwroot" + RawUrl + ".html");
-                    if(RawUrl== "/js/helper.js" && RawUrlFileText != null)
                     {
-                        RawUrlFileText = RawUrlFileText.Replace("\"http://www.SmartX.com:8004\"", $"\"http://{request.Url.Authority}\"");
+                        RawUrlFileText = File.ReadAllBytes("./wwwroot" + RawUrl);
+                    }
+                    else
+                    if (File.Exists("./wwwroot" + RawUrl + ".html"))
+                    {
+                        RawUrlFileText = File.ReadAllBytes("./wwwroot" + RawUrl + ".html");
+                    }
+                    if(RawUrl== "/js/helper.js" && RawUrlFileText != null && ReplaceFunc!=null )
+                    {
+                        RawUrlFileText = ReplaceFunc(RawUrlFileText, request);
                     }
                     return RawUrlFileText;
                 }
-                return "";
+                return Encoding.UTF8.GetBytes("");
             }
             catch (Exception ex)
             {
-                return $"在接收数据时发生错误:{ex.ToString()}";
+                return Encoding.UTF8.GetBytes($"在接收数据时发生错误:{ex.ToString()}");
            }
         }
 
-        private string OnPost(HttpListenerRequest request, HttpListenerResponse response)
+        private byte[] OnPost(HttpListenerRequest request, HttpListenerResponse response)
         {
             try
             {
@@ -240,7 +269,7 @@ namespace ETModel
                 Dictionary<string, string> map = JsonHelper.FromJson<Dictionary<string, string>>(data);                
                 response.StatusDescription = "200";//获取或设置返回给客户端的 HTTP 状态代码的文本说明。
                 response.StatusCode = 200;// 获取或设置返回给客户端的 HTTP 状态代码。
-                return OnMessage(map, request,  response);
+                return Encoding.UTF8.GetBytes(OnMessage(map, request,  response));
             }
             catch (Exception ex)
             {
@@ -248,7 +277,7 @@ namespace ETModel
                 response.StatusCode = 404;
                 //Console.ForegroundColor = ConsoleColor.Red;
                 //Console.WriteLine($"在接收数据时发生错误:{ex.ToString()}");
-                return $"在接收数据时发生错误:{ex.ToString()}";
+                return Encoding.UTF8.GetBytes($"在接收数据时发生错误:{ex.ToString()}");
             }
         }
 
@@ -261,7 +290,7 @@ namespace ETModel
             message.request  = request;
             message.response = response;
 
-            lock (Entity.Root)
+            //lock (Entity.Root)
             {
                 try
                 {

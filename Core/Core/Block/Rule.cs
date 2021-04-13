@@ -17,9 +17,11 @@ namespace ETModel
         BlockMgr blockMgr = null;
         Consensus  consensus = null;
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-        HttpPool httpPool = null;
+        HttpPool     httpPool = null;
+        HttpPool     httpRule = null;
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
-        NodeManager nodeManager = null;
+        NodeManager  nodeManager = null;
+
         bool bRun = true;
 
         public override void Awake(JToken jd = null)
@@ -33,10 +35,12 @@ namespace ETModel
             consensus  = Entity.Root.GetComponent<Consensus>();
             blockMgr = Entity.Root.GetComponent<BlockMgr>();
             httpPool = Entity.Root.GetComponentInChild<HttpPool>();
+            httpRule = Entity.Root.GetComponent<HttpPool>();
             nodeManager = Entity.Root.GetComponent<NodeManager>();
 
-            if(bRun)
-            Run();
+            if (bRun) {
+                Run();
+            }
         }
 
         static public long pooltime = 15;
@@ -55,12 +59,12 @@ namespace ETModel
             Log.Debug($"Rule.Run at height {height}");
 
             Wallet wallet = Wallet.GetWallet();
-            P2P_NewBlock p2p_NewBlock = new P2P_NewBlock() { networkID = BlockMgr.networkID };
+            P2P_NewBlock p2p_NewBlock = new P2P_NewBlock() { networkID = NodeManager.networkIDBase };
             Block blk    = null;
             Block preblk = null;
             TimePass timePass = new TimePass(1);
-            
-            var httpRule = Entity.Root.GetComponent<HttpPool>();
+            bool bBlkMining = true;
+
             if(httpRule==null)
                 broadcasttime = pooltime * 5 / 15; // 不挖矿就提前广播块
 
@@ -80,10 +84,13 @@ namespace ETModel
                         preblk = GetLastMcBlock();
                         if (consensus.IsRule(preblk.height + 1, wallet.GetCurWallet().ToAddress()))
                         {
-                            blk = CreateBlock(preblk);
-                            diff_max = 0;
-                            hashmining = blk.ToHashMining();
-                            httpRule?.SetMinging(blk.height, hashmining, consensus.calculatePower.GetPower());
+                            blk = CreateBlock(preblk,ref bBlkMining);
+                            if (blk != null&& bBlkMining)
+                            {
+                                diff_max = 0;
+                                hashmining = blk.ToHashMining();
+                                httpRule?.SetMinging(blk.height, hashmining, consensus.calculatePower.GetPower());
+                            }
                         }
                         else
                         {
@@ -95,7 +102,7 @@ namespace ETModel
                     if (blk != null && httpRule == null )
                     {
                         // 挖矿
-                        if (httpRule == null)
+                        if (httpRule == null&& bBlkMining)
                         {
                             Mining(blk, hashmining);
                         }
@@ -104,32 +111,35 @@ namespace ETModel
                     // 广播块
                     if (blk != null && time >= broadcasttime)
                     {
-                        if (httpRule != null)
-                        {
-                            Dictionary<string, MinerTask> miners = httpRule.GetMiner(blk.height);
-                            if (miners != null)
+                        if (bBlkMining)
+                        { 
+                            if (httpRule != null)
                             {
-                                double diff = miners.Values.Max(t => t.diff);
-                                var miner = miners.Values.FirstOrDefault(c => c.diff == diff);
-                                if(miner!=null)
-                                    blk.random = miner.random;
-                                httpRule.SetMinging(blk.height, "", consensus.calculatePower.GetPower());
+                                Dictionary<string, MinerTask> miners = httpRule.GetMiner(blk.height);
+                                if (miners != null)
+                                {
+                                    double diff = miners.Values.Max(t => t.diff);
+                                    var miner = miners.Values.FirstOrDefault(c => c.diff == diff);
+                                    if (miner != null&&!string.IsNullOrEmpty(miner.random))
+                                        blk.random = miner.random;
+                                    httpRule.SetMinging(blk.height, "", consensus.calculatePower.GetPower());
+                                }
                             }
+                            height = blk.height;
+                            blk.hash = blk.ToHash();
+                            blk.sign = blk.ToSign(Wallet.GetWallet().GetCurWallet());
+                            blockMgr.AddBlock(blk);
                         }
 
-                        height = blk.height;
-                        blk.hash = blk.ToHash();
-                        blk.sign = blk.ToSign(Wallet.GetWallet().GetCurWallet());
-                        blockMgr.AddBlock(blk);
                         p2p_NewBlock.block = JsonHelper.ToJson(blk);
                         p2p_NewBlock.ipEndPoint = networkInner.ipEndPoint.ToString();
                         nodeManager.Broadcast(p2p_NewBlock, blk);
-                        diff_max = 0;
 
-                        Log.Debug($"Rule.Broadcast {blk.height} {blk.hash} {nodeManager.GetNodeCount()}");
+                        Log.Debug($"Rule.Broadcast {blk.height} {bBlkMining} {blk.hash} {nodeManager.GetNodeCount()}");
                         calculatePower.Insert(blk);
-                        blk = null;
                         hashmining = "";
+                        diff_max   = 0;
+                        blk = null;
 
                     }
 
@@ -154,21 +164,22 @@ namespace ETModel
             while (chain2 != null)
             {
                 chain1 = chain2;
-                chain2 = chain2.GetMcBlockNext();
                 if(chain1.height>= transferHeight+10)
-                    return chain1.GetMcBlock();
+                    chain2 = null;
+                else
+                    chain2 = chain1.GetMcBlockNext();
             }
 
+            blockMgr.DelBlockWithHeight(consensus, chain1.height);
             Block blk1 = chain1.GetMcBlock();
 
             // 2F1
-            float timestamp = TimeHelper.Now();
             double t_2max = consensus.GetRuleCount(blk1.height+1);
             List<Block> blks = blockMgr.GetBlock(blk1.height+1);
             blks = BlockChainHelper.GetRuleBlk(consensus, blks, chain1.hash);
             if(blks.Count >= BlockChainHelper.Get2F1(t_2max) )
             {
-                chain2 = BlockChainHelper.GetMcBlockNextNotBeLink(chain1,timestamp, pooltime*1000);
+                chain2 = BlockChainHelper.GetMcBlockNextNotBeLink(chain1);
                 if (chain2!=null)
                 {
                     var blk2 = chain2.GetMcBlock();
@@ -204,24 +215,31 @@ namespace ETModel
             if (!Wallet.Verify(transfer.sign, transfer.hash, transfer.addressIn))
                 return -2;
 
+            Account account = null;
+            using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+            {
+                account = snapshot.Accounts.Get(transfer.addressIn);
+
+                if (snapshot.Transfers.Get(transfer.hash) != null)
+                    return -9;
+            }
+
+            if(BigHelper.Less(account.amount, "0.002", false))
+                return -3;
+
             if (transfer.type == "transfer")
             {
-                if(BigHelper.Less(transfer.amount,"0",false))
-                    return -3;
-
-                Account account = null;
-                using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
-                {
-                    account = snapshot.Accounts.Get(transfer.addressIn);
-                }
                 if (account == null)
                     return -4;
 
                 if (BigHelper.Less(account.amount, transfer.amount, false))
                     return -5;
 
-                if (BigHelper.Round8(transfer.amount) != transfer.amount)
+                if (!BigHelper.Equals( BigHelper.Round8(transfer.amount) , transfer.amount))
                     return -6;
+
+                if(!Wallet.CheckAddress(transfer.addressOut))
+                    return -10;
             }
             else
             {
@@ -230,7 +248,7 @@ namespace ETModel
             }
 
             if(transfer.addressIn==transfer.addressOut)
-                return -6;
+                return -8;
 
             lock (blockSubs)
             {
@@ -241,13 +259,19 @@ namespace ETModel
                 blockSubs.Remove(transfer.hash);
                 blockSubs.Add(transfer.hash, transfer);
             }
+
+            var length = JsonHelper.ToJson(transfer).Length;
+            if (length > 1024 * 4)
+                return -11;
+
             return 1;
         }
 
-        public Block CreateBlock(Block preblk)
+        public Block CreateBlock(Block preblk,ref bool bBlkMining)
         {
             if(preblk==null)
                 return null;
+            string address = Wallet.GetWallet().GetCurWallet().ToAddress();
 
             Block myblk = new Block();
             myblk.Address    = Wallet.GetWallet().GetCurWallet().ToAddress();
@@ -257,14 +281,30 @@ namespace ETModel
             myblk.random     = System.Guid.NewGuid().ToString("N").Substring(0, 16);
 
             //引用上一周期的连接块
-            List<Block> blks = blockMgr.GetBlock(preblk.height);
-            blks = BlockChainHelper.GetRuleBlk(consensus, blks, preblk.prehash);
-            for ( int ii = 0; ii < blks.Count; ii++)
+            var blks1 = blockMgr.GetBlock(preblk.height);
+            var blks2 = BlockChainHelper.GetRuleBlk(consensus, blks1, preblk.prehash);
+            for ( int ii = 0; ii < blks2.Count; ii++)
             {
-                myblk.AddBlock(ii, blks[ii]);
+                myblk.AddBlock(ii, blks2[ii]);
             }
+
+            // 比较相同高度的出块
+            var blks3 = blockMgr.GetBlock(myblk.height);
+            var blklast = blks3.Find(x => (x.Address == address && x.prehash == myblk.prehash && x.linksblk.Count >= myblk.linksblk.Count  ) );
+            if (blklast != null)
+            {
+                bBlkMining = false;
+                return blklast;
+            }
+
+            CalculatePower.SetDT(myblk,preblk, httpRule);
+
             RefTransfer(myblk);
             myblk.prehashmkl = myblk.ToHashMerkle(blockMgr);
+
+            bBlkMining = true;
+
+            //Log.Debug($"Rule.CreateBlock {myblk.height} linksblk:{myblk.linksblk.Count} linkstran:{myblk.linkstran.Count} blks1:{blks1.Count} blks3:{blks3.Count}");
 
             return myblk;
         }
@@ -276,21 +316,27 @@ namespace ETModel
             {
                 lock (blockSubs)
                 {
-                    var list = blockSubs.Values.ToList<BlockSub>();
-                    list.Sort((BlockSub a, BlockSub b) => {
-                        int rel = a.nonce.CompareTo(b.nonce);
-                        if (rel == 0)
-                            rel = a.hash.CompareTo(b.hash);
-                        return rel;
-                    });
-                    for (int ii = 0; ii < list.Count; ii++)
+                    //using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
                     {
-                        if (list[ii] != null)
+                        var list = blockSubs.Values.ToList<BlockSub>();
+                        list.Sort((BlockSub a, BlockSub b) =>
                         {
-                            blk.AddBlockSub(ii, list[ii]);
+                            int rel = a.nonce.CompareTo(b.nonce);
+                            if (rel == 0)
+                                rel = a.hash.CompareTo(b.hash);
+                            return rel;
+                        });
+                        for (int ii = 0; ii < list.Count; ii++)
+                        {
+                            if (list[ii] != null)
+                            {
+                                //if (snapshot.Transfers.Get(list[ii].hash) != null)
+                                //    continue;
+                                blk.AddBlockSub(ii, list[ii]);
+                            }
                         }
+                        blockSubs.Clear();
                     }
-                    blockSubs.Clear();
                 }
             }
             catch (Exception e)
@@ -310,7 +356,8 @@ namespace ETModel
         public void Mining(Block blk,string hashmining)
         {
             string random = System.Guid.NewGuid().ToString("N").Substring(0, 16);
-            string hash   = CryptoHelper.Sha256(hashmining + random);
+            //string hash   = CryptoHelper.Sha256(hashmining + random);
+            string hash = BlockDag.ToHash(blk.height, hashmining, random);
 
             double diff = Helper.GetDiff(hash);
             if (diff > diff_max)

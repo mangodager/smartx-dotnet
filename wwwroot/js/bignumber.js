@@ -28,11 +28,11 @@
  *      isNegative                      |  sum
  *      isPositive                      |
  *      isZero                          |
- *      minus                           |
+ *      minus                    sub    |
  *      modulo                   mod    |
  *      multipliedBy             times  |
  *      negated                         |
- *      plus                            |
+ *      plus                     add    |
  *      precision                sd     |
  *      shiftedBy                       |
  *      squareRoot               sqrt   |

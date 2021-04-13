@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "+5F6FfG8Z53rDpbzngs9C1N44dQFuEEoWDkZfyekfIlKajE0J2g7HF3g/SKgVhtaaSynkgIxChPM9dAlPdTH3w==",
+  "dgSpecHash": "iznHEL0oeTGRRRN/RtpUw5k0XpkMRf4c8RUJN1gF/qEL3asjNOEw7eQMGNAXbfytbOBRZMYspDKEG7xvR41BdQ==",
   "success": true,
   "projectFilePath": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
   "expectedPackageFiles": [

@@ -34,6 +34,10 @@ namespace ETModel
             if (old != null)
                 return false;
 
+            // 节点使用自己的地址挖矿
+            if (addressIn == addressOut)
+                return false;
+
             transfers.Add(new TransferHandle() { lastHeight = 0, miniindex = 0, sendCount = 0, addressIn = addressIn ,addressOut = addressOut, amount = amount , unique = unique });
             return true;
         }
@@ -64,12 +68,10 @@ namespace ETModel
                     transfersDel.Clear();
                     for (int ii = 0; ii < transfers.Count; ii++)
                     {
-                        int TFA_Count = dbSnapshot.List.GetCount($"TFA__{transfers[ii].addressIn}");
-                        if (transfers[ii].miniindex != 0)
-                        for (int jj = (int)transfers[ii].miniindex; jj <= TFA_Count; jj++)
+                        if (transfers[ii].sendCount <= 5)
                         {
-                            string hasht = dbSnapshot.List.Get($"TFA__{transfers[ii].addressIn}",jj);
-                            if (hasht != null)
+                            string hasht = dbSnapshot.Get($"unique_{transfers[ii].unique}");
+                            if (!string.IsNullOrEmpty(hasht))
                             {
                                 var transfer = dbSnapshot.Transfers.Get(hasht);
                                 if (transfer != null)
@@ -81,6 +83,10 @@ namespace ETModel
                                     }
                                 }
                             }
+                        }
+                        else
+                        {
+                            transfersDel.Add(transfers[ii]);
                         }
                     }
 
@@ -102,16 +108,14 @@ namespace ETModel
                     }
 
                     // Start a new deal
-                    for (int ii = 0; ii < transfers.Count; ii++)
+                    for (int ii = transfers.Count-1; ii >= 0; ii--)
                     {
                         if (transfers[ii].lastHeight < rule.height + 6 && transfers[ii].sendCount <= 5)
                         {
                             transfers[ii].lastHeight = rule.height;
                             transfers[ii].sendCount++;
 
-                            int TFA_Count = dbSnapshot.List.GetCount($"TFA__{transfers[ii].addressIn}");
                             var account = dbSnapshot.Accounts.Get(transfers[ii].addressIn);
-                            transfers[ii].miniindex = TFA_Count-1;
                             BlockSub transfer = new BlockSub();
                             transfer.addressIn = transfers[ii].addressIn;
                             transfer.addressOut = transfers[ii].addressOut;
@@ -128,6 +132,7 @@ namespace ETModel
                             if (rel != 1)
                             {
                                 Log.Error($"TransferProcess: aAddTransfer  Error! {transfers[ii]}");
+                                transfers.RemoveAt(ii);
                             }
                         }
                     }

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Collections;
 using XLua;
 using System.IO;
+using System.Numerics;
 
 namespace ETModel
 {
@@ -19,12 +20,12 @@ namespace ETModel
         public string Address;    // 出块地址
         public long   timestamp;  // 时间戳
         public string random;     // 随机数
-        public List<string> extend; // 扩展
+        public Dictionary<int, string> extend; // 扩展
         public List<string> temp;   // 
 
         // 使用Dictionary解决Json序列化后排序错乱问题
-        public Dictionary<int,string>    linksblk  = new Dictionary<int,string>();     // 引用块哈希  2F+1
-        public Dictionary<int, BlockSub> linkstran = new Dictionary<int, BlockSub>();  // 包含的交易
+        public Dictionary<int,string>    linksblk = new Dictionary<int,string>();    // 引用块哈希  2F+1
+        public Dictionary<int,BlockSub> linkstran = new Dictionary<int,BlockSub>();  // 包含的交易
 
         public byte[]   sign;    // 裁决签名
 
@@ -56,7 +57,7 @@ namespace ETModel
             if (This.extend != null)
             {
                 str_extend += "#";
-                for (int ii = 0; ii < This.extend.Count; ii++)
+                for (int ii = 1; ii <= This.extend.Count; ii++)
                 {
                     str_extend = $"{str_extend}#{This.extend[ii]}";
                 }
@@ -68,9 +69,10 @@ namespace ETModel
 
         static public string ToHash(this Block This, string r=null)
         {
-            if (r != null && r != "")
-                return CryptoHelper.Sha256((CryptoHelper.Sha256(This.ToString()) + r));
-            return CryptoHelper.Sha256((CryptoHelper.Sha256(This.ToString()) + This.random));
+            //if (r != null && r != "")
+            //    return CryptoHelper.Sha256((CryptoHelper.Sha256(This.ToString()) + r));
+            //return CryptoHelper.Sha256((CryptoHelper.Sha256(This.ToString()) + This.random));
+            return BlockDag.ToHash(This.height, CryptoHelper.Sha256(This.ToString()), r??This.random);
         }
 
         static public string ToHashMining(this Block This)
@@ -163,6 +165,63 @@ namespace ETModel
         static public double GetDiff(this Block This)
         {
             return GetDiff(This.hash);
+        }
+
+
+    }
+
+    public class BlockDag
+    {
+        static       long V2_0_0_size  = 1024 * 1024 * 32;
+        static BigInteger V2_0_0_right = BigInteger.Zero;
+
+        // DAG 创建测试
+        static byte[] dag = null;
+        static public void Init()
+        {
+            if (dag==null)
+            {
+                dag = new byte[V2_0_0_size];
+                var hash = CryptoHelper.Sha256("SmartX_DAG 2021_03_18 21:43:56");
+                var count = dag.Length / hash.Length;
+                int dagIndex = 0;
+                for (int ii = 0; ii < count; ii++)
+                {
+                    hash = CryptoHelper.Sha256(hash);
+                    for (int jj = 0; jj < hash.Length; jj++)
+                    {
+                        dag[dagIndex++] = (byte)hash[jj];
+                    }
+                }
+            }
+        }
+
+        static byte[] randomDag = new byte[32];
+
+        static string _ToDag(string random)
+        {
+            var left   = BigInteger.Parse("0" + random, System.Globalization.NumberStyles.HexNumber);
+            var right  = BigInteger.Remainder(left, V2_0_0_right).ToString();
+            var offset = long.Parse(right);
+
+            int dagIndex = 0;
+            for (int jj = 0; jj < randomDag.Length; jj++, dagIndex++)
+            {
+                randomDag[jj] = dag[offset+dagIndex];
+            }
+
+            return CryptoHelper.Sha256(random + randomDag.ToStr());
+        }
+
+        static public string ToHash(long height,string hashmining, string random)
+        {
+            Init();
+            V2_0_0_right = V2_0_0_right != BigInteger.Zero ? V2_0_0_right : BigInteger.Parse((dag.Length - randomDag.Length).ToString());
+
+            var hash1 = _ToDag(random);
+            var hash2 = _ToDag(CryptoHelper.Sha256(hash1).Substring(hashmining.Length - random.Length));
+            return CryptoHelper.Sha256(hashmining + random + hash1 + hash2);
+            //return CryptoHelper.Sha256(hashmining + random);
         }
 
     }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "n0kIUkLaTP86E5gisiUtr4B9IBBJ+i4SIdQxPO4vhlbE5gZEipuW5FKTJqwI0VlFXjqO0njJM84QNk1Vk6OxSw==",
+  "dgSpecHash": "KlSp1qro+wGq7SY8pXxq+ZofumVwJyr7lqGzkYu7NQDhMfASNWKUpCjmHKDAdPasfyDDCBNtgQNFNbowhjuhRw==",
   "success": true,
   "projectFilePath": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
   "expectedPackageFiles": [

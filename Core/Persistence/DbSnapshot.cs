@@ -18,18 +18,19 @@ namespace ETModel
         private  ReadOptions options;
 
         DbUndo Undos = null;    // 数据回退
-        private DbCache<string>      Snap { get; }
+        public DbCache<string>       Snap { get; }
         public DbCache<Block>        Blocks { get; }
         public DbCache<List<string>> Heights { get; }
         public DbCache<BlockSub>     Transfers { get; }
         public DbCache<Account>      Accounts { get; }
         public DbCache<LuaVMScript>  Contracts { get; }
         public DbCache<LuaVMContext> Storages { get; }
-        public DbCache<string>       StoragesAccount { get; }
+        public DbCache<string>       StoragesMap { get; }
         public DbCache<List<string>> ABC { get; } // Accounts Bind Contracts
 
         public DbCache<BlockChain>   BlockChains { get; }
         public DbList<string>        List { get; }
+        public DbQueue<string>       Queue { get; }
 
         public DbSnapshot(DB db, long height, bool bUndo)
         {
@@ -57,9 +58,10 @@ namespace ETModel
             Contracts = new DbCache<LuaVMScript>(db, options, batch, Undos, "Contracts");
             Storages  = new DbCache<LuaVMContext>(db, options, batch, Undos, "Storages");
             BlockChains = new DbCache<BlockChain>(db, options, batch, Undos, "BlockChain");
-            StoragesAccount = new DbCache<string>(db, options, batch, Undos, "StgAcc");
+            StoragesMap = new DbCache<string>(db, options, batch, Undos, "StgMap");
             ABC       = new DbCache<List<string>>(db, options, batch, Undos, "ABC");
             List      = new DbList<string>(db, options, batch, Undos, "List");
+            Queue     = new DbQueue<string>(db, options, batch, Undos, "Queue", 1260);
 
         }
 
@@ -73,9 +75,10 @@ namespace ETModel
             Contracts.Commit();
             Storages.Commit();
             BlockChains.Commit();
-            StoragesAccount.Commit();
+            StoragesMap.Commit();
             ABC.Commit();
             List.Commit();
+            Queue.Commit();
 
             if (Undos != null)
             {

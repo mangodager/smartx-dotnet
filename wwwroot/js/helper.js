@@ -25,6 +25,33 @@
         localStorage.setItem("serverIP", serverIP);
     }
 
+    Helper.GetSSFAddress = function () {
+        var SSFAddress = localStorage.getItem("SSFAddress");
+        if (SSFAddress == null || SSFAddress=="")
+            SSFAddress = "dsoZAxn4GEiGycq2sFc24CAQn4SRCgDuS";
+        return SSFAddress;
+    }
+
+    Helper.SetSSFAddress = function (SSFAddress) {
+        localStorage.setItem("SSFAddress", SSFAddress);
+    }
+
+    Helper.ERCSat = function () {
+        return "RnnUBgzrzv2z7YrEz5ZhuzVtbkCbspKpV";
+    }
+    
+    Helper.PledgeFactory = function () {
+        return "SWipqG94LJXXx9E8sYbSpZVa8n5TSUD2B";
+    }
+
+    Helper.LockFactory = function () {
+        return "RXF5eSnpEGNgRsUZdx9t2o5ByB511NzrT";
+    }
+
+    Helper.GetRewardRule = function () {
+        return "2522880000";//GetRewardRule*100
+    }
+
     Helper.TableInsert = function () {
         var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='liOnclick(this)'>";
         innerHTML = innerHTML.replace(/myid/g, arguments[1]);
@@ -40,6 +67,7 @@
 
         item_new.innerHTML = innerHTML;
         document.getElementById(arguments[0]).appendChild(item_new);
+        return item_new;
     }
 
     Helper.TableInsert2 = function () {
@@ -91,6 +119,173 @@
 
         item_new.innerHTML = innerHTML;
         document.getElementById(arguments[0]).appendChild(item_new);
+    }
+
+    Helper.StatusbarInsert = function () {
+        // 删除之前的数据
+        var mytableEle = document.getElementById(arguments[0]);
+        for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+            if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                mytableEle.children[i].remove();
+        }
+        if(arguments.length==1) {
+            return;
+        }
+
+        var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='Helper.ShowTransfer(event)'>";
+        innerHTML = innerHTML.replace(/myid/g, arguments[1]);
+        innerHTML += "<td style='text-align:center;vertical-align:middle;'>" + arguments[3] + "</td>";
+
+        if(arguments[4]==1) {
+            innerHTML = innerHTML.replace(/mycolor/g, "");
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;'> \
+            <img src='./static/waiting.gif'/ style='width:24px;height:24px;'> \
+            </th>";
+        }
+        else
+        if(arguments[4]==2) {
+            innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-danger");
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #af0000'> \
+            失败 \
+            </th>";
+        }
+        else
+        if(arguments[4]==3) {
+            innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-success");
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> \
+            完成 \
+            </th>";
+        }
+        else
+        if(arguments[4]==4) {
+            innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-success");
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> \
+            丢失 \
+            </th>";
+        }
+        innerHTML += '</tr ></tbody>';
+
+        var item_new = document.createElement("tbody");
+        item_new.innerHTML = innerHTML;
+        document.getElementById(arguments[0]).appendChild(item_new);
+        
+        var tableId     = arguments[0];
+        var elementById = arguments[1];
+        var arguments_2 = arguments[2];
+        var arguments_3 = arguments[3];
+        var arguments_4 = arguments[4];
+        var arguments_5 = arguments[5];
+        var timestamp   = arguments[6];
+        var timestamp2  = new Date().getTime();
+        var timestamp3  = 10000-(timestamp2-timestamp);
+
+        setTimeout(function(){
+            if(arguments_4!=1) {
+                Helper.Statusbar(elementById);
+                return;
+            }
+            $.ajax({
+                url: Helper.GetServerIP() + "/TransferState",
+                dataType: "text",
+                type: "get",
+                data: { hash: elementById },
+                success: function (data) {
+                    if (data != "") {
+                        var jsonObj = JSON.parse(data);
+                        let state = 2;
+                        if(jsonObj["height"]!=0) {
+                            state = 3;
+                        }
+                        Helper.Statusbar(tableId,elementById,arguments_2,arguments_3,state,arguments_5,null,true);
+                    }
+                    else {
+                        if(arguments_4==1&&timestamp2-timestamp>45000) {
+                            Helper.Statusbar(tableId,elementById,arguments_2,arguments_3,4,arguments_5,null,true);
+                        }
+                        else {
+                            Helper.Statusbar(tableId,elementById,arguments_2,arguments_3,1,arguments_5,null,true);
+                        }
+                    }
+                }
+            });
+        }, timestamp3 > 0 ? timestamp3 : 3000 );
+
+    }
+
+    Helper.Statusbar = function ()
+    {
+        if(arguments.length==0) {
+            var jsonStr   = localStorage.getItem("Statusbar");
+            if(jsonStr!=null)
+            {
+                var arguments2 = JSON.parse(jsonStr);
+                Helper.StatusbarInsert(arguments2[0],arguments2[1],arguments2[2],arguments2[3],arguments2[4],arguments2[5],arguments2[6]);
+            }
+        }
+        else
+        if(arguments.length==1) {
+            var jsonStr   = localStorage.getItem("Statusbar");
+            if(jsonStr!=null) {
+                var arguments2 = JSON.parse(jsonStr);
+                if(arguments2[1]!=arguments[0]) {
+                    return;
+                }
+            }
+            localStorage.removeItem("Statusbar");
+            Helper.StatusbarInsert(arguments[0]);
+            return;
+        }
+        else {
+            if(arguments[6]==null)
+                arguments[6] = new Date().getTime();
+            if (arguments[7] != null) {
+                var jsonStr = localStorage.getItem("Statusbar");
+                if (jsonStr != null) {
+                    var arguments2 = JSON.parse(jsonStr);
+                    if (arguments2[1] != arguments[1]) {
+                        return;
+                    }
+                }
+                else {
+                    return;
+                }
+            }
+
+            var jsonStr = JSON.stringify(arguments);
+            localStorage.setItem("Statusbar", jsonStr);
+            
+            Helper.StatusbarInsert(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5],arguments[6]);
+        }
+    }
+
+    Helper.MessageBox = function ()
+    {
+        if(arguments.length==1&&arguments[0]!=null) {
+            // ModalMessageBox
+            var innerHTML = "\
+                <div class='modal fade' id='ModalMessageBox' data-backdrop='static' tabindex='-1' role='dialog' aria-labelledby='ModalMessageLabel' aria-hidden='true' style='top:10%;'>\
+                    <div class='modal-dialog' style='width:460px;margin-top: 20%;'>\
+                        <div class='modal-content' data-dismiss='modal'>\
+                            <form>\
+                                <ul style='padding-left:0px;'>\
+                                    <div style='height: 30px; user-select:none'></div>\
+                                    <center><h4 style=' user-select:none'>######&nbsp;&nbsp;<img src='./static/waiting.gif'/ style='width:24px;height:24px;margin-top:-2px;'></h4>\</center>\
+                                    <div style='height: 20px; user-select:none'></div>\
+                                </ul>\
+                            </form>\
+                        </div>\
+                    </div>\
+                </div>\
+            ";
+            innerHTML = innerHTML.replace(/######/g, arguments[0]);
+            
+            var item_new = document.createElement("div");
+            item_new.innerHTML = innerHTML;
+            document.body.appendChild(item_new);
+
+            $("#ModalMessageBox").modal('show');
+            setTimeout(function(){$("#ModalMessageBox").modal('hide');},"1000");
+        }
     }
 
     Helper.Simplify = function (str, platform) {
@@ -152,7 +347,6 @@
         }
     }
 
-
     Helper.GetTransferCount = function (address) {
         var index = 1;
         for (; index < 100; index++) {
@@ -168,6 +362,30 @@
         for (; index < 100; index++) {
             localStorage.removeItem(address + "_transfer_" + index);
         }
+    }
+
+    Helper.GetTransferByHash = function (hash) {
+        for (var index = 1; index < 100; index++) {
+            var KeyPair = Wallet.Load(index, Login.LoadPassword());
+            if (KeyPair == null)
+                break;
+
+            var address = Wallet.ToAddress(KeyPair.publicKey);
+            var count = Helper.GetTransferCount(address);
+
+            var jj = 1;
+            for (; jj < 100; jj++) {
+                var str = Helper.LoadTransfer(address, jj);
+                if (str == null)
+                    break;
+                var jsonObj = JSON.parse(str);
+                if (jsonObj == null)
+                    break;
+                if (jsonObj["hash"] == hash) {
+                    return str;
+                }
+            }
+        }        
     }
 
    /** 下载钱包 */
@@ -219,7 +437,7 @@
 
         var jsonStr = JSON.stringify(transferdata);
 
-        if (type =="contract")
+        if (type =="contract"&&data.indexOf("transfer")!=-1)
             Helper.AddTransfer(addressCur + addressOut, jsonStr);
         else
             Helper.AddTransfer(addressCur, jsonStr);
@@ -232,19 +450,338 @@
             success: function (data) {
                 var jsonObj = JSON.parse(data);
                 if (data != "{\"success\":true}") {
-                    alert("提交失败,交易数据出错或者节点无出块权限: " + jsonObj["rel"]);
+                    var text = "";
+                    var rel = jsonObj["rel"];
+                    switch (rel) {
+                        case -1:
+                            text = "节点无出块权限";
+                            break;
+                        case -2:
+                            text = "验证错误";
+                            break;
+                        case -3:
+                            text = "余额小于0.002,无法扣除手续费";
+                            break;
+                        case -4:
+                            text = "转出账户不存在";
+                            break;
+                        case -5:
+                            text = "转出余额不足";
+                            break;
+                        case -6:
+                            text = "小数点后位数超过8";
+                            break;
+                        case -7:
+                            text = "节点拥堵";
+                            break;
+                        case -8:
+                            text = "出入地址相同";
+                            break;
+                        case -9:
+                            text = "交易已存在";
+                            break;
+                        case -10:
+                            text = "转出地址无效";
+                            break;
+                    }
+                    alert("提交失败: " + text);
+                    Helper.liOnTransferInfoDelete(hash);
                 }
 
                 //alert("提交成功!");
-                $("#" + e).modal("hide");
-                window.location.href = window.location.href;
+                if(e!=null) {
+                    $("#" + e).modal("hide");
+                    //window.location.href = window.location.href;
+                }
             },
             error: function (err) {
                 alert("网络连接错误!");
             }
         });
-
+        return hash;
     };
 
+    Helper.Mul = function (aa,bb) {
+        if(typeof(aa)=='string')
+            aa = new BigNumber(aa.replace(/,/g, ""));
+        if(typeof(bb)=='string')
+            bb = new BigNumber(bb.replace(/,/g, ""));
+        return aa.multipliedBy(bb).toFormat(8).replace(/,/g, "");
+    }
+    Helper.Div = function (aa,bb) {
+        if(typeof(aa)=='string')
+            aa = new BigNumber(aa.replace(/,/g, ""));
+        if(typeof(bb)=='string')
+            bb = new BigNumber(bb.replace(/,/g, ""));
+        return aa.dividedBy(bb).toFormat(8).replace(/,/g, "");
+    }
+    Helper.Add = function (aa,bb) {
+        if(typeof(aa)=='string')
+            aa = new BigNumber(aa.replace(/,/g, ""));
+        if(typeof(bb)=='string')
+            bb = new BigNumber(bb.replace(/,/g, ""));
+        return aa.plus(bb).toFormat(8).replace(/,/g, "");
+    }
+    Helper.Sub = function (aa,bb) {
+        if(typeof(aa)=='string')
+            aa = new BigNumber(aa.replace(/,/g, ""));
+        if(typeof(bb)=='string')
+            bb = new BigNumber(bb.replace(/,/g, ""));
+        return aa.minus(bb).toFormat(8).replace(/,/g, "");
+    }
+    Helper.Fix = function (aa) {
+        if(aa==null||aa=="")
+            aa = "0"
+        if(typeof(aa)=='string')
+            aa = new BigNumber(aa.replace(/,/g, ""));
+        aa = new BigNumber(aa.toFormat(8).replace(/,/g, ""));
+        if (aa == "NaN")
+            aa = new BigNumber(0);
+        if (aa == "Infinity")
+            aa = new BigNumber(0);
+        return aa.toFormat().replace(/,/g, "");
+    }
+
+    Helper.CheckAmount = function (aa,bb,cc) {
+        aa = Helper.Fix(aa);
+        bb = Helper.Fix(bb);
+
+        if(aa==""||aa=="NaN") {
+            alert("请输入数额");
+            return false;
+        }
+        if(new BigNumber(aa).isLessThanOrEqualTo(new BigNumber("0"))) {
+            alert("数额必须大于0");
+            return false;
+        }
+        //if(aa!="0"&&new BigNumber(aa).isGreaterThan(new BigNumber(bb))) {
+        //    alert("超出余额: "+bb);
+        //    return false;
+        //}
+        if(cc!=null&&new BigNumber(aa).isLessThan(new BigNumber(cc))) {
+            alert("数额必须大于: "+cc);
+            return false;
+        }
+        return true;
+    }
+
+    Helper.appendTransferModal = function() {
+        var TransferInfo = document.getElementById("TransferInfo")
+        if(TransferInfo==null)
+        {
+            var innerHTML = "\
+                <div class=\"modal fade\" id=\"TransferInfo\" data-backdrop=\"static\" tabindex=\"-1\" role=\"dialog\" aria-labelledby=\"TransferInfoLabel\" aria-hidden=\"true\" style=\"top:10%\">\
+                    <div class=\"modal-dialog\">\
+                        <div class=\"modal-content\">\
+                            <div class=\"modal-header\">\
+                                <button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-hidden=\"true\">×</button>\
+                                <h4 class=\"modal-title\" id=\"myModalLabel\">Transfer</h4>\
+                            </div>\
+                            <div style='width:100%;height:100%;overflow-x:auto;'>\
+                                <table class='table table-hover' id='TransferInfoTable'>\
+                                    <tbody>\
+                                        <thead id=\"thead_mytable111\">\
+                                            <tr>\
+                                                <th>key</th>\
+                                                <th>value</th>\
+                                            </tr>\
+                                        </thead>\
+                                    </tbody>\
+                                </table>\
+                            </div>\
+                            <div class=\"modal-footer\">\
+                                <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoResend(event)\" id = \"TransferInfoResend\" >\
+                                    重发\
+                                </button>\
+                                <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoDelete(event)\">\
+                                    删除\
+                                </button>\
+                                <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoLeave(event)\">\
+                                    离开\
+                                </button>\
+                            </div>\
+                        </div>\
+                    </div>\
+                </div>\
+            ";
+
+            var item_new = document.createElement("div");
+            item_new.innerHTML = innerHTML;
+            document.body.appendChild(item_new);
+            $("#TransferInfo").modal('hide');
+        }
+    }
+
+    Helper.ShowTransfer = function(text) {
+        Helper.appendTransferModal();
+        if(typeof(text)!='string') {
+            text = text.currentTarget.id;
+        }
+        
+        if (text != "") {
+            $.ajax({
+                url: Helper.GetServerIP() + "/TransferState",
+                dataType: "text",
+                type: "get",
+                data: { hash: text },
+                success: function (data) {
+                    colorindex = 1;
+                    if (data != "") {
+                        // 删除之前的数据
+                        var mytableEle = document.getElementById("TransferInfoTable");
+                        for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                            if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                mytableEle.children[i].remove();
+                        }
+
+                        var jsonObj = JSON.parse(data);
+                        for (var key in jsonObj) {
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                            if (key != "linksblk" && key != "linkstran") {
+                                Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
+                            }
+                        }
+                        var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                        let state = "交易失败";
+                        if(jsonObj["height"]!=0) {
+                            state = "交易已完成";
+                        }
+
+                        Helper.TableInsert("TransferInfoTable", "state", color, "状态", state)
+                        document.curshottransferHash = text;
+                        $("#TransferInfo").modal('show');
+                        $('#TransferInfoResend').attr("disabled",true);
+                    }
+                    else {
+                        // transferWait
+                        var str = Helper.GetTransfer(addressCur + tokenAddress, text);
+                        if(str==null)
+                            str = Helper.GetTransferByHash(text);
+
+                        var jsonObj = JSON.parse(str);
+                        
+                        // 删除之前的数据
+                        var mytableEle = document.getElementById("TransferInfoTable");
+                        for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                            if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                            mytableEle.children[i].remove();
+                        }
+                        
+                        for (var key in jsonObj) {
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                            if (key != "linksblk" && key != "linkstran") {
+                                Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
+                            }
+                        }
+                        
+                        var state = "交易未确认";
+                        try {
+                            if (new Date().getTime()-parseInt(jsonObj["timestamp"]) > 60000)
+                                state = "交易丢失";
+                        }
+                        catch{}
+                        
+                        var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                        Helper.TableInsert("TransferInfoTable", "state", color, "状态", state)
+                        document.curshottransferHash = text;
+                        $("#TransferInfo").modal('show');
+                        if( state == "交易丢失" && (document.ResendlastTime==null||(new Date().getTime())-document.ResendlastTime>30000) ) {
+                            $('#TransferInfoResend').attr("disabled",false);
+                        }
+                        else {
+                            $('#TransferInfoResend').attr("disabled",true);
+                        }
+                    }
+                },
+                error: function (err) {
+                    alert("网络连接错误!");
+                }
+            });
+        }
+    };
+
+    // 删除处理中的交易
+    Helper.liOnTransferInfoDelete = function (hash) {
+        if (hash == null)
+            hash = document.curshottransferHash;
+        if (hash != "") {
+            Helper.Statusbar(hash);
+            Helper.DelTransfer(addressCur + tokenAddress, hash)
+            document.curshottransferHash = "";
+            //window.location.href = window.location.href;
+            $("#TransferInfo").modal('hide');
+        }
+    };
+
+    Helper.liOnTransferInfoLeave  = function(e) {
+        $("#TransferInfo").modal('hide');
+    };
+
+    Helper.liOnTransferInfoResend = function(evevt) {
+        let e = "TransferInfo";
+        if (document.curshottransferHash != "") {       
+            if(document.ResendlastTime!=null&&(new Date().getTime())-document.ResendlastTime<30000)
+            {
+                return;
+            }
+            document.ResendlastTime = new Date().getTime();
+
+            var str = Helper.GetTransfer(addressCur + tokenAddress,document.curshottransferHash);
+            var transferdata = JSON.parse(str);
+            if(transferdata.nonce<nonceCur) {
+                alert("transfer nonce已失效！");
+                return;
+            }
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/Transfer",
+                dataType: "text",
+                type: "get",
+                data: transferdata,
+                success: function (data) {
+                    var jsonObj = JSON.parse(data);
+                    if (data != "{\"success\":true}") {
+                        alert("提交失败,交易数据出错或者节点无出块权限: " + jsonObj["rel"]);
+                        Helper.liOnTransferInfoDelete(document.curshottransferHash);
+                    }
+                    if(e!=null) {
+                        alert("交易已重发!");
+                        $("#" + e).modal("hide");
+                        //window.location.href = window.location.href;
+                    }
+                },
+                error: function (err) {
+                    alert("网络连接错误!");
+                }
+            });
+        }
+    }
+
+    Helper.getByID = function (parentID,myID) {
+        var myIDEle = $('#' + myID);
+        var mytableEle = $('#' + parentID);
+        var children = mytableEle.find(myID);
+
+        return children;
+    };
+
+    Helper.StringFormat = function () {
+        if (arguments.length == 0) {
+            return "";
+        }
+        if (arguments.length == 1) {
+            return arguments[0];
+        }
+        var result = arguments[0];
+        for (var ii = 1; ii < arguments.length; ii++) {
+            var value = arguments[ii];
+            if (null != value) {
+                var reg2 = new RegExp("({)" + (ii - 1) + "(})", "g");
+                result = result.replace(reg2, value);
+            }
+        }
+        return result;
+    }
 
 })(typeof module !== 'undefined' && module.exports ? module.exports : (self.Helper = self.Helper || {}));

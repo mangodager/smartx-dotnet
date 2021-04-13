@@ -1,5 +1,5 @@
-
-/*°´Å¥ÁĞ±í*/
+ï»¿
+/*æŒ‰é’®åˆ—è¡¨*/
 .nav_box {
     height: 60px;
     position: relative;
@@ -24,7 +24,7 @@ body {
 }
 
 
-/*¾ŞÄ»*/
+/*å·¨å¹•*/
 .jumbotron {
     background-size: cover;
     padding-top: 7%;
@@ -32,7 +32,7 @@ body {
     background: #e5e5e5;
 }
 
-/*Ä£Ì¬¿òÕûÌå¸ß¶È*/
+/*æ¨¡æ€æ¡†æ•´ä½“é«˜åº¦*/
 .modal.fade.in {
     top: 25%;
 }
@@ -44,7 +44,7 @@ body {
     user-select: none;
 }
 
-/*±í¸ñÑùÊ½1*/
+/*è¡¨æ ¼æ ·å¼1*/
 
 table {
     /*table-layout: fixed;*/
@@ -77,7 +77,7 @@ td {
 }
 
 
-/*±í¸ñÑùÊ½1*/
+/*è¡¨æ ¼æ ·å¼1*/
 /*
 table {
     width: 90%;

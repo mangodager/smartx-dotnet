@@ -120,10 +120,10 @@ namespace ETModel
             }
             state |= Entity.Root.GetComponentInChild<RelayNetwork>() != null ? EnumState.RelayNetwork : 0;
             new_Node.state   = state;
-            new_Node.version = BlockMgr.networkID;
 
             while (bRun && list.Count>0)
             {
+                new_Node.version = NodeManager.networkIDCur;
                 try
                 {
                     for (int ii = 0; ii < list.Count; ii++)
@@ -178,6 +178,12 @@ namespace ETModel
         }
 
         Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        public static string networkIDCur  = "alpha_2.1.0";
+        public static string networkIDBase = "alpha_2.1.0";
+        public static bool CheckNetworkID(string id)
+        {
+            return id.IndexOf(networkIDBase) !=-1;
+        }
 
         //[MessageMethod(NetOpcode.Q2P_New_Node)]
         async void Q2P_New_Node_Handle(Session session, int opcode, object msg)
@@ -185,10 +191,10 @@ namespace ETModel
             Q2P_New_Node new_Node = msg as Q2P_New_Node;
             try
             {
-                if(new_Node.version!=BlockMgr.networkID)
+                if(!CheckNetworkID(new_Node.version))
                 {
                     R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
-                    response.Message = $"Network Version Not Compatible your:{new_Node.version} cur:{BlockMgr.networkID}";
+                    response.Message = $"Network Version Not Compatible your:{new_Node.version} cur:{NodeManager.networkIDBase}";
                     session.Reply(new_Node, response);
                     return;
                 }
@@ -356,6 +362,11 @@ namespace ETModel
             if (nodesTemp.Length != 0)
                 return nodesTemp[RandomHelper.Random() % nodesTemp.Length].ipEndPoint.ToString();
             return null;
+        }
+
+        public NodeData[] GetNode(long state)
+        {
+            return nodes.Where(a => a.ipEndPoint != networkInner.ipEndPoint.ToString() && (a.state & state) == state).ToArray();
         }
 
         public List<NodeData> GetBroadcastNode()

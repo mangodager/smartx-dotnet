@@ -11,6 +11,8 @@ namespace ETModel
     public class RuleInfo
     {
         public string Address;
+        public string Contract;
+        public string Amount;
         public long   Start;
         public long   End;
         public long   LBH;
@@ -19,16 +21,20 @@ namespace ETModel
     // 在裁决时间点向其他裁决服广播视图, 到达2/3的视图视为决议，广播2/3的决议
     public class Consensus : Component
     {
-        public CalculatePower calculatePower = new CalculatePower(32L);
+        public CalculatePower calculatePower = new CalculatePower(1L);
         public string auxiliaryAddress = "";
         public string consAddress = "";
+        public string SatswapFactory = "";
+        public string ERCSat = "";
+        public string PledgeFactory = "";
+        public string LockFactory = "";
 
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
         BlockMgr blockMgr = Entity.Root.GetComponent<BlockMgr>();
         NodeManager nodeManager = Entity.Root.GetComponent<NodeManager>();
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
         Rule rule = null;
-        public bool transferShow = false;
+        public bool transferShow = true; // 强制打开防止发送重复交易
         public bool openSyncFast = true;
         public bool bRun = true;
 
@@ -36,16 +42,15 @@ namespace ETModel
         {
             try
             {
-                if (jd["transferShow"] != null)
-                    Boolean.TryParse(jd["transferShow"]?.ToString(), out transferShow);
+                //if (jd["transferShow"] != null)
+                //    Boolean.TryParse(jd["transferShow"]?.ToString(), out transferShow);
+                //Log.Info($"Consensus.transferShow = {transferShow}");
                 if (jd["openSyncFast"] != null)
                     Boolean.TryParse(jd["openSyncFast"]?.ToString(), out openSyncFast);
-                Log.Info($"Consensus.transferShow = {transferShow}");
                 Log.Info($"Consensus.openSyncFast = {openSyncFast}");
 
                 if (jd["Run"] != null)
                     bool.TryParse(jd["Run"].ToString(), out bRun);
-
 
                 ComponentNetMsg componentNetMsg = Entity.Root.GetComponent<ComponentNetMsg>();
                 componentNetMsg.registerMsg(NetOpcode.P2P_NewBlock, P2P_NewBlock_Handle);
@@ -54,7 +59,17 @@ namespace ETModel
                 Block genesisblk = JsonHelper.FromJson<Block>(genesisText);
                 auxiliaryAddress = genesisblk.Address;
 
-                consAddress = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.type == "contract"));
+                try
+                {
+                consAddress    = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.depend == "RuleContract_v1.0"));
+                SatswapFactory = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.depend == "SatswapFactory"));
+                ERCSat         = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.depend == "ERCSat"));
+                PledgeFactory  = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.depend == "PledgeFactory"));
+                LockFactory    = LuaVMEnv.GetContractAddress(genesisblk.linkstran.Values.First((x) => x.depend == "LockFactory"));
+                }
+                catch(Exception)
+                {
+                }
 
                 long.TryParse(Entity.Root.GetComponent<LevelDBStore>().Get("UndoHeight"), out transferHeight);
                 if (transferHeight == 0)
@@ -63,13 +78,18 @@ namespace ETModel
                     {
                         blockMgr.AddBlock(genesisblk);
                         ApplyGenesis(genesisblk);
+
+                        Log.Info($"SatswapFactory : {SatswapFactory}");
+                        Log.Info($"ERCSat         : {ERCSat}");
+                        Log.Info($"PledgeFactory  : {PledgeFactory}");
+                        Log.Info($"LockFactory    : {LockFactory}");
                     }
                 }
 
                 //debug
                 using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
                 {
-                    LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray() };
+                    LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray(), tablName = "RuleContract_curr" };
                     snapshot.Contracts.Add(consAddress, luaVMScript);
                     snapshot.Commit();
                 }
@@ -87,12 +107,22 @@ namespace ETModel
                     ApplyBlockChain(height);
                 }
 
-                //string aa = BigInt.Div("1000,1000","1000");
-
-
+                ////string aa = BigInt.Div("1000,1000","1000");
+                //if(NodeManager.networkIDBase == "alpha_1.5.3")
+                //{
+                //    var hash = CryptoHelper.Sha256(FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray()).ToHexString();
+                //    if(hash!= "abfe80b6bb9baeae8e56e8128eee991929515b7c2ce6da0764287ce6727d8611")
+                //    {
+                //        bRun = false;
+                //        Log.Warning("./Data/Contract/RuleContract_curr.lua Version mismatch!!!");
+                //        Log.Warning("Consensus.Run Stop!!!");
+                //        throw new Exception("RuleContract_curr.lua Version mismatch!");
+                //    }
+                //}
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Error(e);
             }
         }
 
@@ -116,9 +146,9 @@ namespace ETModel
 
         static public long GetReward(long height)
         {
-            long half = height / 1025280L / 2; // 2*60*24*356 , half life of 2 year
+            long half = height / (2050560L * 2); // 4*60*24*356 * 2 , half life of 2 year
 
-            long reward = 1024L;
+            long reward = 72L;
             while (half-- > 0)
             {
                 reward = reward / 2;
@@ -128,9 +158,9 @@ namespace ETModel
 
         static public long GetRewardRule(long height)
         {
-            long half = height / 1025280L / 2; // 2*60*24*356 , half life of 2 year
+            long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
 
-            long reward = 64L;
+            long reward = 12L;
             while (half-- > 0)
             {
                 reward = reward / 2;
@@ -175,12 +205,33 @@ namespace ETModel
             return false;
         }
 
+        public RuleInfo GetRule(long height, string Address)
+        {
+            RuleInfo info = null;
+            if (GetRule(height).TryGetValue(Address, out info))
+            {
+                if (info.Start <= height && (height < info.End || info.End == -1) && info.Address == Address)
+                {
+                    return info;
+                }
+            }
+            return null;
+        }
+
         public Dictionary<long, Dictionary<string, RuleInfo>> cacheRule = new Dictionary<long, Dictionary<string, RuleInfo>>();
         public Dictionary<string, RuleInfo> GetRule(long height)
         {
             long target = cacheRule.Keys.FirstOrDefault( (x) => { return Math.Abs(x - height) <= 5; }  );
             if (target != 0)
-                return cacheRule[target];
+            {
+                if(cacheRule[target]!=null)
+                    return cacheRule[target];
+                else
+                if (target == transferHeight)
+                    return null;
+                else
+                    return GetRule(transferHeight);
+            }
 
             if (transferHeight!=height&&Math.Abs(transferHeight - height)<= 5)
                 return GetRule(transferHeight);
@@ -189,11 +240,15 @@ namespace ETModel
             {
                 //Log.Debug($"GetRule {height}");
                 string str = snapshot.Get($"Rule_{height}");
-                if(!string.IsNullOrEmpty(str))
+                if (!string.IsNullOrEmpty(str))
                 {
                     var ruleInfo = JsonHelper.FromJson<Dictionary<string, RuleInfo>>(str);
-                    cacheRule.Add(height,ruleInfo);
+                    cacheRule.Add(height, ruleInfo);
                     return ruleInfo;
+                }
+                else
+                {
+                    cacheRule.Add(height, null);
                 }
             }
             return transferHeight != 0 ? GetRule(transferHeight) : null;
@@ -221,6 +276,7 @@ namespace ETModel
         // 获取某个块被链接为主块的次数
         public int GetBlockBeLinkCount(Block target, List<Block> blks2 = null)
         {
+
             List<Block> blks = blks2 ?? blockMgr.GetBlock(target.height + 1);
             List<Block> blkNum = new List<Block>();
             for (int i = 0; i < blks.Count; i++)
@@ -305,7 +361,7 @@ namespace ETModel
             LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
 
             // --------------------------------------------------
-            calculatePower.Insert(mcblk);
+            calculatePower.InsertLink(mcblk, blockMgr);
             //Log.Debug($"ApplyHeight={blockChain.height}, {calculatePower.GetPower()}, {mcblk.GetDiff()}");
 
             using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshotUndo(blockChain.height))
@@ -328,6 +384,9 @@ namespace ETModel
                     {
                         for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
                         {
+                            linkblk.linkstran[jj].height = 0;
+                            if (!ApplyTransferFee(dbSnapshot, linkblk.linkstran[jj], linkblk.height, linkblk))
+                                continue;
                             if (!ApplyTransfer(dbSnapshot, linkblk.linkstran[jj], linkblk.height))
                                 return false;
                             if (!ApplyContract(dbSnapshot, linkblk.linkstran[jj], linkblk.height))
@@ -339,47 +398,62 @@ namespace ETModel
                 dbSnapshot.Add($"Rule_{mcblk.height}",JsonHelper.ToJson(ruleInfos));
 
                 dbSnapshot.Commit();
-            }
 
+                cacheRule.Remove(mcblk.height);
+                cacheRule.Add(mcblk.height, ruleInfos);
+            }
             return true;
         }
 
         public bool ApplyTransfer(DbSnapshot dbSnapshot, BlockSub transfer, long height)
         {
-            if (transfer.type != "transfer")
-                return true;
-            if (transfer.addressIn == transfer.addressOut)
-                return true;
-            if (BigHelper.Less(transfer.amount , "0" , true))
-                return true;
-            //if (!transfer.CheckSign() && height != 1)
-            //    return true;
-
-            if (height != 1)
+            do
             {
-                Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
-                if (accountIn == null)
-                    return true;
-                if (BigHelper.Less(accountIn.amount , transfer.amount,false))
-                    return true;
-                if (accountIn.nonce + 1 != transfer.nonce)
-                    return true;
-                accountIn.amount = BigHelper.Sub(accountIn.amount,transfer.amount);
-                accountIn.nonce += 1;
-                dbSnapshot.Accounts.Add(accountIn.address, accountIn);
-                if(transferShow)
-                    dbSnapshot.BindTransfer2Account(transfer.addressIn, transfer.hash);
+                if (transfer.type != "transfer")
+                    break;
+                if (transfer.addressIn == transfer.addressOut)
+                    break;
+                if (BigHelper.Less(transfer.amount, "0", true))
+                    break;
+                //if (!transfer.CheckSign() && height != 1)
+                //    return true;
 
+                if (height != 1)
+                {
+                    Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
+                    if (accountIn == null)
+                        break;
+                    if (BigHelper.Less(accountIn.amount, transfer.amount, false))
+                        break;
+                    if (accountIn.nonce + 1 != transfer.nonce)
+                        break;
+                    accountIn.amount = BigHelper.Sub(accountIn.amount, transfer.amount);
+                    accountIn.nonce += 1;
+                    dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+                    if (transferShow)
+                    {
+                        dbSnapshot.BindTransfer2Account(transfer.addressIn, transfer.hash);
+                        if (!string.IsNullOrEmpty(transfer.data))
+                        {
+                            dbSnapshot.Add($"unique_{transfer.data}", transfer.hash);
+                        }
+                    }
+                }
+
+                Account accountOut = dbSnapshot.Accounts.Get(transfer.addressOut) ?? new Account() { address = transfer.addressOut, amount = "0", nonce = 0 };
+                accountOut.amount = BigHelper.Add(accountOut.amount, transfer.amount);
+                dbSnapshot.Accounts.Add(accountOut.address, accountOut);
+
+                if (transferShow)
+                {
+                    dbSnapshot.BindTransfer2Account(transfer.addressOut, transfer.hash);
+                    transfer.height = height;
+                }
             }
+            while (false);
 
-            Account accountOut = dbSnapshot.Accounts.Get(transfer.addressOut) ?? new Account() { address = transfer.addressOut, amount = "0", nonce = 0 };
-            accountOut.amount = BigHelper.Add(accountOut.amount,transfer.amount);
-            dbSnapshot.Accounts.Add(accountOut.address, accountOut);
-
-            if (transferShow)
+            if (transferShow&&(transfer.height != 0 || dbSnapshot.Transfers.Get(transfer.hash) == null))
             {
-                dbSnapshot.BindTransfer2Account(transfer.addressOut, transfer.hash);
-                transfer.height = height;
                 dbSnapshot.Transfers.Add(transfer.hash, transfer);
             }
 
@@ -396,23 +470,31 @@ namespace ETModel
             dbSnapshot.Add(rewardKey, "1");
 
             var amount     = GetReward(mcblk.height).ToString();
-            var amountRule = GetRewardRule(mcblk.height).ToString();
-            var timestamp  = TimeHelper.Now();
+            var amountRuletolat  = GetRewardRule(mcblk.height).ToString();
+            var amountRuleCons   = BigHelper.Mul(amountRuletolat,"0.98");
+            var amountRuleRate   = BigHelper.Sub(amountRuletolat, amountRuleCons);
+            var timestamp  = mcblk.timestamp;
 
-            BlockSub Reward_Rule = null;
-            BlockSub Reward      = null;
+            BlockSub Reward = null;
+            BlockSub Reward_RuleCons = null;
+            BlockSub Reward_RuleRate = null;
             if (transferShow)
             {
-                Reward_Rule = new BlockSub() { hash = "", type = "Reward_Rule", nonce = mcblk.height, amount = amountRule };
-                Reward_Rule.hash = Reward_Rule.ToHash();
-                Reward_Rule.height = mcblk.height;
-                Reward_Rule.timestamp = timestamp;
-                dbSnapshot.Transfers.Add(Reward_Rule.hash, Reward_Rule);
+                Reward_RuleCons = new BlockSub() { hash = "", type = "Reward_RCons", timestamp = timestamp, amount = amountRuleCons };
+                Reward_RuleCons.hash = Reward_RuleCons.ToHash();
+                Reward_RuleCons.height = mcblk.height;
 
-                Reward = new BlockSub() { hash = "", type = "Reward_Mc", nonce = mcblk.height, data = mcblk.height.ToString(), amount = amount };
+                Reward_RuleRate = new BlockSub() { hash = "", type = "Reward_RRate", timestamp = timestamp, amount = amountRuleRate };
+                Reward_RuleRate.hash = Reward_RuleRate.ToHash();
+                Reward_RuleRate.height = mcblk.height;
+
+                Reward = new BlockSub() { hash = "", type = "Reward_Mc", timestamp = timestamp, amount = amount };
+                Reward.hash = Reward.ToHash();
                 Reward.height = mcblk.height;
-                Reward.timestamp = timestamp;
-                dbSnapshot.Transfers.Add(Reward.hash = Reward.ToHash(), Reward);
+
+                dbSnapshot.Transfers.Add(Reward_RuleCons.hash, Reward_RuleCons);
+                dbSnapshot.Transfers.Add(Reward_RuleRate.hash, Reward_RuleRate);
+                dbSnapshot.Transfers.Add(Reward.hash, Reward);
             }
 
             // rule奖励
@@ -423,11 +505,29 @@ namespace ETModel
                 if (linkblk != null && IsRule(mcblk.height, linkblk.Address))
                 {
                     ruleCount++;
-                    Account linkAccount = dbSnapshot.Accounts.Get(linkblk.Address) ?? new Account() { address = linkblk.Address, amount = "0", nonce = 0 };
-                    linkAccount.amount = BigHelper.Add(linkAccount.amount, amountRule);
-                    dbSnapshot.Accounts.Add(linkAccount.address, linkAccount);
-                    if (transferShow)
-                        dbSnapshot.BindTransfer2Account(linkAccount.address, Reward_Rule.hash);
+                    string ruleAddress = linkblk.Address;
+                    var rule = GetRule(mcblk.height, linkblk.Address);
+                    if (rule != null && !string.IsNullOrEmpty(rule.Contract) ) {
+                        ruleAddress = rule.Contract;
+                    }
+                    {   // Reward_RuleCons
+                        Account linkAccount = dbSnapshot.Accounts.Get(ruleAddress) ?? new Account() { address = ruleAddress, amount = "0", nonce = 0 };
+                        linkAccount.amount = BigHelper.Add(linkAccount.amount, amountRuleCons);
+                        dbSnapshot.Accounts.Add(linkAccount.address, linkAccount);
+                        if (transferShow)
+                        {
+                            dbSnapshot.BindTransfer2Account(linkAccount.address, Reward_RuleCons.hash);
+                        }
+                    }
+                    {   // amountRuleRate
+                        Account linkAccount = dbSnapshot.Accounts.Get(linkblk.Address) ?? new Account() { address = linkblk.Address, amount = "0", nonce = 0 };
+                        linkAccount.amount = BigHelper.Add(linkAccount.amount, amountRuleRate);
+                        dbSnapshot.Accounts.Add(linkAccount.address, linkAccount);
+                        if (transferShow)
+                        {
+                            dbSnapshot.BindTransfer2Account(linkAccount.address, Reward_RuleRate.hash);
+                        }
+                    }
                 }
             }
 
@@ -437,45 +537,108 @@ namespace ETModel
             dbSnapshot.Accounts.Add(account.address, account);
 
             if (transferShow)
+            {
                 dbSnapshot.BindTransfer2Account(account.address, Reward.hash);
+            }
         }
 
         LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
         public bool ApplyContract(DbSnapshot dbSnapshot, BlockSub transfer, long height)
         {
-            if (transfer.type != "contract")
-                return true;
-            if (transfer.addressIn == transfer.addressOut)
-                return true;
-            //if (transfer.data == null || transfer.data == "")
-            //    return true;
-            //if (!transfer.CheckSign())
-            //    return true;
-
-            // 设置交易index
-            Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn) ?? new Account() { address = transfer.addressIn, amount = "0", nonce = 0 };
-            if (accountIn.nonce + 1 != transfer.nonce)
-                return true;
-
-            accountIn.nonce += 1;
-            dbSnapshot.Accounts.Add(accountIn.address, accountIn);
-
-            bool rel = luaVMEnv.Execute(dbSnapshot, transfer, height, out object[] reslut);
-
-            if (transferShow&&rel)
+            do
             {
-                var consAddressNew = LuaVMEnv.GetContractAddress(transfer);
-                dbSnapshot.BindTransfer2Account($"{transfer.addressIn}{consAddressNew}", transfer.hash);
+                if (transfer.type != "contract")
+                    break;
+                if (transfer.addressIn == transfer.addressOut)
+                    break;
+                //if (transfer.data == null || transfer.data == "")
+                //    return true;
+                //if (!transfer.CheckSign())
+                //    return true;
+
+                // 设置交易index
+                Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn) ?? new Account() { address = transfer.addressIn, amount = "0", nonce = 0 };
+                if (accountIn.nonce + 1 != transfer.nonce)
+                    break;
+
+                accountIn.nonce += 1;
+                dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+
                 transfer.height = height;
+                bool rel = luaVMEnv.Execute(dbSnapshot, transfer, height, out object[] reslut);
+
+                if (transferShow)
+                {
+                    if (rel)
+                    {
+                        var consAddressNew = LuaVMEnv.GetContractAddress(transfer);
+                        if (transfer.addressOut == "" && transfer.depend.IndexOf("ERC20") == -1)
+                        {
+                            dbSnapshot.BindTransfer2Account($"{transfer.addressIn}", transfer.hash);
+                        }
+                        dbSnapshot.BindTransfer2Account($"{transfer.addressIn}{consAddressNew}", transfer.hash);
+                    }
+                    else
+                    {
+                        transfer.height = 0;
+                    }
+                }
+            }
+            while (false);
+
+            if (transferShow && (transfer.height != 0 || dbSnapshot.Transfers.Get(transfer.hash) == null))
+            {
                 dbSnapshot.Transfers.Add(transfer.hash, transfer);
             }
-
             return true;
         }
 
-        public long transferHeight = 0;
-        List<P2P_NewBlock> newBlocks = new List<P2P_NewBlock>();
+        // take off fee
+        public bool ApplyTransferFee(DbSnapshot dbSnapshot, BlockSub transfer, long height,Block blk)
+        {
+            if (height != 1)
+            {
+                if (dbSnapshot.Transfers.Get(transfer.hash) != null)
+                {
+                    //// 节点重复打包已经存在交易将被扣手续费
+                    //Account accountIn = dbSnapshot.Accounts.Get(blk.Address);
+                    //if (accountIn == null)
+                    //    return false;
+                    //if (BigHelper.Less(accountIn.amount, "0.002", false))
+                    //    return false;
+                    //accountIn.amount = BigHelper.Sub(accountIn.amount, "0.002");
+                    //dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+                    return false;
+                }
+                else
+                {
+                    // 正常扣除手续费
+                    Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
+                    if (accountIn == null)
+                        return false;
+                    if (BigHelper.Less(accountIn.amount, "0.002", false))
+                        return false;
+                    accountIn.amount = BigHelper.Sub(accountIn.amount, "0.002");
+                    dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+
+                    Account blkAccount = dbSnapshot.Accounts.Get(blk.Address);
+                    if(blkAccount != null) {
+                        blkAccount.amount = BigHelper.Add(blkAccount.amount, "0.002");
+                        dbSnapshot.Accounts.Add(blkAccount.address, blkAccount);
+                    }
+                }
+            }
+            return true;
+        }
+
+        public long transferHeight    = 0;
+        List<P2P_NewBlock> newBlocks  = new List<P2P_NewBlock>();
         TimePass bifurcatedReportTime = new TimePass(15);
+        TimePass cacheRuleClearTime   = new TimePass(15);
+
+        //// 记录transferHeight多长时间没变化了
+        //long  transferHeightLast = -1;
+        //float transferHeightTime = TimeHelper.time;
 
         public async void Run()
         {
@@ -485,6 +648,7 @@ namespace ETModel
 
             Log.Debug($"Consensus.Run at height {transferHeight}");
 
+            blockMgr.DelBlockWithHeight(this,transferHeight);
             // 恢复到停机前的高度
             ApplyBlockChain();
 
@@ -516,13 +680,10 @@ namespace ETModel
                                     newBlocks.RemoveAll((x) => { return x.ipEndPoint == ipEndPoint; });
                                     break;
                                 }
-                                //if (await SyncHeight(otherMcBlk, newBlocks[ii].ipEndPoint))
                                 ApplyBlockChain();
                             }
-                            //break;
                         }
                     }
-
                     ApplyBlockChain();
 
                     lock (this)
@@ -531,13 +692,36 @@ namespace ETModel
                         runAction = null;
                     }
 
-                    if (bifurcatedReportTime.IsPassOnce() && bifurcatedReport != "")
+                    //if (bifurcatedReport != null)
+                    //{
+                    //    // 如果15分钟高度无变化,并且发现更高的分叉链,回退两个高度块
+                    //    if (bifurcatedReport.height > transferHeight + 60 && TimeHelper.time - transferHeightTime > 900)
+                    //    {
+                    //        long min = transferHeight - 3;
+                    //        long max = transferHeight + 4;
+                    //        Entity.Root.GetComponent<LevelDBStore>().UndoTransfers(min);
+                    //        for (long ii = max; ii > min; ii--)
+                    //        {
+                    //            Entity.Root.GetComponent<BlockMgr>().DelBlock(ii);
+                    //        }
+                    //        transferHeight = min;
+                    //    }
+                    //}
+                    //if (transferHeightLast != transferHeight)
+                    //{
+                    //    transferHeightLast = transferHeight;
+                    //    transferHeightTime = TimeHelper.time;
+                    //}
+
+                    if (bifurcatedReportTime.IsPassSet() && bifurcatedReport != null)
                     {
-                        Log.Info(bifurcatedReport);
-                        bifurcatedReport = "";
+                        var outputstr = $"find a branch chain. height: {bifurcatedReport.height} address: {bifurcatedReport.Address} , rules count: {bifurcatedReport.linksblk.Count}";
+                        Log.Info(outputstr);
+
+                        bifurcatedReport = null;
                     }
 
-                    if (newBlocks.Count == 0)
+                    if (cacheRuleClearTime.IsPassSet())
                     {
                         cacheRule.TryGetValue(transferHeight, out Dictionary<string, RuleInfo> ruleInfo);
                         cacheRule.Clear();
@@ -545,7 +729,16 @@ namespace ETModel
                         {
                             cacheRule.Add(transferHeight, ruleInfo);
                         }
+                    }
+
+                    
+                    if (newBlocks.Count == 0)
+                    {
                         await Task.Delay(1000);
+                    }
+                    else
+                    {
+                        await Task.Delay(1);
                     }
                 }
                 catch (Exception e)
@@ -555,47 +748,6 @@ namespace ETModel
                     await Task.Delay(1000);
                 }
             }
-        }
-
-        public void ApplyBlockChainOld()
-        {
-            // 应用账本到T-1周期
-            long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-            var before = transferHeight;
-            var chain1 = BlockChainHelper.GetBlockChain(transferHeight).GetMcBlockNext(blockMgr, this);
-            var chain2 = chain1 == null ? null : chain1.GetMcBlockNext(blockMgr, this);
-            while (chain1 != null && chain2 != null)
-            {
-                if (!ApplyHeight(chain1))
-                    break;
-
-                //// 可能会造成找不到块的BUG
-                //var mcblk = chain1.GetMcBlock();
-                //var blks = blockMgr.GetBlock(mcblk.height - 1);
-                //if (blks.Count > mcblk.linksblk.Count)
-                //{
-                //    for (int ii = blks.Count - 1; ii >= 0; ii--)
-                //    {
-                //        if (mcblk.linksblk.Find((x) => { return x == blks[ii].hash; }) != blks[ii].hash)
-                //        {
-                //            var temp = BlockChainHelper.GetBlockChain(blks[ii].height-1);
-                //            if(temp.hash!= blks[ii].prehash ) {
-                //                blockMgr.DelBlock(blks[ii].hash);
-                //            }
-                //        }
-                //    }
-                //}
-
-                chain1 = chain2;
-                chain2 = chain2.GetMcBlockNext(blockMgr, this);
-
-                if (before != transferHeight && chain1 != null && chain1.height % 100 == 0)
-                    Log.Debug($"ApplyHeight {chain1.height}");
-            }
-            long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-            if(before!= transferHeight)
-                Log.Debug($"ApplyHeight {before} to {transferHeight}");
-
         }
 
         // 解决分叉链
@@ -656,27 +808,25 @@ namespace ETModel
             long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
             if (before != transferHeight)
                 Log.Debug($"ApplyHeight {before} to {transferHeight}");
+
         }
 
-        string bifurcatedReport = "";
+        SyncHeightFast syncHeightFast = new SyncHeightFast();
+        public Block bifurcatedReport = null;
         async Task<bool> SyncHeight(Block otherMcBlk, string ipEndPoint)
         {
             if (transferHeight + 20 < otherMcBlk.height)
             {
-                // 随机一个openSyncFast节点
-                string ipEndPoint2 = nodeManager.GetRandomNode(NodeManager.EnumState.openSyncFast);
-                //Log.Info($"SyncHeightFast {ipEndPoint2}");
-                if(!string.IsNullOrEmpty(ipEndPoint2))
-                    return await SyncHeightFast(otherMcBlk, ipEndPoint2);
+                return await syncHeightFast.Sync(otherMcBlk, ipEndPoint);
             }
-
-            return await SyncHeightNear(otherMcBlk, ipEndPoint);
+            var rel = await SyncHeightNear(otherMcBlk, ipEndPoint);
+            return rel;
         }
 
-        async Task<bool> SyncHeightFast(Block otherMcBlk,string ipEndPoint)
+        async Task SyncHeightFast(Block otherMcBlk,string ipEndPoint)
         {
             if (transferHeight >= otherMcBlk.height)
-                return true;
+                return ;
 
             long.TryParse(levelDBStore.Get("Snap___2F1Height"), out long l2F1Height);
             l2F1Height = Math.Max(1, l2F1Height);
@@ -684,9 +834,9 @@ namespace ETModel
             BlockChain chain2F1 = BlockChainHelper.GetBlockChain(l2F1Height);
             if (chain2F1 != null && chain2F1.hash != hash2F1)
             {
-                if(bifurcatedReport == ""&&!string.IsNullOrEmpty(hash2F1))
-                    bifurcatedReport = $"find a branch chain. height: {otherMcBlk.height} address: {otherMcBlk.Address} , rules count: {otherMcBlk.linksblk.Count}";
-                return true;
+                if (bifurcatedReport == null && !string.IsNullOrEmpty(hash2F1))
+                    bifurcatedReport = otherMcBlk;
+                return ;
             }
 
             // 接收广播过来的主块
@@ -717,7 +867,7 @@ namespace ETModel
             q2p_Sync_Height.spacing = 23;
             q2p_Sync_Height.height  = currHeight;
             var reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint,15);
-            if (reply != null)
+            if (reply!=null&&!string.IsNullOrEmpty(reply.blockChains))
             {
                 blockChains = JsonHelper.FromJson<Dictionary<long, string>>(reply.blockChains);
                 do
@@ -734,7 +884,7 @@ namespace ETModel
                     if (!error&& reply.height!=-1)
                     {
                         q2p_Sync_Height.height = reply.height;
-                        q2p_Sync_Height.spacing = Math.Max(1, 103 - (reply.height - currHeight));
+                        q2p_Sync_Height.spacing = Math.Max(1, 23 - (reply.height - currHeight));
 
                         reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint);
                     }
@@ -742,51 +892,9 @@ namespace ETModel
                 while (!error && reply != null && reply.height != -1);
             }
 
-            //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
-            bool bUndoHeight = false;
-            long ii = currHeight;
-            for ( ; ii < syncHeight + 1 && ii < currHeight + 20; ii++)
-            {
-                blockChains.TryGetValue(ii, out string hash);
-                Block syncMcBlk = blockMgr.GetBlock(hash);
-                if (syncMcBlk == null)
-                    break;
-
-                // 比较链
-                if (syncMcBlk.height > 2 && !bUndoHeight)
-                {
-                    var chain = BlockChainHelper.GetBlockChain(syncMcBlk.height - 3);
-                    if (chain != null)
-                    {
-                        var chainnext = chain.GetMcBlockNext();
-                        if (chainnext != null)
-                        {
-                            Block blk2 = blockMgr.GetBlock(chainnext.hash);
-                            Block blk3 = blockMgr.GetBlock(syncMcBlk.prehash);
-                            if (blk2 != null && blk3 != null && blk2.hash != blk3.prehash)
-                            {
-                                bUndoHeight = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 回滚到同步块的高度
-            if (bUndoHeight)
-            {
-                long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-                levelDBStore.UndoTransfers(currHeight);
-                long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-            }
-
-            if (ii < syncHeight + 1)
-                return false;
-
-            return true;
         }
 
-        async Task<bool> SyncHeightNear(Block otherMcBlk, string ipEndPoint)
+        public async Task<bool> SyncHeightNear(Block otherMcBlk, string ipEndPoint,float timeOut=5)
         {
             if (transferHeight >= otherMcBlk.height)
                 return true;
@@ -797,8 +905,8 @@ namespace ETModel
             BlockChain chain2F1 = BlockChainHelper.GetBlockChain(l2F1Height);
             if (chain2F1 != null && chain2F1.hash != hash2F1)
             {
-                if (bifurcatedReport == "" && !string.IsNullOrEmpty(hash2F1))
-                    bifurcatedReport = $"find a branch chain. height: {otherMcBlk.height} address: {otherMcBlk.Address} , rules count: {otherMcBlk.linksblk.Count}";
+                if (bifurcatedReport == null && !string.IsNullOrEmpty(hash2F1))
+                    bifurcatedReport = otherMcBlk;
                 return true;
             }
 
@@ -815,7 +923,7 @@ namespace ETModel
             {
                 currHeight = jj;
                 BlockChain chain = BlockChainHelper.GetBlockChain(jj);
-                string hash = await QueryMcBlockHash(jj, ipEndPoint);
+                string hash = await QueryMcBlockHash(jj, ipEndPoint, timeOut);
                 if (hash != "" && (chain == null || chain.hash != hash))
                 {
                     continue;
@@ -826,54 +934,78 @@ namespace ETModel
             //Log.Info($"SyncHeight: {currHeight} to {syncHeight}");
             bool bUndoHeight = false;
             long ii = currHeight;
-            for (; ii < syncHeight + 1 && ii < currHeight + 10; ii++)
+            bool isContinue = true;
+            for (; ii < syncHeight + 1 && ii < currHeight + 13; ii++)
             {
                 Block syncMcBlk = null;
                 if (ii == otherMcBlk.height - 1) // 同步prehash， 先查
                 {
-                    syncMcBlk = blockMgr.GetBlock(otherMcBlk.prehash) ?? await QueryMcBlock(ii, ipEndPoint);
+                    syncMcBlk = blockMgr.GetBlock(otherMcBlk.prehash) ?? await QueryMcBlock(ii, ipEndPoint, timeOut);
                 }
                 if (ii == otherMcBlk.height)
                 {
                     syncMcBlk = otherMcBlk;
                 }
-                else
+                if (syncMcBlk == null)
                 {
-                    string hash = await QueryMcBlockHash(ii, ipEndPoint);
+                    string hash = await QueryMcBlockHash(ii, ipEndPoint, timeOut);
+                    if (string.IsNullOrEmpty(hash))
+                        break;
                     syncMcBlk = blockMgr.GetBlock(hash);
                     if (syncMcBlk == null)
                     {
-                        syncMcBlk = await QueryMcBlock(ii, ipEndPoint);
+                        syncMcBlk = await QueryMcBlock(ii, ipEndPoint, timeOut);
                     }
                 }
 
                 if (syncMcBlk == null)
                     break;
 
-                if (!blockMgr.AddBlock(syncMcBlk))
+                if (!AddBlockFlag(syncMcBlk))
                     break;
 
                 for (int jj = 0; jj < syncMcBlk.linksblk.Count; jj++)
                 {
-                    Block queryBlock = blockMgr.GetBlock(syncMcBlk.linksblk[jj]) ?? await QueryBlock(syncMcBlk.linksblk[jj], ipEndPoint);
+                    Block queryBlock = blockMgr.GetBlock(syncMcBlk.linksblk[jj]) ?? await QueryBlock(syncMcBlk.linksblk[jj], ipEndPoint, timeOut);
                     if (queryBlock == null)
+                    {
+                        isContinue = false;
                         break;
-                    if (!blockMgr.AddBlock(queryBlock))
+                    }
+                    if (!AddBlockFlag(queryBlock))
+                    {
+                        isContinue = false;
                         break;
+                    }
                 }
+                if(!isContinue)
+                    break;
 
-                var beLinks = await QueryBeLinkHash(syncMcBlk.hash, ipEndPoint);
+                var beLinks = await QueryBeLinkHash(syncMcBlk.hash, ipEndPoint, timeOut);
                 if (beLinks != null)
                 {
                     for (int jj = 0; jj < beLinks.Count; jj++)
                     {
-                        Block queryBlock = blockMgr.GetBlock(beLinks[jj]) ?? await QueryBlock(beLinks[jj], ipEndPoint);
+                        Block queryBlock = blockMgr.GetBlock(beLinks[jj]) ?? await QueryBlock(beLinks[jj], ipEndPoint, timeOut);
                         if (queryBlock == null)
+                        {
+                            isContinue = false;
                             break;
-                        if (!blockMgr.AddBlock(queryBlock))
+                        }
+                        if (!AddBlockFlag(queryBlock))
+                        {
+                            isContinue = false;
                             break;
+                        }
                     }
                 }
+                else
+                {
+                    break;
+                }
+
+                if (!isContinue)
+                    break;
 
                 // 比较链
                 if (syncMcBlk.height > 2 && !bUndoHeight)
@@ -909,21 +1041,37 @@ namespace ETModel
             return true;
         }
 
+        bool AddBlockFlag(Block blk,bool b = true)
+        {
+            if (blk != null)
+            {
+                if(blk.temp==null)
+                    blk.temp = new List<string>();
+                blk.temp.Remove("syncFlag");
+                if (b)
+                {
+                    blk.temp.Add("syncFlag");
+                }
+                return blockMgr.AddBlock(blk,true);
+            }
+            return false;
+        }
+
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
-            if (p2p_Block.networkID != BlockMgr.networkID)
+            if (!NodeManager.CheckNetworkID(p2p_Block.networkID))
                 return;
 
             if (string.IsNullOrEmpty(p2p_Block.ipEndPoint))
                 return;
 
-            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = BlockMgr.networkID, ipEndPoint = p2p_Block.ipEndPoint };
+            var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = NodeManager.networkIDBase, ipEndPoint = p2p_Block.ipEndPoint };
             newBlocks.RemoveAll((x) => { return x.ipEndPoint == newBlock.ipEndPoint; });
             newBlocks.Add(newBlock) ;
         }
 
-        public async Task<string> QueryPrehashmkl(long syncHeight, string ipEndPoint = null)
+        public async Task<string> QueryPrehashmkl(long syncHeight, string ipEndPoint = null, float timeOut = 5)
         {
             Q2P_Prehashmkl q2p_PreHash = new Q2P_Prehashmkl();
             q2p_PreHash.ActorId = nodeManager.GetMyNodeId();
@@ -944,7 +1092,7 @@ namespace ETModel
 
             if (session != null)
             {
-                R2P_Prehashmkl r2p_Prehashmkl = (R2P_Prehashmkl)await session.Query(q2p_PreHash);
+                R2P_Prehashmkl r2p_Prehashmkl = (R2P_Prehashmkl)await session.Query(q2p_PreHash, timeOut);
                 return r2p_Prehashmkl != null ? r2p_Prehashmkl.prehashmkl : "";
             }
             return "";
@@ -959,7 +1107,7 @@ namespace ETModel
             session.Reply(q2p_Prehashmkl, r2p_Prehashmkl);
         }
 
-        public async Task<Block> QueryBlock(string hash, string ipEndPoint = null)
+        public async Task<Block> QueryBlock(string hash, string ipEndPoint = null, float timeOut = 5)
         {
             Q2P_Block q2p_Block = new Q2P_Block();
             q2p_Block.ActorId = nodeManager.GetMyNodeId();
@@ -981,7 +1129,7 @@ namespace ETModel
 
             if (session != null)
             {
-                R2P_Block r2p_Block = (R2P_Block)await session.Query(q2p_Block);
+                R2P_Block r2p_Block = (R2P_Block)await session.Query(q2p_Block, timeOut);
                 if (r2p_Block != null&& r2p_Block.block!="")
                     blk = JsonHelper.FromJson<Block>(r2p_Block.block);
             }
@@ -1007,7 +1155,7 @@ namespace ETModel
             session.Reply(q2p_HasBlock, r2p_HasBlock);
         }
 
-        public async Task<Block> QueryMcBlock(long height, string ipEndPoint=null)
+        public async Task<Block> QueryMcBlock(long height, string ipEndPoint=null,float timeOut=5)
         {
             Q2P_McBlock q2p_mcBlock = new Q2P_McBlock();
             q2p_mcBlock.ActorId = nodeManager.GetMyNodeId();
@@ -1029,7 +1177,7 @@ namespace ETModel
 
             if (session != null)
             {
-                R2P_McBlock r2p_McBlock = (R2P_McBlock)await session.Query(q2p_mcBlock);
+                R2P_McBlock r2p_McBlock = (R2P_McBlock)await session.Query(q2p_mcBlock, timeOut);
                 if (r2p_McBlock != null && r2p_McBlock.block!="" )
                     blk = JsonHelper.FromJson<Block>(r2p_McBlock.block);
             }
@@ -1047,7 +1195,7 @@ namespace ETModel
             session.Reply(q2p_McBlock, r2p_McBlock);
         }
 
-        public async Task<string> QueryMcBlockHash(long height, string ipEndPoint = null)
+        public async Task<string> QueryMcBlockHash(long height, string ipEndPoint = null, float timeOut = 5)
         {
             Q2P_McBlockHash q2p_mcBlockHash = new Q2P_McBlockHash();
             q2p_mcBlockHash.ActorId = nodeManager.GetMyNodeId();
@@ -1069,7 +1217,7 @@ namespace ETModel
 
             if (session != null)
             {
-                R2P_McBlockHash r2p_McBlock = (R2P_McBlockHash)await session.Query(q2p_mcBlockHash);
+                R2P_McBlockHash r2p_McBlock = (R2P_McBlockHash)await session.Query(q2p_mcBlockHash, timeOut);
                 if (r2p_McBlock != null )
                     hash = r2p_McBlock.hash;
             }
@@ -1105,7 +1253,7 @@ namespace ETModel
             session.Reply(q2q_McBlockHash, r2p_McBlockHash);
         }
 
-        public async Task<List<string>> QueryBeLinkHash(string hash, string ipEndPoint = null)
+        public async Task<List<string>> QueryBeLinkHash(string hash, string ipEndPoint = null, float timeOut = 5)
         {
             Q2P_BeLinkHash q2p_BeLinkHash = new Q2P_BeLinkHash();
             q2p_BeLinkHash.ActorId = nodeManager.GetMyNodeId();
@@ -1126,7 +1274,7 @@ namespace ETModel
 
             if (session != null)
             {
-                R2P_BeLinkHash r2p_BeLinkHash = (R2P_BeLinkHash)await session.Query(q2p_BeLinkHash);
+                R2P_BeLinkHash r2p_BeLinkHash = (R2P_BeLinkHash)await session.Query(q2p_BeLinkHash, timeOut);
                 if (r2p_BeLinkHash != null&& r2p_BeLinkHash.hashs !=null && r2p_BeLinkHash.hashs != "" )
                     return JsonHelper.FromJson<List<string>>(r2p_BeLinkHash.hashs);
             }
@@ -1188,6 +1336,10 @@ namespace ETModel
             var consensus = Entity.Root.GetComponent<Consensus>();
             if (!consensus.openSyncFast)
             {
+                Q2P_Sync_Height q2p_Sync_Height = msg as Q2P_Sync_Height;
+                R2P_Sync_Height reply_msg = new R2P_Sync_Height();
+                reply_msg.height = -1;
+                session.Reply(q2p_Sync_Height, reply_msg);
                 return;
             }
             else
@@ -1213,7 +1365,7 @@ namespace ETModel
                         blockChains.Add(chain1.height, chain1.hash);
                     }
 
-                    List<Block> blks;
+                    List<Block> blks = blockMgr.GetBlock(reply_msg.height);
                     var blkNext = BlockChainHelper.GetMcBlock(reply_msg.height + 1);
                     if (blkNext != null)
                     {
@@ -1221,13 +1373,9 @@ namespace ETModel
                         foreach (string hash in blkNext.linksblk.Values)
                         {
                             Block blk = blockMgr.GetBlock(hash);
-                            if (blk != null)
+                            if (blk!=null && blks.IndexOf(blk)==-1)
                                 blks.Add(blk);
                         }
-                    }
-                    else
-                    {
-                        blks = blockMgr.GetBlock(reply_msg.height);
                     }
 
                     for (reply_msg.handle = q2p_Sync_Height.handle; reply_msg.handle < blks.Count; reply_msg.handle++)
@@ -1293,6 +1441,83 @@ namespace ETModel
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
                     blk.AddBlockSub(1, transfer);
+                }
+
+                {
+                    BlockSub transfer = new BlockSub();
+                    transfer.addressIn = blk.Address;
+                    transfer.addressOut = "";
+                    transfer.amount = "0";
+                    transfer.nonce = 2;
+                    transfer.type = "contract";
+                    transfer.depend = "ERCSat";
+                    transfer.data = "create(\"SAT\",\"SAT\",\"0\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash = transfer.ToHash();
+                    transfer.sign = transfer.ToSign(key);
+                    blk.AddBlockSub(2, transfer);
+                }
+
+                {
+                    BlockSub transfer = new BlockSub();
+                    transfer.addressIn = blk.Address;
+                    transfer.addressOut = "";
+                    transfer.amount = "0";
+                    transfer.nonce = 3;
+                    transfer.type = "contract";
+                    transfer.depend = "PledgeFactory";
+                    transfer.data = "create(\"PledgeFactory\",\"RPF\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash = transfer.ToHash();
+                    transfer.sign = transfer.ToSign(key);
+                    blk.AddBlockSub(3, transfer);
+                }
+
+                {
+                    BlockSub transfer = new BlockSub();
+                    transfer.addressIn = blk.Address;
+                    transfer.addressOut = "";
+                    transfer.amount = "0";
+                    transfer.nonce = 4;
+                    transfer.type = "contract";
+                    transfer.depend = "SatswapFactory";
+                    transfer.data = "create(\"SatswapFactory\",\"SSF\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash = transfer.ToHash();
+                    transfer.sign = transfer.ToSign(key);
+                    blk.AddBlockSub(4, transfer);
+                }
+
+                {
+                    BlockSub transfer = new BlockSub();
+                    transfer.addressIn = blk.Address;
+                    transfer.addressOut = "";
+                    transfer.amount = "0";
+                    transfer.nonce = 5;
+                    transfer.type = "contract";
+                    transfer.depend = "LockFactory";
+                    transfer.data = "create(\"LockFactory\",\"LKF\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash = transfer.ToHash();
+                    transfer.sign = transfer.ToSign(key);
+                    blk.AddBlockSub(5, transfer);
+                }
+
+                var ERCSat      = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "ERCSat"));
+                var LockFactory = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "LockFactory")); ;
+                {
+                    BlockSub transfer   = new BlockSub();
+                    transfer.addressIn  = blk.Address;
+                    transfer.addressOut = LockFactory;
+                    transfer.amount = "0";
+                    transfer.nonce = 6;
+                    transfer.type = "contract";
+                    transfer.depend = "";
+                    transfer.data =  $"approve(\"ez55m4D86AtG4foGBqaDy5z4JwjbNNHVn\",\"{ERCSat}\",\"10000\",\"10\",\"Lock10\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash = transfer.ToHash();
+                    transfer.sign = transfer.ToSign(key);
+                    blk.AddBlockSub(6, transfer);
                 }
 
                 blk.hash = blk.ToHash();
