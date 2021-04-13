@@ -1,10 +1,10 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+    "projectUniqueName": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
     "projectName": "KcpLib",
-    "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
-    "outputPath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
+    "projectPath": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+    "outputPath": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
     "projectStyle": "PackageReference",
     "fallbackFolders": [
       "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

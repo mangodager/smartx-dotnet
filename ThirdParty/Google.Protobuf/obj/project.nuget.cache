@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "KlSp1qro+wGq7SY8pXxq+ZofumVwJyr7lqGzkYu7NQDhMfASNWKUpCjmHKDAdPasfyDDCBNtgQNFNbowhjuhRw==",
+  "dgSpecHash": "J1hO1ukV9RiphlLeh6ZcH3ilrXlgJQuQ0QDBlL6IB4AAZIZs8YsfnLHE/TkV1L+5aQ9usZjWgISEtpz/mmKHBw==",
   "success": true,
-  "projectFilePath": "E:\\github\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
+  "projectFilePath": "E:\\www\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Administrator\\.nuget\\packages\\dnsclient\\1.3.1\\dnsclient.1.3.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.netcore.platforms\\2.1.2\\microsoft.netcore.platforms.2.1.2.nupkg.sha512",

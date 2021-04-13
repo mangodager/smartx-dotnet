@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+      "projectUniqueName": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
       "projectName": "KcpLib",
-      "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+      "projectPath": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
+      "outputPath": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

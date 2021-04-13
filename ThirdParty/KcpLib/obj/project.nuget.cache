@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "FsXLxHWBU/w2aG+eyEgpYa56KqkIzT/XsFj5yytfL6L5AT1yvEE159B2N3SteAwbc0ZsQuvpACGWTnvuxSWB7w==",
+  "dgSpecHash": "sJ0zKTgoHlhqV2mq8S+90NU+KL9lyoaxlAHc4nZ8OhZAtVhw2Fp1JNl3SqRjIc49c5Oc4R4Ic4GQ9V+1/8i+uA==",
   "success": true,
-  "projectFilePath": "E:\\github\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+  "projectFilePath": "E:\\www\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

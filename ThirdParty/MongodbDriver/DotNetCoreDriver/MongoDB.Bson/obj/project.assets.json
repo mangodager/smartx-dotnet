@@ -693,11 +693,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
+      "projectUniqueName": "E:\\www\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
       "projectName": "MongoDB.Bson",
-      "projectPath": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
+      "projectPath": "E:\\www\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\github\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\obj\\",
+      "outputPath": "E:\\www\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
