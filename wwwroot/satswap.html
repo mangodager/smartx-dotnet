@@ -1,0 +1,1168 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+
+    <!-- 自定义样式 -->
+    <style>
+        .nav_box {
+            height: 60px;
+            position: relative;
+            top: calc(50% - 30px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qx_1 {
+            display: flex;
+            line-height: 70x;
+            margin: -15px 5px 0 5px;
+            padding: 0 18px 0 18px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        body {
+            padding-bottom: 48px;
+            background: #fafafa;
+        }
+
+        .jumbotron {
+            background-size: cover;
+            padding-top: 7%;
+            padding-bottom: 2%;
+            background: #e5e5e5;
+        }
+    </style>
+    
+    <style>
+        fieldset {
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 0 .625em;
+        }
+
+        label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: left;
+            width: 180px;
+            vertical-align: top;
+        }
+
+        input {
+            font-size: inherit;
+            width: 300px;
+        }
+    </style>
+
+<style>
+.bBFMKx {
+    box-sizing: border-box;
+    margin: 0px;
+    min-width: 0px;
+    width: 100%;
+    display: flex;
+    padding: 0px;
+    -webkit-box-align: center;
+    align-items: center;
+    flex-wrap: wrap;
+    -webkit-box-pack: center;
+    justify-content: center;
+}
+.gByVwA {
+    box-sizing: border-box;
+    margin-top: 4px;
+    min-width: 0px;
+    width: 100%;
+    border-radius: 16px;
+    padding: 40px;
+    border: 1px solid rgb(245, 245, 245);
+    background-color: rgb(228 , 228 , 228 );
+}
+element.style {
+    margin-top: 4px;
+}
+</style>
+
+<style>
+body {
+    min-height: 100vh;
+    background-position: 50% center;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-image: url(././MoonSwap_files/bg-main.13b7b0cd.png);
+}
+.flat-form {
+  background: #e74c3c;
+  margin: 25px auto;
+  width: 460px;
+  height: auto;
+  position: relative;
+  font-family: 'Roboto';
+  position: relative;
+    max-width: 460px;
+    width: 100%;
+    background: rgb(255, 255, 255);
+    box-shadow: rgba(0, 0, 0, 0.03) 0px 0.64rem 2.56rem 0.85rem, rgba(0, 0, 0, 0.05) 0px 0.48rem 1.49rem 0px, rgba(0, 0, 0, 0.08) 0px 0.32rem 0.85rem -0.43rem;
+    border-radius: 30px;
+    padding: 1rem;
+}
+
+.tabs {
+    display: flex;
+    flex-flow: row nowrap;
+    -webkit-box-align: center;
+    align-items: center;
+    border-radius: 3rem;
+    justify-content: space-evenly;
+    padding-left: 0px;   
+}
+
+.tabs li {
+  display: block;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+.tabs a {
+    display: contents;
+    flex-flow: row nowrap;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    height: 3rem;
+    border-radius: 3rem;
+    outline: none;
+    cursor: pointer;
+    text-decoration: none;
+    color: rgb(136, 141, 155);
+    font-size: 20px;
+}
+
+.tabs li:last-child a {
+  border-right: none;
+  width: 174px;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.tabs a.active {
+    border-radius: 12px;
+    font-weight: 500;
+    color: rgb(51, 51, 51);
+}
+.form-action {
+  padding: 0 20px;
+  position: relative;
+}
+
+.form-action h1 {
+  font-size: 42px;
+  padding-bottom: 10px;
+}
+.form-action p {
+  font-size: 12px;
+  padding-bottom: 10px;
+  line-height: 25px;
+}
+form {
+  padding-right: 20px !important;
+}
+
+.dark-box {
+  background: #5e0400;
+  box-shadow: 1px 3px 3px #3d0100 inset;
+  height: 40px;
+  width: 50px;
+}
+.form-action .dark-box.bottom {
+  position: absolute;
+  right: 0;
+  bottom: -24px;
+}
+.tabs + .dark-box.top {
+  position: absolute;
+  right: 0;
+  top: 0px;
+}
+.show {
+  display: block;
+}
+.hide {
+  display: none;
+}
+
+.button {
+    border: none;
+    display: block;
+    background: #136899;
+    height: 40px;
+    width: 50%;
+    color: #ffffff;
+    text-align: center;
+    border-radius: 5px;
+    /*box-shadow: 0px 3px 1px #2075aa;*/
+  	-webkit-transition: all 0.15s linear;
+	  -moz-transition: all 0.15s linear;
+	  transition: all 0.15s linear;
+}
+
+.button:hover {
+  background: #1e75aa;
+  /*box-shadow: 0 3px 1px #237bb2;*/
+}
+
+.button:active {
+  background: #136899;
+  /*box-shadow: 0 3px 1px #0f608c;*/
+}
+
+::-webkit-input-placeholder {
+  color: #e74c3c;
+}
+:-moz-placeholder {
+  /* Firefox 18- */
+  color: #e74c3c;
+}
+::-moz-placeholder {
+  /* Firefox 19+ */
+  color: #e74c3c;
+}
+:-ms-input-placeholder {
+  color: #e74c3c;
+}
+ </style>
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+        <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+        <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+        <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+        
+        <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+        <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+        <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+        <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+        <script type="text/javascript" src="js/crypto-js.js"></script>
+        
+    <script src='js/bignumber.min.js'></script>
+    <script src="js/aes256.min.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script type="text/javascript" src="js/qrcode.min.js"></script>
+    <script src="js/reqrcode.js"></script>
+
+
+    <div class="container">
+        <div class="jumbotron">
+            <h1>SmartX-dotnet</h1>
+        </div>
+        &nbsp;
+        <h4></h4>
+
+        <div class="flat-form">
+            <ul class="tabs">
+                <li>
+                    <a href="#swap" class="active">兑换</a>
+                </li>
+                <li>
+                    <a href="#liquidity">资金池</a>
+                </li>
+                <li>
+                    <a href="#createPair">交易对</a>
+                </li>
+            </ul>
+            <div style="height: 20px; user-select:none"></div>
+            <form>
+                <ul>
+                    <div style="height: 24px; user-select:none">输入 :</div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id='swap_A' placeholder="0.0" onkeyup='return onchangeSwap(event)' onchange='return onchangeSwap(event)' style="height: 36px;"  >
+                        <div class="input-group-btn">
+                            <button type="button" id='swap_tokenA_Btn' class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);" onclick="ModalSwapTokenShow(event,'ModalSwapTokenClick')">
+                                <div id='swap_tokenA'>选择代币</div><span class="caret"></span>
+                            </button>
+                        </div><!-- /btn-group -->
+                    </div><!-- /input-group -->
+                    <div style="height: 20px; user-select:none"></div>
+                    <div class="sc-jzJRlG sc-kAzzGY sc-kGXeez bBFMKx" style="padding: 0px 1rem;"><div class="sc-cooIXK fOtoIU"><svg xmlns="http://www.w3.org/2000/svg" onclick="swapTransform()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#565A69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div></div>
+                    <div style="height: 24px; user-select:none">输入 :</div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id='swap_B' placeholder="0.0" onkeyup='return onchangeSwap(event)' onchange='return onchangeSwap(event)' style="height: 36px;" >
+                        <div class="input-group-btn">
+                            <button type="button" id='swap_tokenB_Btn' class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);" onclick="ModalSwapTokenShow(event,'ModalSwapTokenClick')">
+                                <div id='swap_tokenB'>选择代币</div><span class="caret"></span>
+                            </button>
+                        </div><!-- /btn-group -->
+                    </div><!-- /input-group -->
+                    <div style="height: 8px; user-select:none"></div>
+                    <center><h6 id='reserve' style="height: 24px;color: rgb(255 8 8);"></h6></center>
+                </ul>
+            </form>
+            <div id="swap" class="form-action show">
+                <div style="height: 24px; user-select:none"></div>
+                <form>
+                    <ul>
+                        <center><button type="button" class="btn btn-primary" onclick="swapSubmit()" style="width: 50%;">兑换</button></center>
+                    </ul>
+                </form>
+            </div>
+            <!--/#login.form-action-->
+            <div id="liquidity" class="form-action hide">
+                <div style="height: 24px; user-select:none"></div>
+                <form>
+                    <ul>
+                        <center><button type="button" class="btn btn-primary" onclick="liquiditySubmit()" style="width: 50%;">添加流动性</button></center>
+                    </ul>
+                </form>
+
+                <div style="height: 24px; user-select:none"></div>
+                <div style="width:100%;height:100%;overflow-x:auto;">
+                    <table class="table table-hover" id="mytable">
+                        <caption id="caption_mytable111" style="user-select:none;text-align:center;background-color:#ffeeee;">我的流动性:</caption>
+                        <thead id="thead_mytable111">
+                            <tr>
+                                <th style="user-select:none">名称</th>
+                                <th style='user-select:none;text-align:right;'>份额</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div style="height: 24px; user-select:none"></div>
+
+            </div>
+            <!--/#register.form-action-->
+            <div id="createPair" class="form-action hide">
+                <div style="height: 24px; user-select:none"></div>
+                <form>
+                    <ul>
+                        <center><h6 id='reserve' style="height: 24px;color: rgb(255 8 8);">创建交易对需要支付100SAT</h6></center>
+                        <center><button type="button" class="btn btn-primary" onclick="createPairSubmit()" style="width: 50%;">创建交易对</button></center>
+                    </ul>
+                </form>
+            </div>
+            <!--/#register.form-action-->
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalSwapToken" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalSwapTokenLabel" aria-hidden="true" style="top:10%;">
+        <div class="modal-dialog" style="width:460px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <center><h4 class="modal-title" id="myModalLabel">TokenSelect</h4></center>
+                    <center><h4 class="modal-title" id="myModalLabelData" hidden></h4></center>
+                </div>
+                &nbsp;
+
+                <div style="width: 85%" class="container">
+                    <div class="input-group">
+                        <input type="text" id="ModalSwapTokenText" class="form-control">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" onclick='ModalSwapTokenSel()'>选择</button>
+                        </span>
+                    </div>
+                </div>
+
+                <h6></h6>
+                <div style="width:100%;height:100%;overflow-x:auto;">
+                    <table class="table table-hover" id="ModalSwapTokenTable">
+                        <thead id="thead_mytable111">
+                            <tr><th>名称</th><th>地址</th></tr>
+                        </thead>
+                    </table>
+                </div>
+
+                <!-- <h6></h6>
+                <center><button type="button" class="btn btn-primary" onclick="ModalSwapClick(event)" style="width: 60%;margin-top: 2px;">SAT</button></center>
+                <center><button type="button" class="btn btn-info" onclick="ModalSwapClick(event)" style="width: 60%;margin-top: 2px;">sETH</button></center>
+                <center><button type="button" class="btn btn-success" onclick="ModalSwapClick(event)" style="width: 60%;margin-top: 2px;">sUSDT</button></center>
+                <center><button type="button" class="btn btn-warning" onclick="ModalSwapClick(event)" style="width: 60%;margin-top: 2px;">sBTC</button></center> -->
+                &nbsp;
+                <div class="modal-footer">
+                    <center><button type="button" class="btn btn-danger" onclick="$('#ModalSwapToken').modal('hide')" style="width: 30%;">离开</button></center>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ModalLiquidity" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalLiquidityLabel" aria-hidden="true" style="top:10%;">
+        <div class="modal-dialog" style="width:460px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <center><h4 class="modal-title" id="myLiquidityLabel">取回流动性</h4></center>
+                    <center><h4 class="modal-title" id="myLiquidityData" hidden></h4></center>
+                </div>
+                <form>
+                    <ul style='padding-left:20px;'>
+                        <div style="height: 10px; user-select:none"></div>
+                        <div class="input-group">
+                            <h5 id='Liquidity_Amount'>可用凭证:412641823</h5>
+                            <span class="input-group-btn">
+                                <h5 id='Liquidity_TotalSupply'>凭证占比:</h5>
+                            </span>
+                        </div>
+                        <div style="height: 10px; user-select:none"></div>
+                        <input type="text" id="Liquidity_Get" class="form-control">
+
+                        <div style="height: 10px; user-select:none"></div>
+
+                        <div class="btn-group btn-group-justified" role="group" aria-label="...">
+                            <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >25%</button>
+                            </div>
+                            <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >50%</button>
+                            </div>
+                            <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >75%</button>
+                            </div>
+                            <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >100%</button>
+                            </div>
+                        </div>
+
+                        <div style="height: 10px; user-select:none"></div>
+                        <h5>取回资产:</h5>
+                        <div class="input-group">
+                            <div class="input-group-btn" disabled>
+                                <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);" disabled>
+                                    <div id='Liquidity_tokenA'>币1</div><span class="caret"></span>
+                                </button>
+                            </div>
+                            <input type="text" class="form-control" id='Liquidity_A' placeholder="0.0" style="height: 36px;" disabled>
+                        </div>
+                        <div style="height: 10px; user-select:none"></div>
+
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);" disabled>
+                                    <div id='Liquidity_tokenB'>币2</div><span class="caret"></span>
+                                </button>
+                            </div>
+                            <input type="text" class="form-control" id='Liquidity_B' placeholder="0.0" style="height: 36px;" disabled >
+                        </div>
+                        
+                        <div style="height: 24px; user-select:none"></div>
+
+                        <div class="modal-footer">
+                            <center><button type="button" class="btn btn-danger" onclick="onLiquidityRemove()" style="width: 30%;">取回</button></center>
+                        </div>
+                    </ul>
+                </form>                        
+            </div>
+        </div>
+    </div>
+    
+    <footer class="navbar-fixed-bottom ">
+        <center >
+            <div style="width:50%;height:100%;overflow-x:auto;">
+                <table class="table table-hover" id="statusbar" style='background:#ffffff'>
+                </table>
+            </div>
+        </center>
+        <div class="row nav_box navbar-inverse">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+        </div>
+    </footer>
+
+    <script>
+        (function( $ ) {
+            // constants
+            var SHOW_CLASS = 'show',
+                HIDE_CLASS = 'hide',
+                ACTIVE_CLASS = 'active';
+            
+            $( '.tabs' ).on( 'click', 'li a', function(e){
+                e.preventDefault();
+                var $tab = $( this ),
+                    href = $tab.attr( 'href' );
+            
+                $( '.active' ).removeClass( ACTIVE_CLASS );
+                $tab.addClass( ACTIVE_CLASS );
+            
+                $( '.show' )
+                    .removeClass( SHOW_CLASS )
+                    .addClass( HIDE_CLASS )
+                    .hide();
+                
+                $(href)
+                    .removeClass( HIDE_CLASS )
+                    .addClass( SHOW_CLASS )
+                    .hide()
+                    .fadeIn( 550 );
+            });
+        })( jQuery );
+
+        if (Login.LoadPassword() == null)
+            window.location.href = "index.html";
+            
+        // 地址栏参数
+        function getQueryVariable(variable, search) {
+            if (search == null)
+                search = window.location.search;
+            var query = search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        var addressCur   = getQueryVariable("address");
+        var tokenAddress = "";        
+        var nonceCur     = 0;
+        var amountCur    = 0;
+        var colorindex = 1
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+
+        function OnRefreshAmount() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/balanceOf",
+                dataType: "text",
+                type: "get",
+                data: { Address: addressCur, token: "" },
+                success: function (data) {
+                    var jsonObj = JSON.parse(data);
+                    var amount = new BigNumber(jsonObj["amount"]).toFormat();
+                    var nonce = parseInt(jsonObj["nonce"]);
+                    amountCur = amount;
+                    nonceCur  = nonce + 1;
+                },
+                error: function (err) {
+                }
+            });
+            setTimeout(function(){OnRefreshAmount();}, 5000 );
+        }
+        OnRefreshAmount();
+
+        let SatswapFactory = Helper.GetSSFAddress();
+
+        let Symbols = [];
+        let Symbols_Inverse = [];
+        Symbols[Helper.ERCSat()] = "SAT";
+        Symbols_Inverse["SAT"]   = Helper.ERCSat();
+
+        async function getSymbol(tokenAddress)
+        {
+            return new Promise((resolve, reject) => {
+                if(Symbols[tokenAddress]!=null) {
+                    return resolve(Symbols[tokenAddress]);
+                }
+                $.ajax({
+                    url: Helper.GetServerIP() + "/callFun",
+                    dataType: "text",
+                    type: "get",
+                    data: { consAddress: tokenAddress, data: "symbol()" },
+                    success: function (data) {
+                        if(data.indexOf("error")==-1)
+                        {
+                            var jsonObj1 = JSON.parse(data);
+                            console.log(jsonObj1);
+                            Symbols[tokenAddress] = jsonObj1;
+                            Symbols_Inverse[jsonObj1] = tokenAddress;
+                            resolve(Symbols[tokenAddress]);
+                        }
+                        else
+                        {
+                            resolve(null);
+                        }
+                    },
+                    error: function (err) {
+                        resolve(null);
+                    }
+                });
+            })
+        }
+
+        let pairs = [];
+        function OnRefreshPair() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/callFun",
+                dataType: "text",
+                type: "get",
+                data: { consAddress: SatswapFactory, data: "getPairs()" },
+                success: function (data) {
+                    OnRefreshPair_async(data);
+                },
+                error: function (err) {
+                }
+            });
+        }
+        async function OnRefreshPair_async(data) {
+            var jsonObj1 = JSON.parse(data);
+            var jsonObj2 = JSON.parse(jsonObj1);
+            
+            for (var key1 in jsonObj2) {
+                for (var key2 in jsonObj2[key1]) {
+                    let tokenA = await getSymbol(key1);
+                    let tokenB = await getSymbol(key2);
+                    console.log( tokenA + " -> " + tokenB + ' : ' + jsonObj2[key1][key2] );
+                    if (pairs[tokenA] == null) {
+                        pairs[tokenA] = [];
+                    }
+                    if (pairs[tokenB] == null) {
+                        pairs[tokenB] = [];
+                    }
+                    pairs[tokenA][tokenB] = jsonObj2[key1][key2];
+                    pairs[tokenB][tokenA] = jsonObj2[key1][key2];
+                }
+            }
+        }
+
+        OnRefreshPair();
+        
+        let pairReserves = [];
+        async function getReserves(SatswapPair)
+        {
+            return new Promise((resolve, reject) => {
+                if(pairReserves[SatswapPair]!=null) {
+                    resolve(pairReserves[SatswapPair]);
+                    return;
+                }
+                $.ajax({
+                    url: Helper.GetServerIP() + "/callFun",
+                    dataType: "text",
+                    type: "get",
+                    data: { consAddress: SatswapPair, data: "getReserves()" },
+                    success: function (data) {
+                        if(data.indexOf("error")==-1)
+                        {                  
+                            var jsonObj1 = JSON.parse(data);
+                            console.log(jsonObj1);
+                            let jsonObj2 = [];
+                            jsonObj2[0] = new BigNumber(jsonObj1[0]);
+                            jsonObj2[1] = new BigNumber(jsonObj1[1]);
+                            pairReserves[SatswapPair] = jsonObj2;
+                            resolve(jsonObj2);
+                        }
+                        else
+                        {
+                            resolve(null);
+                        }
+                    },
+                    error: function (err) {
+                        resolve(null);
+                    }
+                });
+           })
+        }
+
+        function _getAmountA(amountB,reserveA, reserveB)
+        {
+            if($('#swap').hasClass("show"))
+                return _getSwapAmountA(amountB,reserveA, reserveB);
+            if($('#liquidity').hasClass("show"))
+                return _getLiquidityAmountA(amountB,reserveA, reserveB);     
+        }
+
+        function _getAmountB(amountA,reserveA, reserveB)
+        {
+            if($('#swap').hasClass("show"))
+                return _getSwapAmountB(amountA,reserveA, reserveB);
+            if($('#liquidity').hasClass("show"))
+                return _getLiquidityAmountB(amountA,reserveA, reserveB);    
+        }
+
+        function _getSwapAmountA(amountB,reserveA, reserveB)
+        {
+            let numerator   = Helper.Mul( Helper.Mul( reserveA , amountB ) , "1000");
+            let denominator = Helper.Mul( Helper.Sub( reserveB , amountB ) ,  "997");
+            let _amount     = Helper.Add( Helper.Div( numerator, denominator ) , "0.00000001");	
+
+            return _amount;
+        }
+
+        function _getSwapAmountB(amountA,reserveA, reserveB)
+        {
+            let amountInWithFee = Helper.Mul( amountA , "997");
+            let numerator   = Helper.Mul( amountInWithFee , reserveB);
+            let denominator = Helper.Add( Helper.Mul( reserveA , "1000" ) , amountInWithFee);
+            let _amount     = Helper.Div( numerator , denominator);
+            
+            return _amount;
+        }
+        
+        function _getLiquidityAmountA(amountB,reserveA, reserveB)
+        {
+            return Helper.Div( Helper.Mul( reserveA , amountB ) , reserveB);
+        }
+
+        function _getLiquidityAmountB(amountA,reserveA, reserveB)
+        {
+            return Helper.Div( Helper.Mul( reserveB , amountA ) , reserveA);
+        }
+
+        async function swapTransform()
+        {
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            $('#swap_tokenA').html(swap_B);
+            $('#swap_tokenB').html(swap_A);
+
+            let amountADesired = $('#swap_A').val();
+            let amountBDesired = $('#swap_B').val();
+
+            $('#swap_A').val(amountBDesired);
+            $('#swap_B').val(amountADesired);
+
+            let event2 = {};
+            event2.currentTarget = document.getElementById('swap_A');
+            onchangeSwap(event2);
+            OnRefreshReserve();
+        }
+
+        async function OnRefreshReserve()
+        {
+            // var currTab = $('#swap').hasClass("show");
+            // if(!currTab)
+            //     return;
+            var reserveEle = document.getElementById("reserve");
+            reserveEle.innerHTML = '没有找到交易对';
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            let SatswapPair = pairs[swap_A][swap_B];
+            if(SatswapPair==null)
+                return;
+
+            let reserves = [].concat(await getReserves(SatswapPair));
+           
+            let amount  = new BigNumber('1');
+            let temp;
+            if ( 'swap_A' != swap_A ) {
+                if ( !(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0) ) {
+                    temp  = _getAmountB(amount,reserves[0],reserves[1]);
+                }
+                else {
+                    temp  = _getAmountA(amount,reserves[0],reserves[1]);
+                }
+            }
+            else {
+                if ( !(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0) ) {
+                        temp  = _getAmountA(amount,reserves[0],reserves[1]);
+                }
+                else {
+                    temp  = _getAmountB(amount,reserves[0],reserves[1]);
+                }
+            }
+            reserveEle.innerHTML = "1 " + swap_A + " ≈ " + Helper.Fix(temp) + " " + swap_B;
+        }
+
+        async function onchangeSwap(event)
+        {
+            let currentTarget = event.currentTarget;
+            let amount = $('#'+currentTarget.id).val().replace(/,/g, "");
+            if(amount=="")
+                return;
+
+            amount  = new BigNumber(amount);
+            // 小于零
+            if(amount.isLessThan(new BigNumber(0))) {
+                $('#'+currentTarget.id).val('0');
+            }
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+
+            let SatswapPair = pairs[swap_A][swap_B];
+            if(SatswapPair==null)
+                return;
+
+            let reserves = [].concat(await getReserves(SatswapPair));
+            if ( !(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0) ) {
+            }
+
+            if(reserves!=null)
+            {
+                let temp = null;
+                let changeid = currentTarget.id.indexOf("A")!=-1?currentTarget.id.replace("A","B") : currentTarget.id.replace("B","A");
+                if ( 'swap_A' == currentTarget.id ) {
+                    if ( !(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0) ) {
+                        temp  = _getAmountB(amount,reserves[0],reserves[1]);
+                    }
+                    else {
+                        temp  = _getAmountA(amount,reserves[0],reserves[1]);
+                    }
+                    $('#'+changeid).val( (new BigNumber(temp.replace(/,/g, "")).toFormat(8)) );
+                }
+                else {
+                    if ( !(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0) ) {
+                        temp  = _getAmountA(amount,reserves[0],reserves[1]);
+                    }
+                    else {
+                        temp  = _getAmountB(amount,reserves[0],reserves[1]);
+                    }
+                    $('#'+changeid).val( Helper.Fix(temp) );
+                }
+            }
+        }
+        
+
+        function ModalSwapTokenShow(event,callback){
+            $("#ModalSwapToken").modal('show');
+            // 删除之前的数据
+            var mytableEle = document.getElementById("ModalSwapTokenTable");
+            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                    mytableEle.children[i].remove();
+            }
+            colorindex = 1;
+            for (var key in Symbols_Inverse) {
+                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                var item  = Helper.TableInsert("ModalSwapTokenTable", key, color, key, Symbols_Inverse[key]);
+                item.innerHTML = item.innerHTML.replace(/liOnclick/g, callback);
+            }
+            
+            var mydataEle = document.getElementById("myModalLabelData");
+            mydataEle.innerHTML = event.currentTarget.id.replace(/_Btn/g, '');
+
+            $("#ModalSwapTokenText").val('');
+        }
+
+        function ModalSwapTokenClick(event){
+            var mydataEle = document.getElementById("myModalLabelData");
+            $("#"+mydataEle.innerHTML).html(event.id);
+            $("#ModalSwapToken").modal('hide');
+
+            let event2 = {};
+            event2.currentTarget = document.getElementById( mydataEle.innerHTML.replace(/token/g, '').replace(/B/g, 'A')  );
+            onchangeSwap(event2);
+            OnRefreshReserve();
+        }
+
+        async function ModalSwapTokenSel(event){
+            let value = $("#ModalSwapTokenText").val();
+            if(value==null||value=="")
+                return;
+            let symbol = await getSymbol(value);
+            if(symbol==null||symbol=="")
+                return;
+            var mydataEle = document.getElementById("myModalLabelData");
+            $("#"+mydataEle.innerHTML).html( symbol );
+            $("#ModalSwapToken").modal('hide');
+
+            let event2 = {};
+            event2.currentTarget = document.getElementById( mydataEle.innerHTML.replace(/token/g, '').replace(/B/g, 'A')  );
+            onchangeSwap(event2);
+            OnRefreshReserve();
+        }
+        
+        function swapSubmit()
+        {
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            let amountADesired = $('#swap_A').val();
+            let amountBDesired = $('#swap_B').val();
+            
+            if(!Helper.CheckAmount(amountADesired,"0")) {
+                return;
+            }
+            
+            if(!Helper.CheckAmount(amountBDesired,"0")) {
+                return;
+            }
+
+            var output = swap_A + " -> " + swap_B + ' : ' + pairs[swap_A][swap_B] + '  ' + amountADesired + ' : ' + amountBDesired;
+            console.log( output );
+            
+            if (Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0 ) {
+                let temp = swap_A;
+                swap_A = swap_B;
+                swap_B = temp;
+                let temp_Desired = amountADesired;
+                amountADesired = amountBDesired;
+                amountBDesired = temp_Desired;
+            }
+            let swap_A_Min = Helper.Mul(amountADesired,"0.97");
+            let swap_B_Min = Helper.Mul(amountBDesired,"0.97");
+
+            if(pairs[swap_A][swap_B]==null)
+            {
+                return alert('没有找到交易对!');
+            }
+
+            let addressOut = pairs[swap_A][swap_B];
+            let data = null;
+            if( swap_A==$('#swap_tokenA').html())
+            {
+                data = 'swapTokensForTokens(\"' + Helper.Fix(amountADesired) + '\",\"' + "0"  + '\",\"' + '0' + '\",\"' + Helper.Fix(swap_B_Min) +'\")';
+            }
+            else
+            {
+                data = 'swapTokensForTokens(\"' + '0' + '\",\"' + Helper.Fix(amountBDesired)  + '\",\"' + Helper.Fix(swap_A_Min) + '\",\"' + '0' +'\")';
+            }
+            console.log( data );
+            
+            let depend  = '';
+            let remarks = '';
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            Helper.Statusbar("statusbar",hash,"","兑换 " + output, 1, nonceCur);
+            Helper.MessageBox('兑换已提交');
+        }
+
+        function liquiditySubmit()
+        {
+            console.log("liquiditySubmit");
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            let swap_A_Min = '0';
+            let swap_B_Min = '0';
+            let amountADesired = $('#swap_A').val();
+            let amountBDesired = $('#swap_B').val();
+
+            if(!Helper.CheckAmount(amountADesired,"0")) {
+                return;
+            }
+            
+            if(!Helper.CheckAmount(amountBDesired,"0")) {
+                return;
+            }
+
+            if (Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0 ) {
+                let temp = swap_A;
+                swap_A = swap_B;
+                swap_B = temp;
+                let temp_Min = swap_A_Min;
+                swap_A_Min = swap_B_Min;
+                swap_B_Min = temp_Min;
+                let temp_Desired = amountADesired;
+                amountADesired = amountBDesired;
+                amountBDesired = temp_Desired;
+            }
+
+            if (pairs[swap_A][swap_B] == null) {
+                return alert('没有找到交易对!');
+            }
+
+            let addressOut = pairs[$('#swap_tokenA').html()][$('#swap_tokenB').html()];
+            let data    = 'addLiquidity(\"' + Helper.Fix(amountADesired) + '\",\"' + Helper.Fix(amountBDesired)  + '\",\"' + Helper.Fix(swap_A_Min) + '\",\"' + Helper.Fix(swap_B_Min) +'\")';
+            let depend  = '';
+            let remarks = '';
+
+            console.log( addressOut );
+            console.log( data );
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 添加流动性: " + amountADesired + " " + amountBDesired, 1, nonceCur);
+            Helper.MessageBox('添加流动性已提交');
+        }
+        
+        async function createPairSubmit()
+        {
+            console.log("createPairSubmit");
+            console.log( $('#swap_tokenA').html() );
+            console.log( $('#swap_tokenB').html() );
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+
+            let amountADesired = $('#swap_A').val();
+            let amountBDesired = $('#swap_B').val();
+
+            if (Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0 ) {            
+                let temp = swap_A;
+                swap_A = swap_B;
+                swap_B = temp;
+                let temp_Desired = amountADesired;
+                amountADesired = amountBDesired;
+                amountBDesired = temp_Desired;
+            }
+
+            if(!Helper.CheckAmount(amountADesired,"0")) {
+                return;
+            }
+            if(!Helper.CheckAmount(amountBDesired,"0")) {
+                return;
+            }
+
+            if (pairs[swap_A][swap_B]!=null) {
+                alert("交易对已存在")
+                return;
+            }
+
+            let addressOut = SatswapFactory;
+            let data    = 'pairCreated(\"' + Symbols_Inverse[swap_A] + '\",\"' + Symbols_Inverse[swap_B] + '\",\"' + Helper.Fix(amountADesired) + '\",\"' + Helper.Fix(amountBDesired)  + '\")';
+            let depend  = '';
+            let remarks = '';
+
+            console.log( data );
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 创建交易对: " + swap_A + " -> " + swap_B, 1, nonceCur);
+            Helper.MessageBox('创建交易对已提交');
+        }
+
+        function onLiquidityInit() {
+            colorindex = 1;
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/GetLiquidity",
+                dataType: "text",
+                type: "get",
+                data: { Address: addressCur,Factory: SatswapFactory,Pair:"SatswapPair"},
+                success: function (data) {
+                    onLiquidityInit_async(data);
+                },
+                error: function (err) {
+                    alert("没有找到可用节点");
+                }
+            });
+        }
+        async function onLiquidityInit_async(data) {
+            if (data != "{\"ret\":\"failed\"}") {
+                // 删除之前的数据
+                var mytableEle = document.getElementById("mytable");
+                for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                    if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                        mytableEle.children[i].remove();
+                }
+
+                colorindex = 1;
+                var jsonObj = JSON.parse(data);
+                for (var key in jsonObj) {
+                    var text    = jsonObj[key];
+                    var array    = JSON.parse(jsonObj[key]);
+                    var symbol1 = array[1];
+                    var symbol2 = array[2];
+                    var amount  = Helper.Fix(array[5]);
+
+                    if(amount=="0")
+                        continue;
+
+                    var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                    let tokenA = await getSymbol(symbol1);
+                    let tokenB = await getSymbol(symbol2);
+                    if(tokenA!=null&&tokenB!=null) {
+                        Helper.TableInsert2("mytable", text, color, tokenA + ' -> ' + tokenB, amount)
+                    }
+                }
+            }
+        }
+
+        onLiquidityInit();
+
+        function liOnclick(e) 
+        {
+            onLiquidityManager(e);
+        }
+
+        async function onLiquidityManager(e) 
+        {
+            var array   = JSON.parse(e.id);
+            var symbol1 = array[1];
+            var symbol2 = array[2];
+            var amount  = new BigNumber(array[5]).toFormat();
+
+            console.log( e.id );
+            $("#ModalLiquidity").modal('show');
+
+            $("#Liquidity_tokenA").html( await getSymbol(array[1]) );
+            $("#Liquidity_tokenB").html( await getSymbol(array[2]) );
+
+            let liquidity = new BigNumber(array[5]);
+            let totalSupply = new BigNumber(array[6]);
+
+            let per = (liquidity.multipliedBy(100).dividedBy(totalSupply).toFormat());
+            if(per=="NaN")
+                per = "0";
+            
+            $("#Liquidity_TotalSupply").html( "凭证占比:"+ Helper.Fix(per) + '%' );
+            $("#Liquidity_Amount").html( "可用凭证:"+ Helper.Fix(liquidity) );
+            $("#myLiquidityData").html( e.id );
+        }
+
+        function onLiquidityPerClick(e) 
+        {
+            let per = e.currentTarget.innerHTML.replace("%","");
+            
+            var array   = JSON.parse($("#myLiquidityData").html());
+            let reserveA = new BigNumber(array[3]);
+            let reserveB = new BigNumber(array[4]);
+            let liquidity = new BigNumber(array[5]);
+            let totalSupply = new BigNumber(array[6]);
+
+            let bigper = liquidity.multipliedBy(new BigNumber(per)).dividedBy(100);
+            $("#Liquidity_Get").val( Helper.Fix(bigper) );
+            
+            reserveA = reserveA.multipliedBy(bigper).dividedBy(totalSupply).toFormat();
+            reserveB = reserveB.multipliedBy(bigper).dividedBy(totalSupply).toFormat();
+            if(reserveA=="NaN")
+                reserveA = "0";
+            if(reserveB=="NaN")
+                reserveB = "0";
+
+            $("#Liquidity_A").val(Helper.Fix(reserveA));
+            $("#Liquidity_B").val(Helper.Fix(reserveB));
+        }
+
+        function onLiquidityRemove() 
+        {
+            let array  = $("#myLiquidityData").html().split(":");
+            let tokenA = $("#Liquidity_tokenA").html();
+            let tokenB = $("#Liquidity_tokenB").html();
+
+            let liquidity = $("#Liquidity_Get").val();
+
+            let addressOut = pairs[tokenA][tokenB];
+            let data    = 'removeLiquidity(\"' + Helper.Fix(liquidity) + '\")';
+            let depend  = '';
+            let remarks = '';
+
+            console.log( addressOut + ' ' + data );
+
+            if(!Helper.CheckAmount(liquidity,array[5])) {
+                return;
+            }
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 取回流行性: " + Helper.Fix(liquidity), 1, nonceCur);
+            Helper.MessageBox('取回流行性已提交');
+            $("#ModalLiquidity").modal('hide');
+        }
+
+        Helper.Statusbar();
+    </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

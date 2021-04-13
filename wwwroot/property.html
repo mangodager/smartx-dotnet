@@ -1,0 +1,574 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>
+     -->
+
+    <!--ModalContract-->
+    <style>
+        .modal.fade.in {
+            top: 15%;
+        }
+
+        fieldset {
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 0 .625em;
+        }
+
+        label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: left;
+            width: 80px;
+            vertical-align: top;
+        }
+
+        input {
+            font-size: inherit;
+            width: 300px;
+        }
+    </style>
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script src='js/bignumber.min.js'></script>
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src="js/aes256.min.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script type="text/javascript" src="js/qrcode.min.js"></script>
+    <script src="js/reqrcode.js"></script>
+
+    <div class="container">
+
+        <div class="jumbotron">
+            <h1>SmartX-dotnet</h1>
+            <button type="button" class="btn btn-primary" onclick="liOnShowQRCode()">收款</button>
+            <button type="button" class="btn btn-info" onclick="liOnScanQRCode()" disabled="disabled">扫码支付</button>
+            <button type="button" class="btn btn-warning" id="btnCopyToClip" title="" onclick='copyToClipBoard()'
+                    data-container="body" data-toggle="popover" data-placement="bottom"
+                    data-content="地址已复制到剪切板">
+                复制地址
+            </button>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#ModalExport">导出</button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalContract">发布智能合约</button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-info" onclick="liOnPledge()">质押合约</button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-info" onclick="liOnLock()">锁仓</button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>
+
+        </div>
+
+        <h4></h4>
+
+        <div style="width: 60%" class="container">
+            <div class="input-group">
+                <span class="input-group-addon">交易</span>
+                <input type="text" id="searchText" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                </span>
+            </div>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="mytable">
+                <caption id="caption_mytable111">账单列表:</caption>
+                <thead id="thead_mytable111">
+                    <tr>
+                        <th>名称</th>
+                        <th style='text-align:right;'>余额</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+        <footer class="navbar-fixed-bottom ">
+            <center >
+                <div style="width:50%;height:100%;overflow-x:auto;">
+                    <table class="table table-hover" id="statusbar" style='background:#ffffff'>
+                    </table>
+                </div>
+            </center>
+            <div class="row nav_box navbar-inverse">
+                <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
+                <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
+                <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
+                <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            </div>
+        </footer>
+
+        <div class="modal fade" id="ModalQRCode" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalQRCodeLabel" aria-hidden="true" style="top:10%">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            ×
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            QRCode
+                        </h4>
+                    </div>
+                    <h4></h4>
+                    <div id="qrcode" style="width:300px; height:300px; margin-top:15px; margin: 0 auto;"></div>
+                    <h4></h4>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="liOnModalQRCodeLeave()">
+                            离开
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="ModalScanQRCode" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalScanQRCodeLabel" aria-hidden="true" style="top:10%">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            ×
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">
+                            扫码支付
+                        </h4>
+                    </div>
+                    <h4></h4>
+                    <label id="photo">照相机<input type="file" id='photo_image1' accept="image/*" capture='camera' onchange="OnScanQRCodeChange('photo_image1')"></label>
+
+                    <fieldset>
+                        <p>
+                            <label for="title">转出地址:</label>
+                            <input type="text" id="scan_addressIn" align="left" disabled="disabled">
+                        </p>
+                    </fieldset>
+                    <fieldset>
+                        <p>
+                            <label for="title">转入地址:</label>
+                            <input type="text" id="scan_addressOut" align="left" disabled="disabled">
+                            <input type="file" id="photo_image2" onchange="OnScanQRCodeChange('photo_image2')">
+                        </p>
+                    </fieldset>
+                    <fieldset>
+                        <p>
+                            <label for="title">转账金额:</label>
+                            <input type="text" id="scan_amount" align="left">
+                        </p>
+                    </fieldset>
+                    <input type="text" id="scan_nonce" align="left" style="display:none">
+                    <input type="text" id="scan_depend" align="left" style="display:none">
+                    <input type="text" id="scan_remarks" align="left" style="display:none">
+
+                    <h4></h4>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="OnScanQRCodeSubmit('ModalScanQRCode')">
+                            提交
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="ModalExport" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalExportLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="myModalLabel">
+                            导出Keystore
+                        </h4>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-addon" id="basic-addon3">输密码</span>
+                        <input type="password" class="form-control" id="ModalExportText" aria-describedby="basic-addon3" onchange="OnExportChange()">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="OnExportLeave()">
+                            导出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="ModalContract" tabindex="-1" role="dialog" aria-labelledby="ModalContractLabel" aria-hidden="true" onload="onTransferLoad()">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            ×
+                        </button>
+                        <h5 class="modal-title" id="myModalLabel">
+                            正在发布智能合约
+                        </h5>
+                    </div>
+
+                    <fieldset>
+                        <p> </p>
+                        <p>
+                            <label for="title">发布地址:</label>
+                            <input type="text" id="input_addressIn" name="addressIn" align="left" disabled="disabled">
+                        </p>
+                        <p>
+                            <label for="username">合约模板:</label>
+                            <input type="text" id="input_depend" value="ERC20" name="remarks" align="left">
+                        </p>
+                        <p>
+                            <label for="username">参数:</label>
+                            <input type="text" id="input_callFun" name="data" align="left">
+                        </p>
+                        <p>
+                            <label for="username">备注:</label>
+                            <input type="text" id="input_remarks" name="remarks" align="left">
+                        </p>
+                        <p>
+                            <label for="username">nonce:</label>
+                            <input type="text" id="input_nonce" name="nonce" align="left">
+                        </p>
+                        <p>
+                            <label for="username">矿工费:</label>
+                            <input type="text" id="gas" name="gas" align="left" value="0.002" disabled="disabled">
+                        </p>
+                    </fieldset>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            取消
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="onTransferSubmit('ModalContract')">
+                            发布
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+
+            if (Login.LoadPassword() == null)
+                window.location.href = "index.html";
+
+            function OnExportChange() {
+            };
+
+            function OnExportLeave(e) {
+                var password = $("#ModalExportText").val();
+                $("#ModalExportText").val("");
+                if (Login.checkPassword(password)) {
+                    var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
+                    var MnemonicWord = Wallet.GetMnemonicWord(addressKeyPair);
+
+                    var encrypted = AES256.encrypt(MnemonicWord, password);// Encrypt
+                    var jsonObj = { version: 101, curIndex: 0, accounts: [{ address: addressCur, encrypted: encrypted }] };
+                    var jsonStr = JSON.stringify(jsonObj);
+
+                    Helper.funDownload(jsonStr, "Smart-Wallet.json");
+                    $("#ModalExport").modal('hide');
+                }
+                else {
+                    alert("密码错误!");
+                }
+            }
+
+            function liOnSearch(e) {
+                var text = $('#' + e).val();
+
+                if (text != "") {
+                    Helper.ShowTransfer(text)
+                }
+            }
+
+            function onTransferLoad(e) {
+                //alert(e.id);
+            };
+
+            $(function () {
+                $("[data-toggle='popover']").popover();
+            });
+
+            // 地址栏参数
+            function getQueryVariable(variable, search) {
+                if (search == null)
+                    search = window.location.search;
+                var query = search.substring(1);
+                var vars = query.split("&");
+                for (var i = 0; i < vars.length; i++) {
+                    var pair = vars[i].split("=");
+                    if (pair[0] == variable) { return pair[1]; }
+                }
+                return (false);
+            }
+
+            var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+            var platform = Helper.checkPlatform();
+            var colorindex = 1
+
+            var addressCur = getQueryVariable("address");
+            var tokenAddress = "";
+            var amountCur = 0;
+            var nonceCur = 0;
+
+            var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
+
+            $(function () {
+                $('#ModalContract').on('show.bs.modal', function () {
+                    //var element = document.getElementById("myModalLabel");
+                    //element.innerHTML = "转出地址: " + addressCur;
+                    locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
+                    $('#input_addressIn').val(addressCur);
+                    $('#input_nonce').val(nonceCur);
+                })
+            });
+
+            // 复制到剪切板
+            var hide_popover_timer = null;
+            function copyToClipBoard() {
+                var aux = document.createElement("input");
+                aux.setAttribute("value", addressCur);
+                document.body.appendChild(aux);
+
+                if (navigator.userAgent.match(/(iPhone|iPod|iPad);?/i)) {//区分iPhone设备
+                    window.getSelection().removeAllRanges();//这段代码必须放在前面否则无效
+                    var range = document.createRange();
+                    // 选中需要复制的节点
+                    range.selectNode(aux);
+                    // 执行选中元素
+                    window.getSelection().addRange(range);
+                    // 执行 copy 操作
+                    var successful = document.execCommand('copy');
+                    // 移除选中的元素
+                    window.getSelection().removeAllRanges();
+                } else {
+                    aux.select(); // 选择对象
+                    document.execCommand("Copy"); // 执行浏览器复制命令
+                }
+                document.body.removeChild(aux);
+
+
+                $("[data-toggle='popover']").popover();
+                clearTimeout(hide_popover_timer);
+                hide_popover_timer = setTimeout("hide_popover()", 3000);
+            };
+
+            function hide_popover() {
+                var popover = document.getElementsByClassName("popover fade bottom in");
+                if (popover.length >= 1)
+                    document.getElementById("btnCopyToClip").click();
+            }
+
+            var transferIndex = 0;
+            function onTransferInit() {
+                colorindex = 1;
+
+                $.ajax({
+                    url: Helper.GetServerIP() + "/GetProperty",
+                    dataType: "text",
+                    type: "get",
+                    data: { Address: addressCur },
+                    success: function (data) {
+                        if (data != "{\"ret\":\"failed\"}") {
+                            // 删除之前的数据
+                            var mytableEle = document.getElementById("mytable");
+                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                    mytableEle.children[i].remove();
+                            }
+
+                            var jsonObj = JSON.parse(data);
+                            for (var key in jsonObj) {
+
+                                var text    = jsonObj[key];
+                                var array   = text.split(":")
+                                var symbol  = array[0];
+                                var amount  = array[1];
+                                var address = array[2];
+
+                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                                var amount2 = new BigNumber(amount).toFormat();
+
+                                Helper.TableInsert2("mytable", symbol+":"+address, color, Helper.Simplify(symbol, platform), amount2)
+                            }
+                        }
+                    },
+                    error: function (err) {
+                        alert("没有找到可用节点");
+                    }
+                });
+            }
+            onTransferInit(0);
+
+            function liOnclick(e) {
+                var array = e.id.split(":")
+                if (array.length == 2) {
+                    var symbol = array[0];
+                    var token = array[1];
+                    window.location.href = "transfer.html?address=" + addressCur + "&symbol=" + symbol + "&token=" + token;
+                }
+            };
+
+            function liOnSatswap() {
+                window.location.href = "satswap.html?address=" + addressCur;
+            };
+
+            function liOnPledge() {
+                window.location.href = "pledge.html?address=" + addressCur;
+            };
+
+            function liOnLock() {
+                window.location.href = "lock.html?address=" + addressCur;
+            };
+
+            function liOnModalQRCodeLeave(e) {
+                $("#ModalQRCode").modal('hide');
+            };
+
+            function liOnShowQRCode(e) {
+                $("#ModalQRCode").modal('show');
+
+                // 删除之前的数据
+                var myEle = document.getElementById("qrcode");
+                for (var i = myEle.children.length - 1; i >= 0; i--) {
+                    myEle.children[i].remove();
+                }
+
+                //初始化存放二维码的div
+                var qrcodeEncode = new QRCode(document.getElementById("qrcode"), {
+                    width: 300,
+                    height: 300
+                });
+                //window.location.href获取到URL
+                qrcodeEncode.makeCode("http://www.SmartX.com/Wallet/transfer.html?target=" + addressCur);
+            };
+
+            function liOnScanQRCode(e) {
+                $("#ModalScanQRCode").modal('show');
+                $("#scan_addressIn").val(addressCur);
+                $("#scan_addressOut").val("");
+                $("#scan_amount").val("");
+                $("#scan_nonce").val(nonceCur);
+                document.getElementById('photo').style.display = "none";//不可见;
+                document.getElementById('photo_image1').value = '';
+                document.getElementById('photo_image2').value = '';
+                document.getElementById('photo_image2').style.display = "block";//可见;
+                $("#photo_image1").click();
+            }
+
+            var getObjectURL = function (file) {
+                var url = null;
+                if (window.createObjectURL != undefined) { // basic
+                    url = window.createObjectURL(file);
+                } else if (window.URL != undefined) { // mozilla(firefox)
+                    url = window.URL.createObjectURL(file);
+                } else if (window.webkitURL != undefined) { // webkit or chrome
+                    url = window.webkitURL.createObjectURL(file);
+                }
+                return url;
+            }
+
+            function OnScanQRCodeChange(e) {
+                var file = document.getElementById(e).files[0];
+                qrcode.decode(getObjectURL(file));
+                qrcode.callback = function (imgMsg) {
+                    document.getElementById('photo').style.display = "none";//不可见;
+                    if (imgMsg == null || imgMsg == "error decoding QR Code") {
+                        alert("无法识别,请重试！")
+                        return;
+                    }
+                    document.getElementById('photo_image2').style.display = "none";//不可见;
+
+                    var search = imgMsg.split("?");
+                    if (search.length >= 2) {
+                        var addressOut = getQueryVariable("target", "?" + search[1])
+                        $("#scan_addressOut").val(addressOut);
+                    }
+                }
+            }
+
+            function OnScanQRCodeSubmit(e) {
+                var amount = new BigNumber($('#scan_amount').val());
+                var addressOut = $('#scan_addressOut').val();
+                var depend = $('#scan_depend').val();
+                var remarks = $('#scan_remarks').val();
+                var nonce = parseInt($('#scan_nonce').val());
+
+                if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
+                    Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
+            }
+
+            function OnRefreshAmount() {
+                var arrayoAddress = new Array();
+                arrayoAddress[0] = addressCur;
+                $.ajax({
+                    url: Helper.GetServerIP() + "/getaccounts",
+                    dataType: "text",
+                    type: "get",
+                    data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
+                    success: function (data) {
+                        var jsonObj = JSON.parse(data);
+                        var account = jsonObj[addressCur];
+                        var nonce = account["nonce"];
+                        nonceCur = nonce + 1;
+                    },
+                    error: function (err) {
+                    }
+                });
+                setTimeout(function(){OnRefreshAmount();}, 5000 );
+            }
+            OnRefreshAmount();
+
+            function onTransferSubmit(e) {
+                var depend = $('#input_depend').val();
+                var data = $('#input_callFun').val();
+                var nonce = parseInt($('#input_nonce').val());
+                var remarks = $('#input_remarks').val();
+
+                var hash = Helper.SendTransferSubmit(e, "contract", "0", "", data, depend, nonce, remarks);
+                Helper.Statusbar("statusbar",hash,"","发布智能合约: " + depend +" 备注: " + remarks , 1, nonceCur);
+                Helper.MessageBox('发布智能合约');
+            };
+
+
+            Helper.Statusbar();
+        </script>
+
+
+</body>
+</html>
