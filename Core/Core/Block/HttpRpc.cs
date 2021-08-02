@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -31,7 +32,16 @@ namespace ETModel
         {
             var RawUrlFileText = System.Text.Encoding.UTF8.GetString(RawUrlFileByte);
 
-            RawUrlFileText = RawUrlFileText.Replace("\"http://www.SmartX.com:8004\"", $"\"http://{request.Url.Authority}\"");
+            string Authority = NetworkHelper.DnsToIPEndPoint(request.Url.Authority);
+            
+            if (!string.IsNullOrEmpty(Program.jdNode["publicIP"]?.ToString()))
+            {
+                var ipEndPoint1 = NetworkHelper.ToIPEndPoint(Program.jdNode["publicIP"].ToString());
+                var ipEndPoint2 = NetworkHelper.ToIPEndPoint(Authority);
+                Authority = ipEndPoint1.Address + ":" + ipEndPoint2.Port;
+            }
+
+            RawUrlFileText = RawUrlFileText.Replace("\"http://www.SmartX.com:8101\"", $"\"http://{Authority}\"");
 
             var cons = Entity.Root.GetComponent<Consensus>();
             if (cons != null)
@@ -41,7 +51,20 @@ namespace ETModel
                 RawUrlFileText = RawUrlFileText.Replace("\"SWipqG94LJXXx9E8sYbSpZVa8n5TSUD2B\"", $"\"{cons.PledgeFactory}\"");
                 RawUrlFileText = RawUrlFileText.Replace("\"RXF5eSnpEGNgRsUZdx9t2o5ByB511NzrT\"", $"\"{cons.LockFactory}\"");
             }
+
+            string ipAddress = IPEndPoint.Parse(Authority).Address.ToString();
+
+            var httpPool = Entity.Root.GetComponent<HttpPool>();
+            string poolIP = "";
+            poolIP += $"'http://{ipAddress}:{networkHttp.ipEndPoint.Port}':'Ruler->{ipAddress}:{httpPool?.GetHttpAdderrs().Port}',\n";
+            poolIP += $"'Ruler->{ipAddress}:{httpPool?.GetHttpAdderrs().Port}':'http://{ipAddress}:{networkHttp.ipEndPoint.Port}'\n";
+            RawUrlFileText = RawUrlFileText.Replace("Helper.PoolList = {}", $"Helper.PoolList = {{\n{poolIP}}}");
             return System.Text.Encoding.UTF8.GetBytes(RawUrlFileText);
+        }
+
+        public IPEndPoint GetHttpAdderrs()
+        {
+            return networkHttp.ipEndPoint;
         }
 
         public void OnHttpMessage(Session session, int opcode, object msg)
@@ -60,6 +83,15 @@ namespace ETModel
                 case "stats":
                     OnStats(httpMessage);
                     break;
+                case "poolstats":
+                    OnPoolStats(httpMessage);
+                    break;
+                case "getpoollist":
+                    GetPoolList(httpMessage);
+                    break;
+                case "redirect":
+                    OnRedirect(httpMessage);
+                    break;
                 case "rules":
                     OnRules(httpMessage);
                     break;
@@ -68,6 +100,9 @@ namespace ETModel
                     break;
                 case "transferstate":
                     OnTransferState(httpMessage);
+                    break;
+                case "uniquetransfer":
+                    UniqueTransfer(httpMessage);
                     break;
                 case "beruler":
                     OnBeRuler(httpMessage);
@@ -154,32 +189,32 @@ namespace ETModel
                 case "stats":
                     OnStats(httpMessage);
                     break;
+                case "poolstats":
+                    OnPoolStats(httpMessage);
+                    break;
                 case "rules":
                     OnRules(httpMessage);
                     break;
-                //case "transfer":
-                //    OnTransfer(httpMessage);
-                //    break;
                 case "transferstate":
                     OnTransferState(httpMessage);
                     break;
                 case "beruler":
                     OnBeRuler(httpMessage);
                     break;
-                //case "getmnemonic":
-                //    GetMnemonicWord(httpMessage);
-                //    break;
                 case "node":
                     OnNode(httpMessage);
                     break;
                 case "miner":
                     OnMiner(httpMessage);
                     break;
+                case "minertop":
+                    OnMinerTop(httpMessage);
+                    break;
+                case "minerabstract":
+                    OnMinerAbstract(httpMessage);
+                    break;
                 case "getblock":
                     GetBlock(httpMessage);
-                    break;
-                case "test":
-                    Test(httpMessage);
                     break;
                 case "delblock":
                     DelBlock(httpMessage);
@@ -187,21 +222,29 @@ namespace ETModel
                 case "mergechain":
                     MergeChain(httpMessage);
                     break;
-                case "dbreset":
-                    onDBReset(httpMessage);
-                    break;
-                case "pool":
-                    GetPool(httpMessage);
-                    break;
                 case "search":
                     OnSearch(httpMessage);
                     break;
                 case "callFun":
                     callFun(httpMessage);
                     break;
+#if !RELEASE
+                case "pool":
+                    GetPool(httpMessage);
+                    break;
+                case "dbreset":
+                    onDBReset(httpMessage);
+                    break;
                 case "outleveldb":
                     OutLeveldb(httpMessage);
                     break;
+                case "poollist":
+                    PoolList(httpMessage);
+                    break;
+                case "test":
+                    Test(httpMessage);
+                    break;
+#endif
                 case "hello":
                     {
                         httpMessage.result = "welcome join SmartX";
@@ -211,6 +254,9 @@ namespace ETModel
                     {
                         httpMessage.result = "you can use Command menu";
                     }
+                    break;
+                case "pooltransfer":
+                    PoolTransfer(httpMessage);
                     break;
                 default:
                     break;
@@ -239,8 +285,11 @@ namespace ETModel
                     httpMessage.result = "command error! \nexample: outleveldb password height filename";
                     return;
                 }
+
+                //Entity.Root.GetComponent<Consensus>().AddRunAction(() => { LevelDBStore.test_ergodic2(long.Parse(height), filename); });
                 LevelDBStore.test_ergodic2(long.Parse(height), filename);
-                httpMessage.result = "导出完成";
+
+                httpMessage.result = "正在导出";
             }
         }
 
@@ -359,6 +408,13 @@ namespace ETModel
 
         public void OnStats(HttpMessage httpMessage)
         {
+            var HttpPoolRelay = Entity.Root.GetComponent<HttpPoolRelay>();
+            if (HttpPoolRelay != null)
+            {
+                OnPoolStats(httpMessage);
+                return;
+            }
+
             if (!GetParam(httpMessage, "1", "style", out string style))
             {
                 style = "";
@@ -402,8 +458,98 @@ namespace ETModel
             if (style == "2")
             {
                 var httpPool = Entity.Root.GetComponent<HttpPool>();
-                var miners = httpPool?.GetMinerReward(out long miningHeight);
-                httpMessage.result = $"H:{UndoHeight} P:{power2} Miner:{miners?.Count} P1:{power1}";
+                var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
+                httpMessage.result = $"H:{UndoHeight} P:{power2} Miner:{miners?.Count}/{httpPool?.minerLimit} P1:{power1} Fee:{Pool.GetServiceFee()*100}% {pool?.RewardInterval/4}min {HttpPool.ignorePower/1000}K Ver:{Miner.version.Replace("Miner_","")}";
+            }
+        }
+
+        public void OnPoolStats(HttpMessage httpMessage)
+        {
+            var HttpPoolRelay = Entity.Root.GetComponent<HttpPoolRelay>();
+            if (HttpPoolRelay == null) {
+                OnStats(httpMessage);
+                return;
+            }
+
+            if (!GetParam(httpMessage, "1", "style", out string style))
+            {
+                style = "";
+            }
+
+            if (style == "")
+            {
+                var pool        = Entity.Root.GetComponent<Pool>();
+                var address     = Wallet.GetWallet().GetCurWallet().ToAddress();
+                var httpPool    = Entity.Root.GetComponent<HttpPool>();
+                long PoolHeight = httpPool == null ? 0 : httpPool.height;
+                string power1   = HttpPoolRelay.calculatePower.GetPower();
+                var minerReward = httpPool?.GetMinerRewardMin(out long miningHeight);
+
+                httpMessage.result =    $"       PoolHeight: {PoolHeight}\n" +
+                                        $"  Calculate Power: {power1}\n" +
+                                        $"          Account: {address}\n" +
+                                        $"            Miner: {minerReward?.Count}\n" +
+                                        $"    Pool.Transfer: {pool?.GetTransfersCount()}\n";
+            }
+            else
+            if (style == "2")
+            {
+                long miningHeight = 0;
+                var pool = Entity.Root.GetComponent<Pool>();
+                var httpPool = Entity.Root.GetComponent<HttpPool>();
+                var minerReward = httpPool?.GetMinerRewardMin(out miningHeight);
+                string power1 = HttpPoolRelay.calculatePower.GetPower();
+
+                httpMessage.result = $"H:{httpPool?.height} Miner:{minerReward?.Count}/{httpPool?.minerLimit} P1:{power1} Fee:{Pool.GetServiceFee() * 100}% {pool?.RewardInterval / 4}min {HttpPool.ignorePower / 1000}K Ver:{Miner.version.Replace("Miner_", "")}";
+            }
+            else
+            if (style == "3")
+            {
+                Dictionary<string, object> result = new Dictionary<string, object>();
+                long miningHeight = 0;
+                var pool = Entity.Root.GetComponent<Pool>();
+                var httpPool = Entity.Root.GetComponent<HttpPool>();
+                var miners = httpPool?.GetMinerRewardMin(out miningHeight);
+                string power1 = HttpPoolRelay.calculatePower.GetPower();
+
+                result.Add("H", miningHeight);
+                result.Add("P1", power1);
+                result.Add("Miner", $"{miners?.Count}/{httpPool?.minerLimit}");
+                result.Add("Fee", $"{Pool.GetServiceFee() * 100}%");
+                result.Add("RewardInterval", $"{pool?.RewardInterval / 4}");
+                result.Add("ignorePower", $"{HttpPool.ignorePower / 1000}K");
+                result.Add("Ver", Miner.version.Replace("Miner_", ""));
+                httpMessage.result = JsonHelper.ToJson(result);
+            }
+
+        }
+
+        public void GetPoolList(HttpMessage httpMessage)
+        {
+            var httpPoolRelay = Entity.Root.GetComponent<HttpPoolRelay>();
+            if (httpPoolRelay != null)
+            {
+                httpMessage.result = $"redirect {httpPoolRelay.rulerRpc}";
+            }
+            else
+            {
+                httpMessage.result = JsonHelper.ToJson(HttpPoolRelay.poolInfos);
+            }
+        }
+
+        public void OnRedirect(HttpMessage httpMessage)
+        {
+            var httpPoolRelay = Entity.Root.GetComponent<HttpPoolRelay>();
+            if (httpPoolRelay != null)
+            {
+                if(httpPoolRelay.rulerWeb.IndexOf("http://")==0)
+                    httpMessage.result = "redirect " + httpPoolRelay.rulerWeb;
+                else
+                    httpMessage.result = "redirect " + "http://" + httpPoolRelay.rulerWeb;
+            }
+            else
+            {
+                httpMessage.result = "";
             }
         }
 
@@ -426,7 +572,7 @@ namespace ETModel
         {
             var httpPool = Entity.Root.GetComponent<HttpPool>();
             var pool = Entity.Root.GetComponent<Pool>();
-            var miners = httpPool.GetMinerReward(out long miningHeight);
+            var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
             if (GetParam(httpMessage, "1", "Address", out string address))
             {
                 GetParam(httpMessage, "2", "transferIndex", out string str_transferIndex);
@@ -447,6 +593,41 @@ namespace ETModel
             {
                 httpMessage.result  = $"pool.style   : {pool.style}\n";
                 httpMessage.result += $"miners.Count : {miners?.Count}\n";
+            }
+        }
+
+        public void OnMinerTop(HttpMessage httpMessage)
+        {
+            var httpPool = Entity.Root.GetComponent<HttpPool>();
+            var pool = Entity.Root.GetComponent<Pool>();
+            var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
+            if (GetParam(httpMessage, "1", "minerIndex", out string str_minerIndex))
+            {
+                GetParam(httpMessage, "2", "minerColumn", out string str_minerColumn);
+
+                long.TryParse(str_minerIndex, out long minerIndex);
+                long.TryParse(str_minerColumn, out long minerColumn);
+
+                var minerView = pool.GetMinerTop(minerIndex, minerColumn);
+
+                httpMessage.result = JsonHelper.ToJson(minerView);
+            }
+            else
+            {
+                httpMessage.result = $"pool.style   : {pool.style}\n";
+                httpMessage.result += $"miners.Count : {miners?.Count}\n";
+            }
+        }
+
+        public void OnMinerAbstract(HttpMessage httpMessage)
+        {
+            var httpPool = Entity.Root.GetComponent<HttpPool>();
+            var pool = Entity.Root.GetComponent<Pool>();
+            var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
+            if (GetParam(httpMessage, "1", "Address", out string address))
+            {
+                var minerView = pool.GetMinerViewAbstract(address);
+                httpMessage.result = JsonHelper.ToJson(minerView);
             }
         }
 
@@ -490,6 +671,45 @@ namespace ETModel
             }
         }
 
+        public void PoolList(HttpMessage httpMessage)
+        {
+            GetParam(httpMessage, "1", "style", out string style);
+
+            var poollist = "";
+            var nodeList = Entity.Root.GetComponent<NodeManager>().GetNodeRandomList();
+            foreach( var value in nodeList )
+            {
+                try
+                {
+                    HttpMessage quest = new HttpMessage();
+                    quest.map = new Dictionary<string, string>();
+                    quest.map.Add("cmd", "stats");
+                    quest.map.Add("style", "2");
+
+                    string ipAddress = IPEndPoint.Parse(value.ipEndPoint).Address.ToString();
+                    var awaiter = ComponentNetworkHttp.QueryString($"http://{ipAddress}:8101", quest).GetAwaiter();
+                    while (!awaiter.IsCompleted)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+
+                    var temp = $"{value.address} {ipAddress} {awaiter.GetResult()}\n";
+                    if (style == "1")
+                    {
+                        File.AppendAllText("./Miners_no_confused.csv", temp.Replace(" ",",") );
+                    }
+                    poollist += temp;
+                }
+                catch (Exception)
+                {
+                }
+            }
+
+            httpMessage.result = poollist;
+        }
+
+
+
         public void OnProperty(HttpMessage httpMessage)
         {
             if (!GetParam(httpMessage, "1", "Address", out string address))
@@ -524,12 +744,8 @@ namespace ETModel
                         {
                             if (!luaVMEnv.IsERC(dbSnapshot, blockSub.addressOut,"ERC20"))
                                 continue;
-                            blockSub.data = "symbol()";
-                            rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight,out result);
-                            if (rel && result != null && result.Length >= 1)
-                            {
-                                symbol = ((string)result[0]) ?? "unknown";
-                            }
+
+                            symbol = LuaContract.GetSymbol(blockSub.addressOut);
 
                             blockSub.data = $"balanceOf(\"{address}\")";
                             rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
@@ -666,14 +882,20 @@ namespace ETModel
             transfer.data = System.Web.HttpUtility.UrlDecode(httpMessage.map["data"]);
             transfer.timestamp = long.Parse(httpMessage.map["timestamp"]);
             transfer.sign = httpMessage.map["sign"].HexToBytes();
-            transfer.depend  = System.Web.HttpUtility.UrlDecode(httpMessage.map["depend"]);
-            transfer.remarks = System.Web.HttpUtility.UrlDecode(httpMessage.map["remarks"]);
+
+            if (httpMessage.map.ContainsKey("depend"))
+                transfer.depend  = System.Web.HttpUtility.UrlDecode(httpMessage.map["depend"]);
+            if (httpMessage.map.ContainsKey("remarks"))
+                transfer.remarks = System.Web.HttpUtility.UrlDecode(httpMessage.map["remarks"]);
+            if(httpMessage.map.ContainsKey("extend"))
+                transfer.extend  = JsonHelper.FromJson<List<string>>(System.Web.HttpUtility.UrlDecode(httpMessage.map["extend"]));
 
             //string hash = transfer.ToHash();
             //string sign = transfer.ToSign(Wallet.GetWallet().GetCurWallet()).ToHexString();
+            //Log.Info($"{sign} {hash}");
 
             var rel = Entity.Root.GetComponent<Rule>().AddTransfer(transfer);
-            if (rel==-1)
+            if (rel == -1)
             {
                 OnTransferAsync(transfer);
             }
@@ -714,7 +936,7 @@ namespace ETModel
             }
         }
 
-        public bool GetParam(HttpMessage httpMessage,string key1,string key2,out string value)
+        public static bool GetParam(HttpMessage httpMessage,string key1,string key2,out string value)
         {
             if (!httpMessage.map.TryGetValue(key1, out value))
             {
@@ -763,6 +985,19 @@ namespace ETModel
 
         public void OnBeRuler(HttpMessage httpMessage)
         {
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                httpMessage.result = "command error! \nexample: beRuler password";
+                return;
+            }
+            if (!Wallet.GetWallet().IsPassword(password))
+                return;
+
+            OnBeRulerReal(httpMessage);
+        }
+
+        public void OnBeRulerReal(HttpMessage httpMessage)
+        {
             var consensus = Entity.Root.GetComponent<Consensus>();
             var blockMgr = Entity.Root.GetComponent<BlockMgr>();
 
@@ -772,6 +1007,7 @@ namespace ETModel
                 httpMessage.result = $"{consensus.transferHeight}:{blockMgr.newBlockHeight} The current block height is too low. command BeRuler have been ignore.";
                 return;
             }
+            Log.Info("AutoBeRuler 8");
 
             WalletKey key = Wallet.GetWallet().GetCurWallet();
 
@@ -801,6 +1037,7 @@ namespace ETModel
             transfer.hash = transfer.ToHash();
             transfer.sign = transfer.ToSign(key);
 
+            Log.Info("AutoBeRuler "+ transfer.hash);
             var rel = Entity.Root.GetComponent<Rule>().AddTransfer(transfer);
             if (rel == -1)
             {
@@ -820,6 +1057,27 @@ namespace ETModel
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
             {
                 var transfer = dbSnapshot.Transfers.Get(hash);
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                }
+                else
+                    httpMessage.result = "";
+            }
+        }
+
+        public void UniqueTransfer(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "unique", out string unique))
+            {
+                httpMessage.result = "command error! \nexample: transferstate hash";
+                return;
+            }
+
+            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                string hasht = dbSnapshot.Get($"unique_{unique}");
+                var transfer = dbSnapshot.Transfers.Get(hasht);
                 if (transfer != null)
                 {
                     httpMessage.result = JsonHelper.ToJson(transfer);
@@ -997,7 +1255,7 @@ namespace ETModel
                 }
 
                 LevelDBStore.Export2CSV_Transfer($"{file}", Address);
-
+                httpMessage.result = $"{file} 导出完成";
             }
             else
             if (style == "2")
@@ -1032,11 +1290,36 @@ namespace ETModel
                 LevelDBStore.Export2CSV_Account($"{file}", Address);
             }
             else
-            if (style == "rule")
+            if (style == "pledge")
             {
-                TestBeRule(httpMessage);
+                TestContract.TestPledge(httpMessage);
             }
+            else
+            if (style == "transfer")
+            {
+                TestContract.TestTransfer(httpMessage);
+            }
+            else
+            if (style.ToLower() == "transferall")
+            {
+                if (!GetParam(httpMessage, "3", "file", out string file))
+                {
+                    httpMessage.result = "command error! \nexample: test 1 Address C:\\Address.csv";
+                    return;
+                }
+                if (!GetParam(httpMessage, "4", "min", out string smin))
+                {
+                    return;
+                }
+                if (!GetParam(httpMessage, "5", "max", out string smax))
+                {
+                    return;
+                }
+                long.TryParse(smin, out long lmin);
+                long.TryParse(smax, out long lmax);
 
+                TestContract.TransferAll(file, lmin, lmax);
+            }
         }
 
         public long DelBlock_min;
@@ -1119,8 +1402,108 @@ namespace ETModel
             }
         }
 
-        Dictionary<string, long> AccountNotice = new Dictionary<string, long>();
-        public long GetAccountNotice(string address,bool reset=true)
+        public void PoolTransfer(HttpMessage httpMessage)
+        {
+            httpMessage.result = "command error!";
+            httpMessage.result += "\nexample 1: PoolTransfer password file.csv address";
+            httpMessage.result += "\nexample 2: PoolTransfer password file.csv all";
+            httpMessage.result += "\nexample 3: PoolTransfer password file.csv minheight maxheight";
+
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                return;
+            }
+
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                if (!GetParam(httpMessage, "2", "file", out string file))
+                {
+                    return;
+                }
+
+                if (!GetParam(httpMessage, "3", "param2", out string param2))
+                {
+                    return;
+                }
+
+                try
+                {
+
+                    var addTransCount = 0;
+                    var transferProcess = Entity.Root.GetComponent<TransferProcess>();
+                    string allText = File.ReadAllText($"./{file}", System.Text.Encoding.UTF8);
+                    allText = allText.Replace("}{", "}\n{");
+                    string[] arr = allText.Split("\n");
+
+                    var list = new List<TransferProcess.TransferHandle>();
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        var transferHandle = JsonHelper.FromJson<TransferProcess.TransferHandle>(arr[i]);
+                        if (transferHandle != null && !string.IsNullOrEmpty(transferHandle.unique))
+                        {
+                            list.Add(transferHandle);
+                        }
+
+                        var blockSub = JsonHelper.FromJson<BlockSub>(arr[i]);
+                        if (blockSub != null && !string.IsNullOrEmpty(blockSub.data))
+                        {
+                            list.Add(new TransferProcess.TransferHandle() { addressIn = blockSub.addressIn, addressOut = blockSub.addressOut, amount = blockSub.amount, unique = blockSub.data });
+                        }
+                    }
+
+                    if (Wallet.CheckAddress(param2))
+                    {
+                        var address = param2;
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            var transferHandle = list[i];
+                            if (transferHandle.addressOut == address)
+                            {
+                                addTransCount++;
+                                transferProcess.AddTransferHandle(transferHandle.addressIn, transferHandle.addressOut, transferHandle.amount, transferHandle.unique, transferHandle.lastHeight);
+                            }
+                        }
+                    }
+                    else
+                    if (param2.ToLower() == "all")
+                    {
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            var transferHandle = list[i];
+                            addTransCount++;
+                            transferProcess.AddTransferHandle(transferHandle.addressIn, transferHandle.addressOut, transferHandle.amount, transferHandle.unique, transferHandle.lastHeight);
+                        }
+                    }
+                    else
+                    if (long.TryParse(param2, out long minHeight))
+                    {
+                        GetParam(httpMessage, "4", "param3", out string param3);
+                        if (!long.TryParse(param3, out long maxHeight))
+                        {
+                            maxHeight = long.MaxValue;
+                        }
+
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            var transferHandle = list[i];
+                            if (minHeight <= transferHandle.lastHeight && transferHandle.lastHeight <= maxHeight)
+                            {
+                                addTransCount++;
+                                transferProcess.AddTransferHandle(transferHandle.addressIn, transferHandle.addressOut, transferHandle.amount, transferHandle.unique, transferHandle.lastHeight);
+                            }
+                        }
+                    }
+                    httpMessage.result = $"BadRecord: {arr.Length}, AddTransCount:{addTransCount}";
+                }
+                catch (Exception e)
+                {
+                    httpMessage.result = e.ToString();
+                }
+            }
+        }
+
+        static Dictionary<string, long> AccountNotice = new Dictionary<string, long>();
+        public static long GetAccountNotice(string address,bool reset=true)
         {
             long notice = 0;
             using (DbSnapshot dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
@@ -1146,7 +1529,7 @@ namespace ETModel
             return notice;
         }
 
-        public async ETTask<Session> OnTransferAsync2(BlockSub transfer ,Session session2)
+        public static async ETTask<Session> OnTransferAsync2(BlockSub transfer ,Session session2)
         {
             Consensus consensus = Entity.Root.GetComponent<Consensus>();
 
@@ -1177,8 +1560,6 @@ namespace ETModel
 
         public async void Test2Async(object o)
         {
-            NodeManager nodeManager = Entity.Root.GetComponent<NodeManager>();
-
             for (int ii = Wallet.GetWallet().keys.Count; ii < 1000; ii++)
             {
                 Wallet.GetWallet().Create();
@@ -1194,17 +1575,17 @@ namespace ETModel
                 int random2 = ii;
                 int random3 = 1000;
 
-                BlockSub transfer = new BlockSub();
-                transfer.type = "transfer";
-                transfer.addressIn = Wallet.GetWallet().keys[random1].ToAddress();
+                BlockSub transfer   = new BlockSub();
+                transfer.type       = "transfer";
+                transfer.addressIn  = Wallet.GetWallet().keys[random1].ToAddress();
                 transfer.addressOut = Wallet.GetWallet().keys[random2].ToAddress();
-                transfer.amount = random3.ToString();
-                transfer.data = "";
-                transfer.depend = "";
-                transfer.nonce = GetAccountNotice(transfer.addressIn, false);
-                transfer.timestamp = TimeHelper.Now();
-                transfer.hash = transfer.ToHash();
-                transfer.sign = transfer.ToSign(Wallet.GetWallet().keys[random1]);
+                transfer.amount     = random3.ToString();
+                transfer.data       = "";
+                transfer.depend     = "";
+                transfer.nonce      = GetAccountNotice(transfer.addressIn, false);
+                transfer.timestamp  = TimeHelper.Now();
+                transfer.hash       = transfer.ToHash();
+                transfer.sign       = transfer.ToSign(Wallet.GetWallet().keys[random1]);
 
                 session2 = await OnTransferAsync2(transfer, session2);
                 while (session2 == null) {
@@ -1253,12 +1634,6 @@ namespace ETModel
             }
         }
 
-        public async void TestBeRule(HttpMessage httpMessage)
-        {
-            httpMessage.result = "";
-            await Task.Delay(10);
-
-        }
 
     }
 

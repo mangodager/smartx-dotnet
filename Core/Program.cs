@@ -33,6 +33,7 @@ namespace ETModel
             param.TryAdd("node", "All");
             param.TryAdd("wallet", "./Data/wallet.json");
             param.TryAdd("db", "./Data/LevelDB");
+            param.TryAdd("node", "All");
 
             if (param.TryGetValue("index", out string index))
             {
@@ -40,29 +41,23 @@ namespace ETModel
                 param["db"] = param["db"] + index;
             }
 
-            if (param.TryGetValue("miner",out string tmp1))
+            if (param.ContainsKey("miner"))
             {
+                RandomXSharp.RandomX.randomx_init(param.ContainsKey("fullmem"));
                 Entity.Root.AddComponent<Miner>().Init(param);
                 Update();
                 return;
             }
+            RandomXSharp.RandomX.randomx_init(false);
 
-            //// DAG 创建测试
-            //char[] dag = new char[1024*1024*10];
-            //var hash = CryptoHelper.Sha256("sat dag");
-            //var count = dag.Length / hash.Length;
-            //int dagIndex = 0;
-            //for (int ii = 0; ii < count; ii++)
-            //{
-            //    hash = CryptoHelper.Sha256(hash);
-            //    for (int jj = 0; jj < hash.Length; jj++)
-            //    {
-            //        dag[dagIndex++] = hash[jj];
-            //    }
-            //}
-
-            //BigHelper.Test();
+            //RandomXSharp.RandomX.Test1(args);
             //return;
+
+            //Wallet.Import("");
+            //return;
+
+            BigHelper.Test();
+            return;
 
             //CalculatePower.Test();
             //return;
@@ -83,8 +78,14 @@ namespace ETModel
             //LevelDBStore.Export2CSV_Block(args);
             //LevelDBStore.test_ergodic(args);
             //return;
-
             //Log.Info(Environment.CurrentDirectory);
+
+            if (param.TryGetValue("makeSnapshot", out string _))
+            {
+                LevelDBStore.MakeSnapshot(param);
+                return;
+            }
+
             string walletFile = param["wallet"];
             Wallet wallet = Wallet.GetWallet(walletFile);
             if (wallet == null)
@@ -92,7 +93,7 @@ namespace ETModel
                 return;
             }
 
-            if (param.TryGetValue("makeGenesis", out string tmp2))
+            if (param.TryGetValue("makeGenesis", out string _))
             {
                 Consensus.MakeGenesis();
                 return;
@@ -101,7 +102,11 @@ namespace ETModel
             //DisbleQuickEditMode();
             Console.Clear();
             Console.CursorVisible = false;
-            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet.GetCurWallet().ToAddress()}";
+#if !RELEASE
+            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet.GetCurWallet().ToAddress()} Debug";
+#else
+            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet.GetCurWallet().ToAddress()} Release";
+#endif
             Log.Debug($"address: {wallet.GetCurWallet().ToAddress()}");
 
             string NodeKey = param["node"];
@@ -109,6 +114,16 @@ namespace ETModel
             SynchronizationContext.SetSynchronizationContext(OneThreadSynchronizationContext.Instance);
             AssemblyHelper.AddAssembly("Base",typeof(AssemblyHelper).Assembly);
             AssemblyHelper.AddAssembly("App" ,typeof(Program).Assembly);
+
+            // check contract
+            var contractHash = FileHelper.HashDirectory("Data/Contract", CryptoHelper.Sha256);
+            if (contractHash != "da4d968db3d8a7360873221cb917c9fcb073600968c2e88a22640b90c529d0f1")
+            {
+                Log.Debug($"contractHash error: {contractHash}");
+#if RELEASE
+                return;
+#endif
+            }
 
             // 读取配置文件
             try
@@ -136,7 +151,7 @@ namespace ETModel
                 List<string> list = JsonHelper.FromJson<List<string>>(jdNode["NodeSessions"].ToString());
                 for (int ii = 0; ii < list.Count; ii++)
                 {
-                    list[ii] = NetworkHelper.DnsToIPEndPoint(list[ii]).ToString();
+                    list[ii] = NetworkHelper.DnsToIPEndPoint(list[ii]);
                 }
                 jdNode["NodeSessions"] = JsonHelper.ToJson(list);
 
@@ -144,16 +159,18 @@ namespace ETModel
                 {
                     if(jdNode["HttpRpc"]!=null)
                         jdNode["HttpRpc"]["ComponentNetworkHttp"]["address"]  = ((string)jdNode["HttpRpc" ]["ComponentNetworkHttp"]["address"]).Replace("8101", (8100 + int.Parse(index)).ToString() );
-                    if(jdNode["HttpRpc"]!=null)
+                    if(jdNode["HttpPool"] !=null)
                         jdNode["HttpPool"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkHttp"]["address"]).Replace("9101", (9100 + int.Parse(index)).ToString());
-                    if(jdNode["HttpRpc"]!=null)
+                    if(jdNode["SmartxRpc"] !=null)
                         jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"]).Replace("5000", ((5000 - 1) + int.Parse(index)).ToString());
-                    if(jdNode["HttpRpc"]!=null)
+                    if(jdNode["ComponentNetworkInner"] !=null)
                         jdNode["ComponentNetworkInner"]["address"] = ((string)jdNode["ComponentNetworkInner"]["address"]).Replace("58601", (58600 + int.Parse(index)).ToString());
-                    if(jdNode["RelayNetwork"]!=null)
+                    if(jdNode["RelayNetwork"] !=null)
                         jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"] = ((string)jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"]).Replace("57601", (57600 + int.Parse(index)).ToString());
                     if(jdNode["Pool"] != null)
                         jdNode["Pool"]["db_path"] = ((string)jdNode["Pool"]["db_path"]) + index;
+                    if (jdNode["HttpPoolRelay"] != null)
+                        jdNode["HttpPoolRelay"]["number"] = jdNode["HttpPoolRelay"]["number"].ToString().Replace("Pool1","Pool"+index);
                 }
 
                 // 数据库路径
@@ -164,6 +181,8 @@ namespace ETModel
 
                 Entity.Root.AddComponent<ComponentStart>(jdNode);
             }
+
+            //TransferProcess.Test();
 
             Update();
 

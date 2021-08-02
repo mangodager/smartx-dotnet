@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0;SERVER</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0;SERVER;SmartX;MultiThread</DefineConstants>
     <OutputPath>..\Bin\</OutputPath>
     <NoWarn>1701;1702;</NoWarn>
     <WarningLevel>4</WarningLevel>
@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>DEBUG;TRACE;RELEASE;NETCOREAPP2_0;SERVER</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;RELEASE;NETCOREAPP2_0;SERVER;SmartX</DefineConstants>
     <OutputPath>..\Bin\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>false</Optimize>

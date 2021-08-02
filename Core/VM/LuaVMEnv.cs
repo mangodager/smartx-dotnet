@@ -27,6 +27,11 @@ namespace ETModel
 
         public static void Enqueue(string _consAddress, string _sender)
         {
+            if(queue.FirstOrDefault( x=>x.consAddress==_consAddress) != null) {
+                queue.Push(new StackItem());
+                throw new Exception("LuaVMStack Enqueue throw");
+            }
+
             var stack = new StackItem() { consAddress  = $"{_consAddress}"  , sender = $"{ _sender}" };
             queue.Push(stack);
 
@@ -44,6 +49,11 @@ namespace ETModel
 
         }
 
+        public static int curDepth()
+        {
+            return queue.Count;
+        }
+
         public static void Reset(BlockSub _transfer,LuaVMDB _dbSnapshot, string _consAddress, string _sender)
         {
             s_transfer   = _transfer;
@@ -56,16 +66,17 @@ namespace ETModel
             }
         }
 
-        public static void Add2TransferTemp(string msg)
+        public static void Add2TransferTemp(string msg, BlockSub _transfer=null)
         {
-            if (s_transfer != null && !string.IsNullOrEmpty(msg))
+            _transfer = _transfer ?? s_transfer;
+            if (_transfer != null && !string.IsNullOrEmpty(msg))
             {
-                if (s_transfer.temp == null)
+                if (_transfer.temp == null)
                 {
-                    s_transfer.temp = new List<string>();
+                    _transfer.temp = new List<string>();
                 }
-                s_transfer.temp.Remove(msg);
-                s_transfer.temp.Add(msg);
+                _transfer.temp.Remove(msg);
+                _transfer.temp.Add(msg);
             }
         }
     }
@@ -133,7 +144,10 @@ namespace ETModel
                 string output = fnName + "(";
                 for (int i = 0; i < args.Length; i++)
                 {
-                    output = output + args[i].type + ":" + args[i].value;
+                    if(args[i].type == "System.String")
+                        output = $"{output}\"{args[i].value}\"";
+                    else
+                        output = $"{output}{args[i].value}";
                     if (i != args.Length - 1)
                         output = output + ",";
                 }
@@ -197,13 +211,15 @@ namespace ETModel
     public class LuaVMEnv : Component
     {
         Dictionary<string, LuaEnv> cacheLuaEnv = new Dictionary<string, LuaEnv>();
-        public LuaEnv GetLuaEnv(string address) 
+        public LuaEnv GetLuaEnv(string address,string prefix) 
         {
-            if (!cacheLuaEnv.TryGetValue(address, out LuaEnv luaEnv))
+            string name = $"{prefix}___{LuaVMStack.curDepth()}___{address}";
+            if (!cacheLuaEnv.TryGetValue(name, out LuaEnv luaEnv))
             {
                 luaEnv = new LuaEnv();
-                cacheLuaEnv.TryAdd(address, luaEnv);
+                cacheLuaEnv.TryAdd(name, luaEnv);
             }
+
             return luaEnv;
         }
 
@@ -273,77 +289,85 @@ end";
 
         public bool Execute(DbSnapshot dbSnapshot, BlockSub transfer,long height,out object[] result)
         {
-            LuaVMDB luaVMDB = new LuaVMDB(dbSnapshot);
-            LuaVMCall luaVMCall = new LuaVMCall();
-            LuaVMScript luaVMScript = null;
-            LuaVMContext LuaVMContext = null;
-            result = null;
-            try
+            lock (this)
             {
-                string consAddress = GetContractAddress(transfer);
-                LuaEnv luaenv = GetLuaEnv(consAddress);
-
-                //LuaEnv Global
-                LuaVMStack.Reset(transfer, luaVMDB, consAddress, transfer.addressIn);
-
-                luaenv.DoString(initScript);
-
-                if (string.IsNullOrEmpty(transfer.addressOut))
+            using (LuaVMDB luaVMDB = new LuaVMDB(dbSnapshot))
+            {
+                result = null;
+                LuaVMCall luaVMCall = new LuaVMCall();
+                LuaVMScript luaVMScript = null;
+                LuaVMContext LuaVMContext = null;
+                try
                 {
-                    // 已存在
-                    if (luaVMDB.Contracts.Get(consAddress) != null)
-                        return false;
+                    string consAddress = GetContractAddress(transfer);
+                    LuaEnv luaenv = GetLuaEnv(consAddress, "Execute");
 
-                    luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData($"./Data/Contract/{transfer.depend}.lua").ToByteArray(), tablName = transfer.depend };
-                    LuaVMContext = new LuaVMContext() { jsonData = "{}".ToByteArray() };
-                    luaVMCall = LuaVMCall.Decode(transfer.data);
-                    luaVMDB.Contracts.Add(consAddress, luaVMScript);
-                    luaenv.DoString(luaVMScript.script);
+                    //LuaEnv Global
+                    LuaVMStack.Reset(transfer, luaVMDB, consAddress, transfer.addressIn);
+
+                    luaenv.DoString(initScript);
+
+                    if (string.IsNullOrEmpty(transfer.addressOut))
+                    {
+                        // 已存在
+                        if (luaVMDB.Contracts.Get(consAddress) != null)
+                            return false;
+
+                        luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData($"./Data/Contract/{transfer.depend}.lua").ToByteArray(), tablName = transfer.depend };
+                        LuaVMContext = new LuaVMContext() { jsonData = "{}".ToByteArray() };
+                        luaVMCall = LuaVMCall.Decode(transfer.data);
+                        luaVMDB.Contracts.Add(consAddress, luaVMScript);
+                        luaenv.DoString(luaVMScript.script);
+                    }
+                    else
+                    {
+                        luaVMScript = LuaVMScript.Get(luaVMDB, consAddress);
+                        LuaVMContext = luaVMDB.Storages.Get(consAddress);
+                        luaVMCall = LuaVMCall.Decode(transfer.data);
+                        luaenv.DoString(luaVMScript.script, transfer.addressOut);
+                        luaenv.DoString($"Storages = rapidjson.decode('{LuaVMContext.jsonData.ToStr()}')\n");
+                    }
+
+                    object[] args = luaVMCall.args.Select(a => a.GetValue()).ToArray();
+                    LuaFunction luaFun = luaenv.Global.Get<LuaFunction>(luaVMCall.fnName);
+
+                    luaenv.Global.Set("curHeight", height);
+                    luaenv.Global.Set("sender", transfer.addressIn);
+                    luaenv.Global.Set("addressThis", consAddress);
+                    if (luaFun != null)
+                    {
+                        result = luaFun.Call(args);
+
+                        // rapidjson
+                        luaenv.DoString("StoragesJson = rapidjson.encode(Storages)\n");
+                        LuaVMContext.jsonData = luaenv.Global.Get<string>("StoragesJson").ToByteArray();
+                        luaVMDB.Storages.Add(consAddress, LuaVMContext);
+                        luaVMDB.Commit();
+                        luaenv.GC();
+
+                        return true;
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    luaVMScript = LuaVMScript.Get(luaVMDB, consAddress);
-                    LuaVMContext = luaVMDB.Storages.Get(consAddress);
-                    luaVMCall = LuaVMCall.Decode(transfer.data);
-                    luaenv.DoString(luaVMScript.script, transfer.addressOut);
-                    luaenv.DoString($"Storages = rapidjson.decode('{LuaVMContext.jsonData.ToStr()}')\n");
+#if !RELEASE
+                    Log.Error(e);
+                    Log.Info($"LuaVMEnv.Execute Error, transfer.hash: {transfer.hash} , contract: {transfer.addressOut} func:{luaVMCall.fnName}");
+#endif
+                    var array = e.Message.Split("\n");
+                    if (array != null && array.Length > 0)
+                    {
+                        array[0] = array[0].Replace("c# exception:XLua.LuaException: c# exception:System.Exception: ", "");
+                        LuaVMStack.Add2TransferTemp(array[0]);
+                    }
                 }
-
-                object[] args = luaVMCall.args.Select(a => a.GetValue()).ToArray();
-                LuaFunction luaFun = luaenv.Global.Get<LuaFunction>(luaVMCall.fnName);
-
-                luaenv.Global.Set("curHeight", height);
-                luaenv.Global.Set("sender", transfer.addressIn);
-                luaenv.Global.Set("addressThis", consAddress);
-                if (luaFun != null)
+                finally
                 {
-                    result = luaFun.Call(args);
-
-                    // rapidjson
-                    luaenv.DoString("StoragesJson = rapidjson.encode(Storages)\n");
-                    LuaVMContext.jsonData = luaenv.Global.Get<string>("StoragesJson").ToByteArray();
-                    luaVMDB.Storages.Add(consAddress, LuaVMContext);
-                    luaVMDB.Commit();
-                    luaenv.GC();
-
-                    return true;
+                    LuaVMStack.Reset(null, null, null, null);
+                }
+                return false;
                 }
             }
-            catch (Exception e)
-            {
-                Log.Error(e);
-                Log.Info($"LuaVMEnv.Execute Error, transfer.hash: {transfer.hash} , contract: {transfer.addressOut} func:{luaVMCall.fnName}");
-                var array = e.Message.Split("\n");
-                if (array != null&& array.Length>0) {
-                    array[0] = array[0].Replace("c# exception:XLua.LuaException: c# exception:System.Exception: ", "");
-                    LuaVMStack.Add2TransferTemp(array[0]);
-                }
-            }
-            finally
-            {
-                LuaVMStack.Reset(null,null,null,null);
-            }
-            return false;
         }
 
         public bool LuaCall(LuaVMDB dbSnapshot, string consAddress, string sender, string data,long height, out object[] result)
@@ -351,11 +375,12 @@ end";
             LuaVMCall luaVMCall = new LuaVMCall();
             LuaVMScript luaVMScript = null;
             LuaVMContext LuaVMContext = null;
+            LuaEnv luaenv = GetLuaEnv(consAddress, "LuaCall");
+
             result = null;
             try
             {
                 LuaVMStack.Enqueue(consAddress, sender);
-                LuaEnv luaenv = new LuaEnv();
 
                 luaenv.DoString(initScript);
 
@@ -400,11 +425,12 @@ end";
             LuaVMCall    luaVMCall    = new LuaVMCall();
             LuaVMScript  luaVMScript  = null;
             LuaVMContext LuaVMContext = null;
+            LuaEnv luaenv = GetLuaEnv(depend, "LuaCreate");
+
             consAddress = GetContractAddress(sender, data, timestamp, depend);
             try
             {
                 LuaVMStack.Enqueue(consAddress, sender);
-                LuaEnv luaenv = new LuaEnv();
 
                 luaenv.DoString(initScript);
 
@@ -474,10 +500,13 @@ end";
 
         public Dictionary<string, RuleInfo> GetRules(string address, long height, DbSnapshot dbSnapshot)
         {
+            lock (this)
+            {
+
             Dictionary<string, RuleInfo> rules = new Dictionary<string, RuleInfo>();
             try
             {
-                LuaEnv luaenv = GetLuaEnv(address);
+                LuaEnv luaenv = GetLuaEnv(address, "GetRules");
                 LuaVMCall luaVMCall = new LuaVMCall();
                 LuaVMScript luaVMScript = null;
                 LuaVMContext LuaVMContext = null;
@@ -534,6 +563,7 @@ end";
                 LuaVMStack.Reset(null, null, null, null);
             }
             return rules;
+            }
         }
 
         public static void TestRapidjson(string[] args)

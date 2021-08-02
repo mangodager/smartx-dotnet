@@ -39,16 +39,17 @@ namespace ETModel
             var httpRpc = Entity.Root.Find("HttpRpc")?.GetComponent<HttpRpc>();
             if (httpRpc == null)
                 return;
-            var consensus  = Entity.Root.GetComponent<Consensus>();
-            var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+            var consensus = Entity.Root.GetComponent<Consensus>();
+            var luaVMEnv  = Entity.Root.GetComponent<LuaVMEnv>();
 
-            HttpMessage httpMessage = new HttpMessage();
-            string address = Wallet.GetWallet().GetCurWallet().ToAddress();
+            var    httpMessage = new HttpMessage();
+            string address     = Wallet.GetWallet().GetCurWallet().ToAddress();
             string consAddress = "";
+               int delayTime   = 60 * 1000 * 2;
 
             while (true)
             {
-                await Task.Delay(60000*2);
+                await Task.Delay(delayTime);
 
                 try
                 {
@@ -108,11 +109,11 @@ namespace ETModel
                     if ( (rulerCount < 25 && BigHelper.Greater(account.amount, "3000000", true))
                        || BigHelper.Greater(account.amount, rulerAmountMin, false))
                     {
-                        httpRpc.OnBeRuler(httpMessage);
+                        httpRpc.OnBeRulerReal(httpMessage);
                     }
 
                 }
-                catch (Exception e)
+                catch (Exception )
                 {
                 }
             }

@@ -61,7 +61,7 @@ namespace ETModel
 
         public static bool CheckAddress(string address)
         {
-            return address.Base58CheckDecode2();
+            return string.IsNullOrEmpty(address) ? false : address.Base58CheckDecode2();
         }
 
         public static string ToAddress(byte[] publickey)
@@ -81,10 +81,10 @@ namespace ETModel
             return seed;
         }
 
-        public WalletKey Create()
+        public WalletKey Create(string input=null)
         {
             WalletKey walletKey = new WalletKey();
-            string input = Wallet.Inst.Input("Please enter random word: ");
+            input = input ?? Wallet.Inst.Input("Please enter random word: ");
             walletKey.random = CryptoHelper.Sha256(Seek().ToHexString() + "#" + input).HexToBytes();
             ed25519.ed25519_create_keypair(walletKey.publickey, walletKey.privatekey, walletKey.random);
             this.keys.Add(walletKey);
@@ -288,8 +288,13 @@ namespace ETModel
                     }
                     else
                     {
-                        //删除错误的字符
-                        Console.Write("\b \b");
+                        if (input.Length > 0)
+                        {
+                            input = input.Remove(input.Length - 1);
+                            //删除错误的字符
+                            Console.Write("\b \b");
+                        }
+
                     }
                 }
                 else
@@ -376,6 +381,36 @@ namespace ETModel
                 return false;
             return true;
         }
+
+        static public void Import(string privatekey, string walletFile = "./Data/walletImport.json")
+        {
+            var walletKey = new WalletKey();
+            walletKey.random = privatekey.HexToBytes();
+            ed25519.ed25519_create_keypair(walletKey.publickey, walletKey.privatekey, walletKey.random);
+
+            var keys = new List<WalletKey>();
+            keys.Add(walletKey);
+
+            var walletJson = new WalletJson();
+            walletJson.curIndex = 0;
+            walletJson.accounts = new List<WalletJsonAddress>();
+
+            var aes256 = new AesEverywhere.AES256();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                var walletJsonAddress = new WalletJsonAddress();
+
+                walletJsonAddress.address = keys[i].ToAddress();
+                walletJsonAddress.encrypted = aes256.Encrypt(keys[i].random.ToHexString(), "smartx123");
+
+                walletJson.accounts.Add(walletJsonAddress);
+            }
+
+            File.WriteAllText(walletFile, JsonHelper.ToJson(walletJson), System.Text.Encoding.UTF8);
+
+
+        }
+
 
     }
 

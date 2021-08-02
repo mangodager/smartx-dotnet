@@ -83,7 +83,10 @@ namespace ETModel
                 q2p_Sync_Height.height = height;
                 var reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint, 30);
                 if (reply == null)
-                    reply = await cons.QuerySync_Height(q2p_Sync_Height, nodeManager.GetRandomNode().ipEndPoint, 30);
+                {
+                    ipEndPoint = nodeManager.GetRandomNode().ipEndPoint;
+                    reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint, 30);
+                }
                 if (reply != null && !string.IsNullOrEmpty(reply.blockChains))
                 {
                     Log.Info($"SyncHeightFast.Get AddBlock {height} {ipEndPoint}");
@@ -104,7 +107,7 @@ namespace ETModel
                             q2p_Sync_Height.height = reply.height;
                             q2p_Sync_Height.spacing = Math.Max(1, spacing - (reply.height - height));
 
-                            reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint);
+                            reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint,30);
                         }
                     }
                     while (!error && reply != null && reply.height != -1);

@@ -295,28 +295,35 @@ namespace System.Numerics
 
         public static BigFloat Parse(string value)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            value = value.Trim();
-            var nf = CultureInfo.CurrentUICulture.NumberFormat;
-            value = value.Replace(nf.NumberGroupSeparator, "");
-            var pos = value.IndexOf(nf.NumberDecimalSeparator);
-            value = value.Replace(nf.NumberDecimalSeparator, "");
-
-            if (pos < 0)
+            try
             {
-                //no decimal point
-                return Factor(BigInteger.Parse(value));
-            }
-            else
-            {
-                //decimal point (length - pos - 1)
-                var numerator = BigInteger.Parse(value);
-                var denominator = BigInteger.Pow(10, value.Length - pos);
+                if (value == null)
+                    throw new ArgumentNullException(nameof(value));
 
-                return Factor(new BigFloat(numerator, denominator));
+                value = value.Trim();
+                var nf = CultureInfo.CurrentUICulture.NumberFormat;
+                value = value.Replace(nf.NumberGroupSeparator, "");
+                var pos = value.IndexOf(nf.NumberDecimalSeparator);
+                value = value.Replace(nf.NumberDecimalSeparator, "");
+
+                if (pos < 0)
+                {
+                    //no decimal point
+                    return Factor(BigInteger.Parse(value));
+                }
+                else
+                {
+                    //decimal point (length - pos - 1)
+                    var numerator = BigInteger.Parse(value);
+                    var denominator = BigInteger.Pow(10, value.Length - pos);
+
+                    return Factor(new BigFloat(numerator, denominator));
+                }
             }
+            catch (Exception)
+            {
+            }
+            return new BigFloat(0);
         }
 
         public static bool TryParse(string value, out BigFloat result)

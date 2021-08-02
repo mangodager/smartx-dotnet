@@ -14,6 +14,19 @@ namespace ETModel
 {
     public class NodeManager : Component
     {
+        Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+#if SmartX
+        public static string networkIDCur  = "SmartX_3.2.0d";
+        public static string networkIDBase = "SmartX_3.2.0";
+#else
+        public static string networkIDCur  = "alpha_2.2.2";
+        public static string networkIDBase = "alpha_2.2.2";
+#endif
+        public static bool CheckNetworkID(string id)
+        {
+            return id.IndexOf(networkIDBase) != -1;
+        }
+
         static public int K_INDEX_ROW = 12; // height
         static public int K_INDEX_COL = 12; // width
 
@@ -92,18 +105,27 @@ namespace ETModel
             // Get Internet IP
             try
             {
-                Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
-                Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
-                R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
-                networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
-                if(rIPNode!=null)
-                networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+                if ( !string.IsNullOrEmpty(Program.jdNode["publicIP"]?.ToString()) )
+                {
+                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(Program.jdNode["publicIP"].ToString());
+                }
+                else
+                {
+                    Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
+                    Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
+                    R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
+                    networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
+                    if (rIPNode != null) {
+                        networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+                    }
+                }
             }
             catch(Exception)
             {
             }
             Log.Info($"NodeManager  {networkInner.ipEndPoint.ToString()}");
             Log.Info($"NodeSessions {list[0]}");
+            Log.Info($"NodeVersion  {networkIDCur}");
 
             // 
             Q2P_New_Node new_Node = new Q2P_New_Node();
@@ -175,14 +197,6 @@ namespace ETModel
             Q2P_IP_INFO qNode = msg as Q2P_IP_INFO;
             R2P_IP_INFO response = new R2P_IP_INFO() { address = session.RemoteAddress.Address.ToString() };
             session.Reply(qNode, response);
-        }
-
-        Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        public static string networkIDCur  = "alpha_2.1.0";
-        public static string networkIDBase = "alpha_2.1.0";
-        public static bool CheckNetworkID(string id)
-        {
-            return id.IndexOf(networkIDBase) !=-1;
         }
 
         //[MessageMethod(NetOpcode.Q2P_New_Node)]
@@ -260,6 +274,9 @@ namespace ETModel
             NodeData node = nodes.Find((n) => { return n.nodeId == data.nodeId; });
             if (node != null)
             {
+                node.address = data.address;
+                node.version = data.version;
+                node.state = data.state;
                 return false;
             }
 
@@ -513,3 +530,13 @@ namespace ETModel
 
 
 }
+
+
+
+
+
+
+
+
+
+

@@ -9,6 +9,7 @@ namespace ETModel
     {
         NodeManager  nodeManager  = Entity.Root.GetComponent<NodeManager>();
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+        BlockMgrCache blockCache  = new BlockMgrCache();
 
         public override void Awake(JToken jd = null)
         {
@@ -27,8 +28,11 @@ namespace ETModel
             if (blk != null && (replace || GetBlock(blk.hash) == null))
             {
                 if (!Entity.Root.GetComponent<Consensus>().Check(blk))
+                {
+                    Log.Warning($"Block Check Error: {blk.ToStringEx()}");
                     return false;
-                using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+                }
+                using (DbSnapshot snapshot = levelDBStore.GetSnapshot(0,true))
                 {
                     List<string> list = snapshot.Heights.Get(blk.height.ToString());
                     if (list == null)
@@ -46,7 +50,7 @@ namespace ETModel
 
         public void DelBlock(string hash)
         {
-            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+            using (DbSnapshot snapshot = levelDBStore.GetSnapshot(0, true))
             {
                 Block blk = snapshot.Blocks.Get(hash);
                 if (blk != null)
@@ -63,11 +67,10 @@ namespace ETModel
             }
         }
 
-        BlockMgrCache blockCache = new BlockMgrCache();
 
         public void DelBlock(long height)
         {
-            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+            using (DbSnapshot snapshot = levelDBStore.GetSnapshot(0, true))
             {
                 List<string> list = snapshot.Heights.Get(height.ToString());
                 if (list != null)
@@ -120,7 +123,7 @@ namespace ETModel
         {
             //Log.Info($"DelBlockWithHeight {start} {start + 4}");
 
-            using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+            using (DbSnapshot snapshot = levelDBStore.GetSnapshot(0,true))
             {
                 bool bCommit = false;
                 for (long height = start; height <= start + 4; height++)
@@ -189,12 +192,12 @@ namespace ETModel
 
             if (!NodeManager.CheckNetworkID(p2p_Block.networkID))
             {
-                Log.Warning($"NewBlock:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
+                Log.Warning($"NewBlk:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
                 return;
             }
 
-            //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} hash:{blk.hash} ");
-            Log.Debug($"NewBlock:{blk.Address} H:{blk.height} prehash:{blk.prehash}");
+            //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} {blk.Address} hash:{blk.hash} ");
+            Log.Debug($"NewBlk:{blk.Address} H:{blk.height} Pre:{blk.prehash} T:{blk.linkstran.Count}");
 
             newBlockHeight = blk.height;
             // 有高度差的直接忽略

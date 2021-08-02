@@ -182,6 +182,12 @@ namespace ETModel
         // 权重最大的块胜出为主块
         static public double GetBlockWeight(Consensus consensus, Block blk, List<Block> blks2 = null,bool belink=true)
         {
+            if (blk.height >= 88380) // Smartx 3.1.1 Fix
+            {
+                if (!consensus.IsRule(blk.height, blk.Address))
+                    return 0;
+            }
+
             double t_1max = consensus.GetRuleCount(blk.height - 1);
             double t_2max = consensus.GetRuleCount(blk.height + 1);
 
@@ -229,7 +235,13 @@ namespace ETModel
             {
                 if (prehash == bb.prehash)
                 {
-                    double weight1 = GetBlockWeight(consensus, bb);
+                    if (bb.height >= 88380) // Smartx 3.1.1 Fix
+                    {
+                        if (!consensus.IsRule(bb.height, bb.Address))
+                            continue;
+                    }
+
+                    //double weight1 = GetBlockWeight(consensus, bb);
                     if (!ruleBlks.TryGetValue(bb.Address, out Block bkl1))
                         ruleBlks[bb.Address] = bb;
                     if (bkl1 != null && GetBlockWeight(consensus, bkl1) < GetBlockWeight(consensus, bb))

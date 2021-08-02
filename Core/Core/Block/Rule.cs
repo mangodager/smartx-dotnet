@@ -13,11 +13,13 @@ namespace ETModel
     {
         public CalculatePower calculatePower = new CalculatePower();
 
+        protected Queue<Dictionary<string, BlockSub>> blockSubQueue = new Queue<Dictionary<string, BlockSub>>();
         protected Dictionary<string, BlockSub> blockSubs = new Dictionary<string, BlockSub>();
+
         BlockMgr blockMgr = null;
         Consensus  consensus = null;
         ComponentNetworkInner networkInner = Entity.Root.GetComponent<ComponentNetworkInner>();
-        HttpPool     httpPool = null;
+        RelayNetwork relayNetwork = Entity.Root.GetComponentInChild<RelayNetwork>();
         HttpPool     httpRule = null;
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
         NodeManager  nodeManager = null;
@@ -32,11 +34,11 @@ namespace ETModel
 
         public override void Start()
         {
-            consensus  = Entity.Root.GetComponent<Consensus>();
-            blockMgr = Entity.Root.GetComponent<BlockMgr>();
-            httpPool = Entity.Root.GetComponentInChild<HttpPool>();
-            httpRule = Entity.Root.GetComponent<HttpPool>();
-            nodeManager = Entity.Root.GetComponent<NodeManager>();
+            consensus    = Entity.Root.GetComponent<Consensus>();
+            blockMgr     = Entity.Root.GetComponent<BlockMgr>();
+            httpRule     = Entity.Root.GetComponent<HttpPool>();
+            nodeManager  = Entity.Root.GetComponent<NodeManager>();
+            relayNetwork = Entity.Root.GetComponentInChild<RelayNetwork>();
 
             if (bRun) {
                 Run();
@@ -120,8 +122,9 @@ namespace ETModel
                                 {
                                     double diff = miners.Values.Max(t => t.diff);
                                     var miner = miners.Values.FirstOrDefault(c => c.diff == diff);
-                                    if (miner != null&&!string.IsNullOrEmpty(miner.random))
-                                        blk.random = miner.random;
+                                    if (miner != null && miner.random != null && miner.random.Count > 0) {
+                                        blk.random = miner.random[miner.random.Count - 1];
+                                    }
                                     httpRule.SetMinging(blk.height, "", consensus.calculatePower.GetPower());
                                 }
                             }
@@ -134,8 +137,10 @@ namespace ETModel
                         p2p_NewBlock.block = JsonHelper.ToJson(blk);
                         p2p_NewBlock.ipEndPoint = networkInner.ipEndPoint.ToString();
                         nodeManager.Broadcast(p2p_NewBlock, blk);
+                        relayNetwork?.Broadcast(p2p_NewBlock);
 
-                        Log.Debug($"Rule.Broadcast {blk.height} {bBlkMining} {blk.hash} {nodeManager.GetNodeCount()}");
+                        Log.Debug($"Rule.Broadcast H:{blk.height} Mining:{bBlkMining} hash:{blk.hash} T:{blk.linkstran.Count}");
+
                         calculatePower.Insert(blk);
                         hashmining = "";
                         diff_max   = 0;
@@ -151,6 +156,8 @@ namespace ETModel
                 }
             }
         }
+
+        TimePass DelBlockWithHeightTime = new TimePass(7f);
 
         // 获取最新高度MC块
         public Block GetLastMcBlock()
@@ -170,7 +177,11 @@ namespace ETModel
                     chain2 = chain1.GetMcBlockNext();
             }
 
-            blockMgr.DelBlockWithHeight(consensus, chain1.height);
+            if (DelBlockWithHeightTime.IsPassSet())
+            {
+                blockMgr.DelBlockWithHeight(consensus, chain1.height);
+            }
+
             Block blk1 = chain1.GetMcBlock();
 
             // 2F1
@@ -205,11 +216,18 @@ namespace ETModel
             return blockSubs;
         }
 
-        public int AddTransfer(BlockSub transfer)
+        public bool IsTransferFull(bool checkFull)
         {
-            if (!consensus.IsRule(height, Wallet.GetWallet().GetCurWallet().ToAddress()))
-                return -1;
+            if(checkFull) {
+                return blockSubQueue.Count >= 10;
+            }
+            else {
+                return blockSubQueue.Count >= 12;
+            }
+        }
 
+        public int AddTransfer(BlockSub transfer,bool checkFull=true)
+        {
             transfer.hash = transfer.ToHash();
 
             if (!Wallet.Verify(transfer.sign, transfer.hash, transfer.addressIn))
@@ -224,15 +242,15 @@ namespace ETModel
                     return -9;
             }
 
+            if (account == null)
+                return -4;
+
             if(BigHelper.Less(account.amount, "0.002", false))
                 return -3;
 
             if (transfer.type == "transfer")
             {
-                if (account == null)
-                    return -4;
-
-                if (BigHelper.Less(account.amount, transfer.amount, false))
+                if (BigHelper.Less(account.amount, BigHelper.Add(transfer.amount, "0.002"), false))
                     return -5;
 
                 if (!BigHelper.Equals( BigHelper.Round8(transfer.amount) , transfer.amount))
@@ -244,7 +262,6 @@ namespace ETModel
             else
             {
 
-
             }
 
             if(transfer.addressIn==transfer.addressOut)
@@ -252,17 +269,27 @@ namespace ETModel
 
             lock (blockSubs)
             {
-                // 出块权限
-                if (blockSubs.Count>6000)
-                    return -7;
+                if (blockSubs.Count >= 600)
+                {
+                    blockSubQueue.Enqueue(blockSubs);
+                    blockSubs = new Dictionary<string, BlockSub>();
+                }
+
+                if (IsTransferFull(checkFull)) {
+                    return -1;
+                }
 
                 blockSubs.Remove(transfer.hash);
                 blockSubs.Add(transfer.hash, transfer);
             }
 
             var length = JsonHelper.ToJson(transfer).Length;
-            if (length > 1024 * 4)
+            if (length > 1024 * 4) {
                 return -11;
+            }
+
+            if (!consensus.IsRule(height, Wallet.GetWallet().GetCurWallet().ToAddress()))
+                return -1;
 
             return 1;
         }
@@ -312,44 +339,43 @@ namespace ETModel
         //引用当前周期交易
         public bool RefTransfer(Block blk)
         {
+            Dictionary<string, BlockSub> blockSubTemp = null;
             try
             {
                 lock (blockSubs)
                 {
-                    //using (var snapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot())
+                    blockSubTemp = blockSubQueue.Count > 0 ? blockSubQueue.Dequeue() : blockSubs;
+                    var list = blockSubTemp.Values.ToList<BlockSub>();
+                    list.Sort((BlockSub a, BlockSub b) =>
                     {
-                        var list = blockSubs.Values.ToList<BlockSub>();
-                        list.Sort((BlockSub a, BlockSub b) =>
+                        int rel = a.nonce.CompareTo(b.nonce);
+                        if (rel == 0)
+                            rel = a.hash.CompareTo(b.hash);
+                        return rel;
+                    });
+                    for (int ii = 0; ii < list.Count; ii++)
+                    {
+                        if (list[ii] != null)
                         {
-                            int rel = a.nonce.CompareTo(b.nonce);
-                            if (rel == 0)
-                                rel = a.hash.CompareTo(b.hash);
-                            return rel;
-                        });
-                        for (int ii = 0; ii < list.Count; ii++)
-                        {
-                            if (list[ii] != null)
-                            {
-                                //if (snapshot.Transfers.Get(list[ii].hash) != null)
-                                //    continue;
-                                blk.AddBlockSub(ii, list[ii]);
-                            }
+                            blk.AddBlockSub(ii, list[ii]);
                         }
-                        blockSubs.Clear();
                     }
+                    blockSubTemp.Clear();
                 }
             }
             catch (Exception e)
             {
                 Log.Debug(e.ToString());
-                blockSubs.Clear();
+                lock (blockSubs){
+                    blockSubTemp?.Clear();
+                }
             }
             return true;
         }
 
         public int GetTransfersCount()
         {
-            return blockSubs.Count;
+            return blockSubs.Count + blockSubQueue.Count*600;
         }
 
         double diff_max  = 0;

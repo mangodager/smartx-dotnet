@@ -15,10 +15,13 @@ namespace ETModel
         public DbCache<Block> Blocks;
         public DbCache<List<string>> Heights;
         public string db_path;
+        public bool   db_Compression = true;
 
         public override void Awake(JToken jd = null)
         {
             db_path = jd["db_path"]?.ToString();
+            bool.TryParse(jd["db_Compression"]?.ToString(), out db_Compression);
+
             var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), db_path);
             Init(DatabasePath);
         }
@@ -58,7 +61,7 @@ namespace ETModel
             {
                 BlockSize = 8 * 1024 * 1024, // 8M 
                 Cache = new Cache(100 * 1024 * 1024), // 内存缓存 100M
-                CompressionLevel = CompressionLevel.SnappyCompression,
+                CompressionLevel = db_Compression ? CompressionLevel.SnappyCompression : CompressionLevel.NoCompression,
                 CreateIfMissing = true,
             };
 
@@ -95,7 +98,8 @@ namespace ETModel
             Log.Debug($"UndoTransfers {height_total} to {height}");
 
             WriteBatch batch = new WriteBatch();
-            for (long ii = height_total; ii > height; ii--)
+            long ii = height_total;
+            for ( ; ii > height; ii--)
             {
                 string Undos_Value = db.Get($"Undos___{ii}");
                 if (Undos_Value != null)
@@ -113,9 +117,13 @@ namespace ETModel
                     }
                     batch.Delete($"Undos___{ii}");
                 }
+                else
+                {
+                    break;
+                }
             }
 
-            batch.Put("UndoHeight", System.Math.Min(height, height_total).ToString() );
+            batch.Put("UndoHeight", System.Math.Min(ii, height_total).ToString() );
 
             db.Write(batch, new WriteOptions { Sync = true });
             batch?.Dispose();
@@ -123,14 +131,14 @@ namespace ETModel
             Entity.Root.GetComponent<Consensus>()?.cacheRule.Clear();
         }
 
-        public DbSnapshot GetSnapshot(long height=0)
+        public DbSnapshot GetSnapshot(long height=0,bool bWrite=false)
         {
-            return new DbSnapshot(db, height, false);
+            return new DbSnapshot(db, height, false, bWrite);
         }
 
         public DbSnapshot GetSnapshotUndo(long height = 0)
         {
-            return new DbSnapshot(db, height, true);
+            return new DbSnapshot(db, height, true,true);
         }
 
         public static void Export2CSV_Block(string[] args)
@@ -328,7 +336,7 @@ namespace ETModel
             var DatabasePath = System.IO.Path.Combine(tempPath, randName);
             LevelDBStore dbstore = new LevelDBStore().Init(DatabasePath);
 
-            using (DbSnapshot snapshot = dbstore.GetSnapshot(1))
+            using (DbSnapshot snapshot = dbstore.GetSnapshot(1, true))
             {
                 snapshot.Blocks.Add("11", new Block() { Address = "11" });
                 snapshot.Blocks.Add("22", new Block() { Address = "22" });
@@ -339,7 +347,7 @@ namespace ETModel
                 var result2 = dbstore.Blocks.Get("22");
             }
 
-            using (DbSnapshot snapshot = dbstore.GetSnapshot(1))
+            using (DbSnapshot snapshot = dbstore.GetSnapshot(1, true))
             {
                 snapshot.Blocks.Add("11", new Block() { Address = "11" });
                 snapshot.Blocks.Add("22", new Block() { Address = "22" });
@@ -375,7 +383,7 @@ namespace ETModel
                 {
                     for (long i = UndoHeight + 1; i <= random1; i++)
                     {
-                        using (DbSnapshot snapshot = dbstore.GetSnapshot(i))
+                        using (DbSnapshot snapshot = dbstore.GetSnapshot(i, true))
                         {
                             snapshot.Transfers.Add("undos_test", new BlockSub() { hash = $"Address_{i}" });
                             snapshot.Commit();
@@ -421,7 +429,7 @@ namespace ETModel
             var DatabasePath = System.IO.Path.Combine(tempPath, randName);
             LevelDBStore dbstore = new LevelDBStore().Init(DatabasePath);
 
-            using (DbSnapshot snapshot = dbstore.GetSnapshot(1))
+            using (DbSnapshot snapshot = dbstore.GetSnapshot(1, true))
             {
                 snapshot.Blocks.Add("11", new Block() { Address = "11" });
                 snapshot.Blocks.Add("22", new Block() { Address = "22" });
@@ -434,7 +442,7 @@ namespace ETModel
                 System.Console.WriteLine($"dbstore.test_delete value1: {result1}");
             }
 
-            using (DbSnapshot snapshot = dbstore.GetSnapshot(1))
+            using (DbSnapshot snapshot = dbstore.GetSnapshot(1, true))
             {
                 snapshot.Blocks.Delete("11");
                 snapshot.Blocks.Delete("22");
@@ -495,13 +503,129 @@ namespace ETModel
             }
         }
 
-        static public string StortJson(string json)
+        /// <summary>
+        /// JSON格式化重新排序
+        /// </summary>
+        /// <param name="jobj">原始JSON JToken.Parse(string json);</param>
+        /// <param name="obj">初始值Null</param>
+        /// <returns></returns>
+        public static string SortJson(JToken jobj, JToken obj)
         {
-            var dic = JsonConvert.DeserializeObject<SortedDictionary<string, object>>(json);
-            SortedDictionary<string, object> keyValues = new SortedDictionary<string, object>(dic);
-            keyValues.OrderBy(m => m.Key);//升序 把Key换成Value 就是对Value进行排序
-                                          //keyValues.OrderByDescending(m => m.Key);//降序
-            return JsonConvert.SerializeObject(keyValues);
+            if (obj == null)
+            {
+                obj = new JObject();
+            }
+            List<JToken> list = jobj.ToList<JToken>();
+            if (jobj.Type == JTokenType.Object)//非数组
+            {
+                List<string> listsort = new List<string>();
+                foreach (var item in list)
+                {
+                    string name = JProperty.Load(item.CreateReader()).Name;
+                    listsort.Add(name);
+                }
+                listsort.Sort();
+                List<JToken> listTemp = new List<JToken>();
+                foreach (var item in listsort)
+                {
+                    listTemp.Add(list.Where(p => JProperty.Load(p.CreateReader()).Name == item).FirstOrDefault());
+                }
+                list = listTemp;
+                //list.Sort((p1, p2) => JProperty.Load(p1.CreateReader()).Name.GetAnsi() - JProperty.Load(p2.CreateReader()).Name.GetAnsi());
+
+                foreach (var item in list)
+                {
+                    JProperty jp = JProperty.Load(item.CreateReader());
+                    if (item.First.Type == JTokenType.Object)
+                    {
+                        JObject sub = new JObject();
+                        (obj as JObject).Add(jp.Name, sub);
+                        SortJson(item.First, sub);
+                    }
+                    else if (item.First.Type == JTokenType.Array)
+                    {
+                        JArray arr = new JArray();
+                        if (obj.Type == JTokenType.Object)
+                        {
+                            (obj as JObject).Add(jp.Name, arr);
+                        }
+                        else if (obj.Type == JTokenType.Array)
+                        {
+                            (obj as JArray).Add(arr);
+                        }
+                        SortJson(item.First, arr);
+                    }
+                    else if (item.First.Type != JTokenType.Object && item.First.Type != JTokenType.Array)
+                    {
+                        (obj as JObject).Add(jp.Name, item.First);
+                    }
+                }
+            }
+            else if (jobj.Type == JTokenType.Array)//数组
+            {
+                foreach (var item in list)
+                {
+                    List<JToken> listToken = item.ToList<JToken>();
+                    List<string> listsort = new List<string>();
+                    foreach (var im in listToken)
+                    {
+                        string name = JProperty.Load(im.CreateReader()).Name;
+                        listsort.Add(name);
+                    }
+                    listsort.Sort();
+                    List<JToken> listTemp = new List<JToken>();
+                    foreach (var im2 in listsort)
+                    {
+                        listTemp.Add(listToken.Where(p => JProperty.Load(p.CreateReader()).Name == im2).FirstOrDefault());
+                    }
+                    list = listTemp;
+
+                    listToken = list;
+                    // listToken.Sort((p1, p2) => JProperty.Load(p1.CreateReader()).Name.GetAnsi() - JProperty.Load(p2.CreateReader()).Name.GetAnsi());
+                    JObject item_obj = new JObject();
+                    foreach (var token in listToken)
+                    {
+                        JProperty jp = JProperty.Load(token.CreateReader());
+                        if (token.First.Type == JTokenType.Object)
+                        {
+                            JObject sub = new JObject();
+                            (obj as JObject).Add(jp.Name, sub);
+                            SortJson(token.First, sub);
+                        }
+                        else if (token.First.Type == JTokenType.Array)
+                        {
+                            JArray arr = new JArray();
+                            if (obj.Type == JTokenType.Object)
+                            {
+                                (obj as JObject).Add(jp.Name, arr);
+                            }
+                            else if (obj.Type == JTokenType.Array)
+                            {
+                                (obj as JArray).Add(arr);
+                            }
+                            SortJson(token.First, arr);
+                        }
+                        else if (item.First.Type != JTokenType.Object && item.First.Type != JTokenType.Array)
+                        {
+                            if (obj.Type == JTokenType.Object)
+                            {
+                                (obj as JObject).Add(jp.Name, token.First);
+                            }
+                            else if (obj.Type == JTokenType.Array)
+                            {
+                                item_obj.Add(jp.Name, token.First);
+                            }
+                        }
+                    }
+                    if (obj.Type == JTokenType.Array)
+                    {
+                        (obj as JArray).Add(item_obj);
+                    }
+
+                }
+            }
+            string ret = obj.ToString(Formatting.None);
+            return ret;
         }
 
         static public void test_ergodic2(long height, string filename)
@@ -518,12 +642,12 @@ namespace ETModel
             // Create new iterator
             lock (dbstore.db)
             {
+                string sum = "0";
                 dbstore.UndoTransfers(height);
                 using (var it = dbstore.db.CreateIterator())
                 {
                     File.Delete("./" + filename + ".csv");
-                    var NodeData  = new NodeManager.NodeData();
-                    File.AppendAllText("./" + filename + ".csv", "height："+ height+"版本："+NodeData.version + "\n");
+                    File.AppendAllText("./" + filename + ".csv", "height："+ height+"版本："+ NodeManager.networkIDCur + "\n");
                     // Iterate in reverse to print the values as strings
                     for (it.SeekToFirst(); it.IsValid(); it.Next())
                     {
@@ -538,6 +662,7 @@ namespace ETModel
                                     Dictionary<string, Dictionary<string, object>> kv = JsonHelper.FromJson<Dictionary<string, Dictionary<string, object>>>(it.ValueAsString());
                                     //all += long.Parse(kv["obj"]["amount"].ToString());
                                     File.AppendAllText("./" + filename + ".csv", kv["obj"]["address"].ToString() + "," + kv["obj"]["amount"].ToString() + "\n");
+                                    BigHelper.Add(kv["obj"]["amount"].ToString(), sum);
                                 }
                                 catch (Exception e)
                                 {
@@ -551,11 +676,9 @@ namespace ETModel
                             if (it.KeyAsString().Contains("Storages"))
                             {
                                 var kv = JsonHelper.FromJson<Dictionary<string, Dictionary<string, byte[]>>>(it.ValueAsString());
-                                var json = StortJson(kv["obj"]["jsonData"].ToStr());
+                                var json = SortJson(JToken.Parse(kv["obj"]["jsonData"].ToStr()),null);
 
-                                Console.WriteLine(it.KeyAsString() + ":" + json);
-
-                                File.AppendAllText("./" + filename + ".csv", it.KeyAsString().Replace("Storages___", "") + "," + CryptoHelper.Sha256(json) + "\n");
+                                File.AppendAllText("./" + filename + ".csv", it.KeyAsString().Replace("Storages___", "") + "," + json + "\n");
                             }
                             else
                             if (it.KeyAsString().Contains("StgMap"))
@@ -565,8 +688,153 @@ namespace ETModel
                             }
                         }
                     }
-                    //Console.WriteLine("导出完成");
+                    File.AppendAllText("./" + filename + ".csv", "All" + "," + sum + "\n");
+
+                    long posProduct = 0;
+                    long powProduct = 0;
+                    long posOriginally = 0;
+                    long powOriginally = 0;
+                    for (long i = 1; i <= height; i++)
+                    {
+                        Block block = BlockChainHelper.GetMcBlock(i);
+                        long posNodeCount = block.linksblk.Count;
+                        posProduct += posNodeCount * Consensus.GetRewardRule(i);
+                        powProduct += Consensus.GetReward(i);
+                        posOriginally += 25*Consensus.GetRewardRule(i);
+                        powOriginally += Consensus.GetReward(i);
+
+                    }
+                    
+                    long All_Product = posProduct + powProduct;
+                    File.AppendAllText("./" + filename + ".csv", "All_Product" + "," + All_Product + "\n");
+                    File.AppendAllText("./" + filename + ".csv", "posProduct" + "," + posProduct + "\n");
+                    File.AppendAllText("./" + filename + ".csv", "posOriginally" + "," + posOriginally + "\n");
+                    File.AppendAllText("./" + filename + ".csv", "powOriginally" + "," + powOriginally + "\n");
+
+                    Console.WriteLine("导出完成");
                 }
+            }
+        }
+
+        static public void MakeSnapshot(Dictionary<string, string> param)
+        {
+            Console.WriteLine($"levelDB.Init {param["db"]}");
+            LevelDBStore levelDB = new LevelDBStore();
+            levelDB.Init(param["db"]);
+
+            if (param.ContainsKey("height")&& long.TryParse(param["height"], out long height))
+            {
+                levelDB.UndoTransfers(height);
+            }
+            long.TryParse(levelDB.Get("UndoHeight"), out long transferHeight);
+            Console.WriteLine($"transferHeight: {transferHeight}");
+
+            var DatabasePath = $"./Data/LevelDB_Snapshot_{transferHeight}";
+            if (Directory.Exists(DatabasePath))
+            {
+                Console.WriteLine($"Directory LevelDB_Snapshot Exists");
+                return;
+            }
+            LevelDBStore snapshotDB = new LevelDBStore();
+            snapshotDB.Init(DatabasePath);
+
+            int count = 0;
+            using (var it = levelDB.db.CreateIterator())
+            {
+                for (it.SeekToFirst(); it.IsValid(); it.Next(),count++)
+                {
+                    //Log.Info($"Value as string: {it.KeyAsString()}");
+                    if (it.KeyAsString().IndexOf("_undo_") == -1
+                      &&it.KeyAsString().IndexOf("Blocks") != 0
+                      &&it.KeyAsString().IndexOf("BlockChain") != 0
+                      &&it.KeyAsString().IndexOf("Queue") != 0
+                      &&it.KeyAsString().IndexOf("List") != 0
+                      &&it.KeyAsString().IndexOf("Heights") != 0
+                      &&it.KeyAsString().IndexOf("Undos___") != 0)
+                    {
+                        if (it.KeyAsString().IndexOf("Trans___") == 0)
+                        {
+                            var slice = JsonHelper.FromJson< DbCache<BlockSub>.Slice >(it.ValueAsString());
+                            if (slice != null && slice.obj.height != 0)
+                            {
+                                snapshotDB.Put(it.KeyAsString(), $"{{\"obj\":{{\"height\":{slice.obj.height}}}}}");
+                                Console.WriteLine($"Processed tran: {it.KeyAsString()}");
+                            }
+                        }
+                        else
+                        if (it.KeyAsString().IndexOf("Snap___") == 0)
+                        {
+                            if (it.KeyAsString().IndexOf("Snap___Rule_") == 0)
+                            {
+                                var key = it.KeyAsString();
+                                var pos1 = "Snap___Rule_".Length;
+                                var pos2 = key.Length;
+                                var hegihtTemp1 = key.Substring(pos1, pos2 - pos1);
+                                var hegihtTemp2 = long.Parse(hegihtTemp1);
+                                if (hegihtTemp2 > transferHeight - 5 && hegihtTemp2 < transferHeight + 5)
+                                {
+                                    snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                                    Console.WriteLine($"Processed  key: {it.KeyAsString()}");
+                                }
+                            }
+                            else
+                            if (it.KeyAsString().IndexOf("_Reward") != -1)
+                            {
+                                var key = it.KeyAsString();
+                                var pos1 = "Snap___".Length;
+                                var pos2 = key.IndexOf("_Reward");
+
+                                var hegihtTemp1 = key.Substring(pos1, pos2 - pos1);
+                                var hegihtTemp2 = long.Parse(hegihtTemp1);
+                                if (hegihtTemp2 > transferHeight - 5 && hegihtTemp2 < transferHeight + 5)
+                                {
+                                    snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                                    Console.WriteLine($"Processed  key: {it.KeyAsString()}");
+                                }
+                            }
+                            else
+                            {
+                                snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                                Console.WriteLine($"Processed  key: {it.KeyAsString()}");
+                            }
+                        }
+                        else
+                        {
+                            snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                            Console.WriteLine($"Processed  key: {it.KeyAsString()}");
+                        }
+                    }
+
+                    if(count%1000000==0)
+                        Console.WriteLine($"Processed Count:{count}");
+                }
+            }
+
+            using (DbSnapshot dbNew = snapshotDB.GetSnapshot(0,true))
+            using (DbSnapshot dbOld = levelDB.GetSnapshot())
+            {
+                for (long ii = transferHeight - 3; ii <= transferHeight + 2; ii++)
+                {
+                    Console.WriteLine($"Processed height: {ii}");
+                    var heights = dbOld.Heights.Get(ii.ToString());
+                    for (int jj = 0; jj < heights.Count; jj++)
+                    {
+                        dbNew.Blocks.Add(heights[jj], dbOld.Blocks.Get(heights[jj]));
+                    }
+
+                    dbNew.Heights.Add(ii.ToString(), heights);
+                    dbNew.BlockChains.Add(ii.ToString(), dbOld.BlockChains.Get(ii.ToString()));
+
+                }
+
+                dbNew.Commit();
+            }
+
+            Console.WriteLine($"MakeSnapshot Complete");
+
+            while (true)
+            {
+                System.Threading.Thread.Sleep(1000);
             }
         }
 

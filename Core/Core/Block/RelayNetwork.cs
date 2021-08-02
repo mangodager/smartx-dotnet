@@ -44,6 +44,11 @@ namespace ETModel
             relayNetworkInner.BroadcastToAll(newBlock);
         }
 
+        public void Broadcast(P2P_NewBlock p2p_NewBlock)
+        {
+            relayNetworkInner.BroadcastToAll(p2p_NewBlock);
+        }
+
         void Q2P_New_Node_Handle(Session session, int opcode, object msg)
         {
             Q2P_New_Node new_Node = msg as Q2P_New_Node;

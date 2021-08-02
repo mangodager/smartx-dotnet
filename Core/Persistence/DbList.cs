@@ -164,7 +164,7 @@ namespace ETModel
                 {
                     for (long i = UndoHeight + 1; i <= random1; i++)
                     {
-                        using (DbSnapshot snapshot = dbstore.GetSnapshot(i))
+                        using (DbSnapshot snapshot = dbstore.GetSnapshot(i,true))
                         {
                             snapshot.Transfers.Add("undos_test", new BlockSub() { hash = $"Address_{i}" });
                             snapshot.Commit();

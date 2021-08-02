@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System.Reflection;
 using System.Collections;
 using XLua;
+using System.Collections.Concurrent;
 
 namespace ETModel
 {
@@ -14,14 +15,18 @@ namespace ETModel
     {
         static public void LogPrint(string info)
         {
+#if !RELEASE
             Log.Info(info);
+#endif
         }
 
         static public void Assert(bool b,string info)
         {
             if (!b)
             {
+#if !RELEASE
                 Log.Info(info);
+#endif
                 throw new Exception(info);
             }
         }
@@ -106,10 +111,14 @@ namespace ETModel
                 var transfer    = LuaVMStack.s_transfer;
                 if (!string.IsNullOrEmpty(consAddress))
                 {
-                    var mapIn = dbSnapshot.ABC.Get(sender) ?? new List<string>();
-                    mapIn.Remove(consAddress);
-                    mapIn.Add(consAddress);
-                    dbSnapshot.ABC.Add(sender, mapIn);
+                    if (!string.IsNullOrEmpty(sender))
+                    {
+                        var mapIn = dbSnapshot.ABC.Get(sender) ?? new List<string>();
+                        mapIn.Remove(consAddress);
+                        mapIn.Add(consAddress);
+                        dbSnapshot.ABC.Add(sender, mapIn);
+                    }
+
                     if (!string.IsNullOrEmpty(_to))
                     {
                         var mapOut = dbSnapshot.ABC.Get(_to) ?? new List<string>();
@@ -224,7 +233,41 @@ namespace ETModel
             return null;
         }
 
+        public static ConcurrentDictionary<string, string> cacheSymbol = new ConcurrentDictionary<string, string>();
+        static public string GetSymbol(string conAddress)
+        {
+            var symbol = "unknown";
+            try
+            {
+                if (cacheSymbol.TryGetValue(conAddress, out symbol)) {
+                    return symbol;
+                }
 
+                var consensus = Entity.Root.GetComponent<Consensus>();
+                var luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
+                var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+                object[] result = null;
+                bool rel;
+                var blockSub = new BlockSub();
+                blockSub.addressIn = consensus.auxiliaryAddress;
+                blockSub.addressOut = conAddress;
+                blockSub.data = "symbol()";
+                using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshot(0, true))
+                {
+                    rel = luaVMEnv.Execute(dbSnapshot, blockSub, consensus.transferHeight, out result);
+                    if (rel && result != null && result.Length >= 1)
+                    {
+                        symbol = ((string)result[0]) ?? "unknown";
+                        cacheSymbol.TryRemove(conAddress, out string _);
+                        cacheSymbol.TryAdd(conAddress, symbol);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return symbol;
+        }
     }
 
 }

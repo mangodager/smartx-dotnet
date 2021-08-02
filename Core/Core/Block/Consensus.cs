@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace ETModel
 {
@@ -79,6 +80,7 @@ namespace ETModel
                         blockMgr.AddBlock(genesisblk);
                         ApplyGenesis(genesisblk);
 
+                        Log.Info($"RuleContract   : {consAddress}");
                         Log.Info($"SatswapFactory : {SatswapFactory}");
                         Log.Info($"ERCSat         : {ERCSat}");
                         Log.Info($"PledgeFactory  : {PledgeFactory}");
@@ -87,7 +89,7 @@ namespace ETModel
                 }
 
                 //debug
-                using (DbSnapshot snapshot = levelDBStore.GetSnapshot())
+                using (DbSnapshot snapshot = levelDBStore.GetSnapshot(0,true))
                 {
                     LuaVMScript luaVMScript = new LuaVMScript() { script = FileHelper.GetFileData("./Data/Contract/RuleContract_curr.lua").ToByteArray(), tablName = "RuleContract_curr" };
                     snapshot.Contracts.Add(consAddress, luaVMScript);
@@ -147,20 +149,7 @@ namespace ETModel
         static public long GetReward(long height)
         {
             long half = height / (2050560L * 2); // 4*60*24*356 * 2 , half life of 2 year
-
             long reward = 72L;
-            while (half-- > 0)
-            {
-                reward = reward / 2;
-            }
-            return Math.Max(reward,1L);
-        }
-
-        static public long GetRewardRule(long height)
-        {
-            long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
-
-            long reward = 12L;
             while (half-- > 0)
             {
                 reward = reward / 2;
@@ -168,6 +157,29 @@ namespace ETModel
             return Math.Max(reward, 1L);
         }
 
+        static public long GetRewardRule(long height)
+        {
+            if (height > 345600)
+            {
+                long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
+                long reward = 12L;
+                while (half-- > 0)
+                {
+                    reward = reward / 2;
+                }
+                return Math.Max(reward, 1L);
+            }
+            else
+            {
+                long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
+                long reward = 4L;
+                while (half-- > 0)
+                {
+                    reward = reward / 2;
+                }
+                return Math.Max(reward, 1L);
+            }
+        }
 
         public bool Check(Block target)
         {
@@ -183,6 +195,9 @@ namespace ETModel
             }
 
             target.hash = target.ToHash();
+            if (string.IsNullOrEmpty(target.hash))
+                return false;
+
             return CheckSign(target);
         }
 
@@ -218,9 +233,12 @@ namespace ETModel
             return null;
         }
 
-        public Dictionary<long, Dictionary<string, RuleInfo>> cacheRule = new Dictionary<long, Dictionary<string, RuleInfo>>();
+        public ConcurrentDictionary<long, Dictionary<string, RuleInfo>> cacheRule = new ConcurrentDictionary<long, Dictionary<string, RuleInfo>>();
         public Dictionary<string, RuleInfo> GetRule(long height)
         {
+            if (cacheRule.TryGetValue(height - 1, out Dictionary<string, RuleInfo> value) && value != null)
+                return value;
+
             long target = cacheRule.Keys.FirstOrDefault( (x) => { return Math.Abs(x - height) <= 5; }  );
             if (target != 0)
             {
@@ -243,12 +261,15 @@ namespace ETModel
                 if (!string.IsNullOrEmpty(str))
                 {
                     var ruleInfo = JsonHelper.FromJson<Dictionary<string, RuleInfo>>(str);
-                    cacheRule.Add(height, ruleInfo);
-                    return ruleInfo;
+                    if (ruleInfo != null) {
+                        cacheRule.TryRemove(height, out Dictionary<string, RuleInfo> tempdel);
+                        cacheRule.TryAdd(height, ruleInfo);
+                        return ruleInfo;
+                    }
                 }
                 else
                 {
-                    cacheRule.Add(height, null);
+                    cacheRule.TryAdd(height, null);
                 }
             }
             return transferHeight != 0 ? GetRule(transferHeight) : null;
@@ -366,6 +387,14 @@ namespace ETModel
 
             using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshotUndo(blockChain.height))
             {
+                if (!cacheRule.TryGetValue(mcblk.height-1, out Dictionary<string, RuleInfo> ruleInfosLast)||ruleInfosLast==null)
+                {
+                    var temp = dbSnapshot.Get($"Rule_{mcblk.height - 1}");
+                    ruleInfosLast = JsonHelper.FromJson<Dictionary<string, RuleInfo>>(temp);
+                    cacheRule.TryRemove(mcblk.height, out Dictionary<string, RuleInfo> tempdel1);
+                    cacheRule.TryAdd(mcblk.height-1, ruleInfosLast);
+                }
+
                 blockChain.Apply(dbSnapshot);
                 ApplyReward(dbSnapshot, mcblk);
 
@@ -399,41 +428,80 @@ namespace ETModel
 
                 dbSnapshot.Commit();
 
-                cacheRule.Remove(mcblk.height);
-                cacheRule.Add(mcblk.height, ruleInfos);
+                cacheRule.TryRemove(mcblk.height, out Dictionary<string, RuleInfo> tempdel2);
+                cacheRule.TryAdd(mcblk.height, ruleInfos);
             }
             return true;
         }
 
         public bool ApplyTransfer(DbSnapshot dbSnapshot, BlockSub transfer, long height)
         {
+            if (transfer.type != "transfer"){
+                return true;
+            }
             do
             {
-                if (transfer.type != "transfer")
+                if (transfer.addressIn == transfer.addressOut) {
+                    LuaVMStack.Add2TransferTemp("Transfer address error", transfer);
                     break;
-                if (transfer.addressIn == transfer.addressOut)
+                }
+                if (BigHelper.Less(transfer.amount, "0", true)) {
+                    LuaVMStack.Add2TransferTemp("Transfer amount Less 0", transfer);
                     break;
-                if (BigHelper.Less(transfer.amount, "0", true))
-                    break;
+                }
+
+                if (transfer.extend != null)
+                {
+                    var strlastHeight = transfer.extend.Find(x => x.IndexOf("deadline:") == 0);
+                    if (!string.IsNullOrEmpty(strlastHeight))
+                    {
+                        var array = strlastHeight.Split(":");
+                        if (array.Length == 2 && long.TryParse(array[1], out long deadline))
+                        {
+                            if (deadline < height) {
+                                LuaVMStack.Add2TransferTemp($"Transfer deadline error", transfer);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (height >= 88380) // Smartx 3.1.1 Fix
+                    {
+                        var unique = transfer.extend.Find(x => x.IndexOf("unique") == 0);
+                        if (!string.IsNullOrEmpty(unique) && !string.IsNullOrEmpty(transfer.data))
+                        {
+                            string hasht = dbSnapshot.Get($"unique_{transfer.data}");
+                            if (!string.IsNullOrEmpty(hasht))
+                                break;
+                        }
+                    }
+                }
+
                 //if (!transfer.CheckSign() && height != 1)
                 //    return true;
 
                 if (height != 1)
                 {
                     Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
-                    if (accountIn == null)
+                    if (accountIn == null){
+                        LuaVMStack.Add2TransferTemp("Transfer addressIn error", transfer);
                         break;
-                    if (BigHelper.Less(accountIn.amount, transfer.amount, false))
+                    }
+                    if (BigHelper.Less(accountIn.amount, transfer.amount, false)) {
+                        LuaVMStack.Add2TransferTemp("Transfer accountIn.amount is not enough", transfer);
                         break;
-                    if (accountIn.nonce + 1 != transfer.nonce)
+                    }
+                    if (accountIn.nonce + 1 != transfer.nonce) {
+                        LuaVMStack.Add2TransferTemp("Transfer nonce error", transfer);
                         break;
+                    }
                     accountIn.amount = BigHelper.Sub(accountIn.amount, transfer.amount);
                     accountIn.nonce += 1;
                     dbSnapshot.Accounts.Add(accountIn.address, accountIn);
                     if (transferShow)
                     {
                         dbSnapshot.BindTransfer2Account(transfer.addressIn, transfer.hash);
-                        if (!string.IsNullOrEmpty(transfer.data))
+                        if (!string.IsNullOrEmpty(transfer.data)&&transfer.data.Length==transfer.hash.Length)
                         {
                             dbSnapshot.Add($"unique_{transfer.data}", transfer.hash);
                         }
@@ -471,7 +539,7 @@ namespace ETModel
 
             var amount     = GetReward(mcblk.height).ToString();
             var amountRuletolat  = GetRewardRule(mcblk.height).ToString();
-            var amountRuleCons   = BigHelper.Mul(amountRuletolat,"0.98");
+            var amountRuleCons   = BigHelper.Mul(amountRuletolat,"0.975");
             var amountRuleRate   = BigHelper.Sub(amountRuletolat, amountRuleCons);
             var timestamp  = mcblk.timestamp;
 
@@ -545,12 +613,16 @@ namespace ETModel
         LuaVMEnv luaVMEnv = Entity.Root.GetComponent<LuaVMEnv>();
         public bool ApplyContract(DbSnapshot dbSnapshot, BlockSub transfer, long height)
         {
+            if (transfer.type != "contract") {
+                return true;
+            }
+
             do
             {
-                if (transfer.type != "contract")
+                if (transfer.addressIn == transfer.addressOut) {
+                    LuaVMStack.Add2TransferTemp("Transfer address error", transfer);
                     break;
-                if (transfer.addressIn == transfer.addressOut)
-                    break;
+                }
                 //if (transfer.data == null || transfer.data == "")
                 //    return true;
                 //if (!transfer.CheckSign())
@@ -558,9 +630,10 @@ namespace ETModel
 
                 // 设置交易index
                 Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn) ?? new Account() { address = transfer.addressIn, amount = "0", nonce = 0 };
-                if (accountIn.nonce + 1 != transfer.nonce)
+                if (accountIn.nonce + 1 != transfer.nonce) {
+                    LuaVMStack.Add2TransferTemp("Transfer nonce error", transfer);
                     break;
-
+                }
                 accountIn.nonce += 1;
                 dbSnapshot.Accounts.Add(accountIn.address, accountIn);
 
@@ -612,23 +685,38 @@ namespace ETModel
                 }
                 else
                 {
-                    // 正常扣除手续费
-                    Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
-                    if (accountIn == null)
-                        return false;
-                    if (BigHelper.Less(accountIn.amount, "0.002", false))
-                        return false;
-                    accountIn.amount = BigHelper.Sub(accountIn.amount, "0.002");
-                    dbSnapshot.Accounts.Add(accountIn.address, accountIn);
+                    do
+                    {
+                        // 正常扣除手续费
+                        Account accountIn = dbSnapshot.Accounts.Get(transfer.addressIn);
+                        if (accountIn == null) {
+                            LuaVMStack.Add2TransferTemp("amount Less 0.002", transfer);
+                            break;
+                        }
+                        if (BigHelper.Less(accountIn.amount, "0.002", false)) {
+                            LuaVMStack.Add2TransferTemp("amount Less 0.002", transfer);
+                            break;
+                        }
+                        accountIn.amount = BigHelper.Sub(accountIn.amount, "0.002");
+                        dbSnapshot.Accounts.Add(accountIn.address, accountIn);
 
-                    Account blkAccount = dbSnapshot.Accounts.Get(blk.Address);
-                    if(blkAccount != null) {
-                        blkAccount.amount = BigHelper.Add(blkAccount.amount, "0.002");
-                        dbSnapshot.Accounts.Add(blkAccount.address, blkAccount);
+                        Account blkAccount = dbSnapshot.Accounts.Get(blk.Address);
+                        if (blkAccount != null)
+                        {
+                            blkAccount.amount = BigHelper.Add(blkAccount.amount, "0.002");
+                            dbSnapshot.Accounts.Add(blkAccount.address, blkAccount);
+                        }
+                        return true;
+                    }
+                    while (false);
+
+                    if (transferShow)
+                    {
+                        dbSnapshot.Transfers.Add(transfer.hash, transfer);
                     }
                 }
             }
-            return true;
+            return false;
         }
 
         public long transferHeight    = 0;
@@ -656,7 +744,7 @@ namespace ETModel
             calculatePower.Clear();
             for (long ii = Math.Max(1, transferHeight - calculatePower.statistic); ii <= transferHeight; ii++)
             {
-                calculatePower.Insert(BlockChainHelper.GetMcBlock(ii));
+                calculatePower.InsertLink(BlockChainHelper.GetMcBlock(ii), blockMgr);
             }
 
             int blockIndex = 0;
@@ -727,10 +815,9 @@ namespace ETModel
                         cacheRule.Clear();
                         if (ruleInfo != null)
                         {
-                            cacheRule.Add(transferHeight, ruleInfo);
+                            cacheRule.TryAdd(transferHeight, ruleInfo);
                         }
                     }
-
                     
                     if (newBlocks.Count == 0)
                     {
@@ -1413,34 +1500,20 @@ namespace ETModel
                 blk.timestamp = TimeHelper.Now();
                 blk.random = RandomHelper.RandUInt64().ToString("x");
 
+                int index = 0;
+
                 // Transfer
                 {
                     BlockSub transfer = new BlockSub();
                     transfer.addressIn = "";
                     transfer.addressOut = blk.Address;
-                    transfer.amount = (3L * 10000L * 10000L).ToString();
-                    transfer.nonce = 1;
+                    transfer.amount = BigHelper.Sub("7000000000","3000000");
+                    transfer.nonce = index;
                     transfer.type = "transfer";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(0,transfer);
-                }
-
-                // rule Consensus
-                {
-                    BlockSub transfer = new BlockSub();
-                    transfer.addressIn = blk.Address;
-                    transfer.addressOut = "";
-                    transfer.amount = "0";
-                    transfer.nonce = 1;
-                    transfer.type = "contract";
-                    transfer.depend = "RuleContract_v1.0";
-                    transfer.data   = "create()";
-                    transfer.timestamp = blk.timestamp;
-                    transfer.hash = transfer.ToHash();
-                    transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(1, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
 
                 {
@@ -1448,14 +1521,14 @@ namespace ETModel
                     transfer.addressIn = blk.Address;
                     transfer.addressOut = "";
                     transfer.amount = "0";
-                    transfer.nonce = 2;
+                    transfer.nonce = index;
                     transfer.type = "contract";
                     transfer.depend = "ERCSat";
                     transfer.data = "create(\"SAT\",\"SAT\",\"0\")";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(2, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
 
                 {
@@ -1463,14 +1536,14 @@ namespace ETModel
                     transfer.addressIn = blk.Address;
                     transfer.addressOut = "";
                     transfer.amount = "0";
-                    transfer.nonce = 3;
+                    transfer.nonce = index;
                     transfer.type = "contract";
                     transfer.depend = "PledgeFactory";
                     transfer.data = "create(\"PledgeFactory\",\"RPF\")";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(3, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
 
                 {
@@ -1478,14 +1551,14 @@ namespace ETModel
                     transfer.addressIn = blk.Address;
                     transfer.addressOut = "";
                     transfer.amount = "0";
-                    transfer.nonce = 4;
+                    transfer.nonce = index;
                     transfer.type = "contract";
                     transfer.depend = "SatswapFactory";
                     transfer.data = "create(\"SatswapFactory\",\"SSF\")";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(4, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
 
                 {
@@ -1493,32 +1566,64 @@ namespace ETModel
                     transfer.addressIn = blk.Address;
                     transfer.addressOut = "";
                     transfer.amount = "0";
-                    transfer.nonce = 5;
+                    transfer.nonce = index;
                     transfer.type = "contract";
                     transfer.depend = "LockFactory";
                     transfer.data = "create(\"LockFactory\",\"LKF\")";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(5, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
 
-                var ERCSat      = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "ERCSat"));
-                var LockFactory = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "LockFactory")); ;
+                var ERCSat = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "ERCSat"));
+                var Pledge = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "PledgeFactory"));
                 {
                     BlockSub transfer   = new BlockSub();
                     transfer.addressIn  = blk.Address;
-                    transfer.addressOut = LockFactory;
+                    transfer.addressOut = Pledge;
                     transfer.amount = "0";
-                    transfer.nonce = 6;
-                    transfer.type = "contract";
+                    transfer.nonce  = index;
+                    transfer.type   = "contract";
                     transfer.depend = "";
-                    transfer.data =  $"approve(\"ez55m4D86AtG4foGBqaDy5z4JwjbNNHVn\",\"{ERCSat}\",\"10000\",\"10\",\"Lock10\")";
+                    transfer.data   = $"pairCreated(\"{ERCSat}\",\"3000000\")";
+                    transfer.timestamp = blk.timestamp;
+                    transfer.hash   = transfer.ToHash();
+                    transfer.sign   = transfer.ToSign(key);
+                    blk.AddBlockSub(index++, transfer);
+                }
+
+                // rule Consensus
+                {
+                    BlockSub transfer   = new BlockSub();
+                    transfer.addressIn  = blk.Address;
+                    transfer.addressOut = "";
+                    transfer.amount = "0";
+                    transfer.nonce  = index;
+                    transfer.type   = "contract";
+                    transfer.depend = "RuleContract_v1.0";
+                    transfer.data   = "create()";
                     transfer.timestamp = blk.timestamp;
                     transfer.hash = transfer.ToHash();
                     transfer.sign = transfer.ToSign(key);
-                    blk.AddBlockSub(6, transfer);
+                    blk.AddBlockSub(index++, transfer);
                 }
+
+                //var LockFactory = LuaVMEnv.GetContractAddress(blk.linkstran.Values.First((x) => x.depend == "LockFactory")); ;
+                //{
+                //    BlockSub transfer   = new BlockSub();
+                //    transfer.addressIn  = blk.Address;
+                //    transfer.addressOut = LockFactory;
+                //    transfer.amount = "0";
+                //    transfer.nonce = 6;
+                //    transfer.type = "contract";
+                //    transfer.depend = "";
+                //    transfer.data =  $"approve(\"ez55m4D86AtG4foGBqaDy5z4JwjbNNHVn\",\"{ERCSat}\",\"10000\",\"10\",\"Lock10\")";
+                //    transfer.timestamp = blk.timestamp;
+                //    transfer.hash = transfer.ToHash();
+                //    transfer.sign = transfer.ToSign(key);
+                //    blk.AddBlockSub(6, transfer);
+                //}
 
                 blk.hash = blk.ToHash();
                 blk.sign = blk.ToSign(key);

@@ -19,7 +19,7 @@ namespace ETModel
 
         public bool Get(string hash,out Block currValue)
         {
-            lock (cacheDict)
+            lock (this)
             {
                 return cacheDict.TryGetValue(hash, out currValue);
             }
@@ -28,8 +28,10 @@ namespace ETModel
         {
             if(currValue!=null)
             {
-                lock (cacheDict)
+                lock (this)
                 {
+                    if (cacheDict.ContainsKey(currValue.hash))
+                        return;
                     cacheDict.Add(currValue.hash, currValue);
                     cacheList.Insert(cacheList.Count, currValue.hash);
 
@@ -44,7 +46,7 @@ namespace ETModel
 
         public void Remove(string hash)
         {
-            lock (cacheDict)
+            lock (this)
             {
                 cacheDict.Remove(hash);
                 cacheList.Remove(hash);

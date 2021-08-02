@@ -4,6 +4,7 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
 using System.Collections;
+using System.Linq;
 
 namespace ETModel
 {
@@ -36,16 +37,20 @@ namespace ETModel
             if (miners == null)
                 return;
 
-            double difftotal = 0;
-            foreach (var miner in miners.Values)
-            {
-                double.TryParse(miner.power_average, out double diff);
-                difftotal += diff;
-            }
+            //double difftotal = 0;
+            //foreach (var miner in miners.Values)
+            //{
+            //    if (double.TryParse(miner.power_average, out double diff)) {
+            //        difftotal += diff;
+            //    }
+            //}
+
+            double difftotal = miners.Values.Sum(x => x.power);
             if (difftotal != 0)
             {
-                if (myblk.extend == null)
+                if (myblk.extend == null) {
                     myblk.extend = new Dictionary<int, string>();
+                }
                 myblk.extend.Add(1,"" + difftotal);
             }
         }
@@ -57,10 +62,13 @@ namespace ETModel
 
             if (blk.extend != null&& blk.extend.Count>=1)
             {
-                double.TryParse(blk.extend[1],out double dt);
-                if (dt != 0)
+                if (double.TryParse(blk.extend[1], out double dt))
                 {
                     InsertPower(dt);
+                }
+                else
+                {
+                    return;
                 }
                 return;
             }
@@ -81,8 +89,9 @@ namespace ETModel
                 Block blk = blockMgr.GetBlock(mcblk.linksblk[ii]);
                 if (blk!=null&&blk.extend!=null && blk.extend.Count >= 1)
                 {
-                    double.TryParse(blk.extend[1], out double dt);
-                    diffWhole += dt;
+                    if(double.TryParse(blk.extend[1], out double dt)) {
+                        diffWhole += dt;
+                    }
                 }
             }
 
@@ -114,7 +123,9 @@ namespace ETModel
             var acc = str.Substring(ii+1,Math.Min(4, str.Length-(ii + 1)));
             double.TryParse(acc,out double accd);
 
-            power = power + accd;
+            power = power*10 + (accd/1000);
+            if (90 > power)
+                power = 0;
 
             return power;
         }
@@ -191,13 +202,13 @@ namespace ETModel
                 Block blk = new Block();
                 blk.prehash = "b6b67d3d8b83f4885620ccd45d1af81d5690a056de2aba8ddf899fba8088b75d";
                 {
-                    blk.hash = "000000c09983d8950d8d0dce9ab5e9039fade2590d25f361ee0f9c1047832ceb";
+                    blk.hash = "000d24c333b6ba99f18e3c3ca33a1b5a388e562fdd38c1ce0a459f15139e0f5e";
                     double value1 = CalculatePower.Power(blk.GetDiff());
                     string value2 = CalculatePower.GetPowerCompany(value1);
                     Log.Info($"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}");
                 }
                 {
-                    blk.hash = "0000003e833bc8b524922d9400e8b489eb1fe753d35efde0d5e2ae5ee430dfbe";
+                    blk.hash = "0e7adeae5ba12d1b14af8a45aaced269e6523621e225e7fd8c6628bdcdbf76db";
                     double value1 = CalculatePower.Power(blk.GetDiff());
                     string value2 = CalculatePower.GetPowerCompany(value1);
                     Log.Info($"\n PowerCompany {blk.GetDiff()} \n {value2} \n {blk.hash}");

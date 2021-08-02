@@ -7,6 +7,7 @@ using System.Collections;
 using XLua;
 using System.IO;
 using System.Numerics;
+using System.Threading;
 
 namespace ETModel
 {
@@ -196,7 +197,7 @@ namespace ETModel
             }
         }
 
-        static byte[] randomDag = new byte[32];
+        private static ThreadLocal<byte[]> randomDag = new ThreadLocal<byte[]>(() => new byte[32]);
 
         static string _ToDag(string random)
         {
@@ -205,23 +206,36 @@ namespace ETModel
             var offset = long.Parse(right);
 
             int dagIndex = 0;
-            for (int jj = 0; jj < randomDag.Length; jj++, dagIndex++)
+            for (int jj = 0; jj < randomDag.Value.Length; jj++, dagIndex++)
             {
-                randomDag[jj] = dag[offset+dagIndex];
+                randomDag.Value[jj] = dag[offset+dagIndex];
             }
 
-            return CryptoHelper.Sha256(random + randomDag.ToStr());
+            return CryptoHelper.Sha256(random + randomDag.Value.ToStr());
         }
 
         static public string ToHash(long height,string hashmining, string random)
         {
-            Init();
-            V2_0_0_right = V2_0_0_right != BigInteger.Zero ? V2_0_0_right : BigInteger.Parse((dag.Length - randomDag.Length).ToString());
+            if (string.IsNullOrEmpty(hashmining) || string.IsNullOrEmpty(random))
+                return "";
 
-            var hash1 = _ToDag(random);
-            var hash2 = _ToDag(CryptoHelper.Sha256(hash1).Substring(hashmining.Length - random.Length));
-            return CryptoHelper.Sha256(hashmining + random + hash1 + hash2);
-            //return CryptoHelper.Sha256(hashmining + random);
+            if (height <= 141222)
+            {
+                Init();
+                V2_0_0_right = V2_0_0_right != BigInteger.Zero ? V2_0_0_right : BigInteger.Parse((dag.Length - randomDag.Value.Length).ToString());
+
+                var hash1 = _ToDag(random);
+                var hash2 = _ToDag(CryptoHelper.Sha256(hash1).Substring(hashmining.Length - random.Length));
+                var hash3 = CryptoHelper.Sha256(hashmining + random + hash1 + hash2);
+                return hash3;
+            }
+            else
+            {
+                var hash1 = CryptoHelper.Sha256(hashmining + random);
+                var hash2 = RandomXSharp.RandomX.CaculateHash(hash1);
+                var hash3 = CryptoHelper.Sha256(hash2);
+                return hash3;
+            }
         }
 
     }

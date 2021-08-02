@@ -16,6 +16,9 @@ namespace ETModel
         private  SnapShot    snapshot;
         private  WriteBatch  batch;
         private  ReadOptions options;
+#if MultiThread
+        private readonly bool bWrite;
+#endif
 
         DbUndo Undos = null;    // 数据回退
         public DbCache<string>       Snap { get; }
@@ -32,14 +35,24 @@ namespace ETModel
         public DbList<string>        List { get; }
         public DbQueue<string>       Queue { get; }
 
-        public DbSnapshot(DB db, long height, bool bUndo)
+        public DbSnapshot(DB db, long height, bool bUndo, bool bWrite)
         {
+#if MultiThread
+            this.bWrite = bWrite;
+            if(this.bWrite){
+                Monitor.Enter(db);
+            }
+            this.db = db;
+            this.snapshot = db.CreateSnapshot();
+            this.batch    = bWrite ? new WriteBatch() : null;
+#else
             Monitor.Enter(db);
-
             this.db = db;
             this.snapshot = db.CreateSnapshot();
             this.batch = new WriteBatch();
-            this.options = new ReadOptions { FillCache = false, Snapshot = snapshot };
+#endif
+
+            this.options  = new ReadOptions { FillCache = false, Snapshot = snapshot };
 
             if (bUndo)
             {
@@ -61,12 +74,18 @@ namespace ETModel
             StoragesMap = new DbCache<string>(db, options, batch, Undos, "StgMap");
             ABC       = new DbCache<List<string>>(db, options, batch, Undos, "ABC");
             List      = new DbList<string>(db, options, batch, Undos, "List");
-            Queue     = new DbQueue<string>(db, options, batch, Undos, "Queue", 1260);
+            Queue     = new DbQueue<string>(db, options, batch, Undos, "Queue", 1260);  //  (60/8) * 24Hour * 7Day
 
         }
 
         public void Commit()
         {
+#if MultiThread
+            if (!this.bWrite) {
+                throw new Exception("Subthread Commit Error!");
+            }
+#endif
+
             Snap.Commit();
             Blocks.Commit();
             Heights.Commit();
@@ -83,7 +102,7 @@ namespace ETModel
             if (Undos != null)
             {
                 batch?.Put($"Undos___{Undos.height}", JsonHelper.ToJson(new DbCache<DbUndo>.Slice() { obj = Undos }));
-                batch.Put("UndoHeight", Undos.height.ToString());
+                batch?.Put("UndoHeight", Undos.height.ToString());
             }
             db.Write(batch, new WriteOptions { Sync = true });
         }
@@ -98,7 +117,14 @@ namespace ETModel
                 options = null;
                 batch = null;
                 snapshot = null;
+
+#if MultiThread
+                if (this.bWrite) {
+                    Monitor.Exit(db);
+                }
+#else
                 Monitor.Exit(db);
+#endif
             }
         }
 
