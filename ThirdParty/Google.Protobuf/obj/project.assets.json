@@ -4739,11 +4739,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\www\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
+      "projectUniqueName": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
       "projectName": "Google.Protobuf",
-      "projectPath": "E:\\www\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
+      "projectPath": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\Google.Protobuf.csproj",
       "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\www\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\obj\\",
+      "outputPath": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\Google.Protobuf\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

@@ -44,3 +44,15 @@ E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.Assemb
 E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
 E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
 E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+E:\github\github版本编译\smartx-dotnet\Bin\snappy32.dll
+E:\github\github版本编译\smartx-dotnet\Bin\snappy64.dll
+E:\github\github版本编译\smartx-dotnet\Bin\libzstd.dll
+E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.deps.json
+E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.dll
+E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.pdb
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
+E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb

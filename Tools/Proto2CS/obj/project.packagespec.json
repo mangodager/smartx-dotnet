@@ -1,10 +1,10 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "E:\\www\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+    "projectUniqueName": "E:\\github\\github版本编译\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
     "projectName": "Proto2CS",
-    "projectPath": "E:\\www\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
-    "outputPath": "E:\\www\\smartx-dotnet\\Tools\\Proto2CS\\obj\\",
+    "projectPath": "E:\\github\\github版本编译\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+    "outputPath": "E:\\github\\github版本编译\\smartx-dotnet\\Tools\\Proto2CS\\obj\\",
     "projectStyle": "PackageReference",
     "fallbackFolders": [
       "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

@@ -34,3 +34,12 @@ E:\www\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\
 E:\www\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.csproj.CoreCompileInputs.cache
 E:\www\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.dll
 E:\www\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.pdb
+E:\github\github版本编译\smartx-dotnet\Bin\MongoDB.Bson.deps.json
+E:\github\github版本编译\smartx-dotnet\Bin\MongoDB.Bson.dll
+E:\github\github版本编译\smartx-dotnet\Bin\MongoDB.Bson.pdb
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.csprojAssemblyReference.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.AssemblyInfoInputs.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.AssemblyInfo.cs
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.csproj.CoreCompileInputs.cache
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.dll
+E:\github\github版本编译\smartx-dotnet\ThirdParty\MongodbDriver\DotNetCoreDriver\MongoDB.Bson\obj\Debug\MongoDB.Bson.pdb

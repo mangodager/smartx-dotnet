@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "5AHeFjF9vaM+Svh/lgTXw9Q/bFpPhKMtI8JVjKJ4yLv0wy8rBN7bY2uUkYtRHmhvc9FFpg4HfikP+H0nJHLM4w==",
+  "dgSpecHash": "uvO00E1SQnMrZysO5yDuOnKuLiYGXHO4U1n94N9w+1PsUE+KQBkx0ATipQmCqqsUV71i6xe0LfXnV/KdaQ9fsQ==",
   "success": true,
-  "projectFilePath": "E:\\www\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
+  "projectFilePath": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\MongodbDriver\\DotNetCoreDriver\\MongoDB.Bson\\MongoDB.Bson.csproj",
   "expectedPackageFiles": [
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",
