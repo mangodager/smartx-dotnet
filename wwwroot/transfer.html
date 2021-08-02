@@ -73,21 +73,23 @@
     <script src='js/Login.js'></script>
     <script type="text/javascript" src="js/qrcode.min.js"></script>
     <script src="js/reqrcode.js"></script>
+    <script src="js/translate.js"></script>
 
     <div class="container">
 
         <div class="jumbotron">
-            <h1>SmartX</h1>
-            <button type="button" class="btn btn-primary" onclick="liOnShowQRCode()">收款</button>
-            <button type="button" class="btn btn-info" onclick="liOnScanQRCode()">扫码支付</button>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalTransfer">转账</button>
+            <h1>SmartX-dotnet <small id="statsLabel" style="font-size: 50%"></small></h1>
+            <button type="button" class="btn btn-primary" onclick="liOnShowQRCode()"><div class="lang" key="收款"></div></button>
+            <button type="button" class="btn btn-info" onclick="liOnScanQRCode()"><div class="lang" key="扫码支付"></div></button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalTransfer"><div class="lang" key="转账"></div></button>
             <button type="button" class="btn btn-warning" id="btnCopyToClip" title="" onclick='copyToClipBoard()'
                     data-container="body" data-toggle="popover" data-placement="bottom"
                     data-content="地址已复制到剪切板">
-                复制地址
+                <div class="lang" key="复制地址"></div>
             </button>
-            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#ModalLock">发起锁仓</button>
-            &nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()">清空交易</button>
+            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#ModalLock"><div class="lang" key="发起锁仓"></div></button>
+            &nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()"><div class="lang" key="清空交易"></div></button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
 
@@ -97,7 +99,7 @@
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="waittable">
                 <caption id="caption_mytable111">
-                    处理列表:
+                    <div class="lang" key="处理列表:"></div>
                 </caption>
                 <thead id="thead_mytable111">
                     <tr>
@@ -112,15 +114,15 @@
             <table class="table table-hover" id="mytable">
                 <caption id="caption_mytable111">
                     <div class="col-lg-6">
-                        账户:
-                        <button type="button" class="btn  btn-default" onclick='liOnclickUp()'> 上 一 页</button>
-                        <button type="button" class="btn  btn-default" onclick='liOnclickDown()'> 下 一 页</button>
+                        <div class="lang" key="账户:"></div>
+                        <button type="button" class="btn  btn-default" onclick='liOnclickUp()'><div class="lang" key="上 一 页"></div></button>
+                        <button type="button" class="btn  btn-default" onclick='liOnclickDown()'><div class="lang" key="下 一 页"></div></button>
                     </div>
                     <div class="col-lg-6">
                         <div class="input-group">
                             <input type="text" id="searchText" class="form-control">
                             <span class="input-group-btn">
-                                <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                                <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'><div class="lang" key="查找!"></div></button>
                             </span>
                         </div>
                         <h4></h4>
@@ -146,10 +148,10 @@
             </div>
         </center>
         <div class="row nav_box navbar-inverse">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
@@ -160,28 +162,27 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         ×
                     </button>
-                    <h5 class="modal-title" id="myModalLabel">
-                        正在申请交易
+                    <h5 class="modal-title lang" id="myModalLabel" key="正在发起交易">
                     </h5>
                 </div>
 
                 <fieldset>
                     <p> </p>
                     <p>
-                        <label for="title">转出地址:</label>
+                        <label for="title" class="lang" key="转出地址:"></label>
                         <input type="text" id="input_addressIn" name="addressIn" align="left" disabled="disabled">
                     </p>
                     <p>
-                        <label for="title">转账金额:</label>
+                        <label for="title" class="lang" key="转账金额:"></label>
                         <input type="text" id="input_amount" name="amount" align="left">
                         <label for="title" id="tokenname"></label>
                     </p>
                     <p>
-                        <label for="username">转入地址:</label>
+                        <label for="username" class="lang" key="转入地址:"></label>
                         <input type="text" id="input_addressOut" name="addressOut" align="left">
                     </p>
                     <p>
-                        <label for="username">备注:</label>
+                        <label for="username" class="lang" key="备注:"></label>
                         <input type="text" id="input_remarks" name="remarks" align="left">
                     </p>
                     <p>
@@ -189,17 +190,17 @@
                         <input type="text" id="input_nonce" name="nonce" align="left">
                     </p>
                     <p>
-                        <label for="username">矿工费:</label>
+                        <label for="username" class="lang" key="矿工费:"></label>
                         <input type="text" id="gas" name="gas" align="left" value="0.002" disabled="disabled">
                     </p>
                 </fieldset>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">
-                        取消
+                        <div class="lang" key="取消"></div>
                     </button>
                     <button type="button" class="btn btn-primary" onclick="onTransferSubmit('ModalTransfer')">
-                        提交
+                        <div class="lang" key="提交"></div>
                     </button>
                 </div>
             </div>
@@ -222,7 +223,7 @@
                 <h4></h4>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="liOnModalQRCodeLeave()">
-                        离开
+                        <div class="lang" key="离开"></div>
                     </button>
                 </div>
             </div>
@@ -236,29 +237,28 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         ×
                     </button>
-                    <h4 class="modal-title" id="myModalLabel">
-                        扫码支付
+                    <h4 class="modal-title lang" id="myModalLabel" key="扫码支付">
                     </h4>
                 </div>
                 <h4></h4>
-                <label id="photo">照相机<input type="file" id='photo_image1' accept="image/*" capture='camera' onchange="OnScanQRCodeChange('photo_image1')"></label>
+                <label id="photo" class="lang" key="照相机"><input type="file" id='photo_image1' accept="image/*" capture='camera' onchange="OnScanQRCodeChange('photo_image1')"></label>
 
                 <fieldset>
                     <p>
-                        <label for="title">转出地址:</label>
+                        <label for="title" class="lang" key="转出地址:"></label>
                         <input type="text" id="scan_addressIn" align="left" disabled="disabled">
                     </p>
                 </fieldset>
                 <fieldset>
                     <p>
-                        <label for="title">转入地址:</label>
+                        <label for="username" class="lang" key="转入地址:"></label>
                         <input type="text" id="scan_addressOut" align="left" disabled="disabled">
                         <input type="file" id="photo_image2" onchange="OnScanQRCodeChange('photo_image2')">
                     </p>
                 </fieldset>
                 <fieldset>
                     <p>
-                        <label for="title">转账金额:</label>
+                        <label for="title" class="lang" key="转账金额:"></label>
                         <input type="text" id="scan_amount" align="left">
                     </p>
                 </fieldset>
@@ -268,7 +268,7 @@
                 <h4></h4>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="OnScanQRCodeSubmit('ModalScanQRCode')">
-                        提交
+                        <div class="lang" key="提交"></div>
                     </button>
                 </div>
             </div>
@@ -282,33 +282,32 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         ×
                     </button>
-                    <h5 class="modal-title" id="myModalLabel">
-                        正在申请交易
+                    <h5 class="modal-title lang" id="myModalLabel" key="正在申请锁仓:">
                     </h5>
                 </div>
 
                 <fieldset>
                     <p> </p>
                     <p>
-                        <label for="title">转出地址:</label>
+                        <label for="title" class="lang" key="转出地址:"></label>
                         <input type="text" id="input_addressIn" name="addressIn" align="left" disabled="disabled">
                     </p>
                     <p>
-                        <label for="title">转账金额:</label>
+                        <label for="title" class="lang" key="转账金额:"></label>
                         <input type="text" id="input_amount" name="amount" align="left">
                         <label for="title" id="tokenname"></label>
                     </p>
                     <p>
-                        <label for="username">转入地址:</label>
+                        <label for="username" class="lang" key="转入地址:"></label>
                         <input type="text" id="input_addressOut" name="addressOut" align="left">
                     </p>
                     <p>
-                        <label for="username">锁仓时间:</label>
+                        <label for="username" class="lang" key="锁仓时间:"></label>
                         <input type="text" id="input_LockTime" name="lockTime" align="left">
-                        <label for="username" id="LockTimeUnit">小时数</label>
+                        <label for="username" id="LockTimeUnit" class="lang" key="小时数:"></label>
                     </p>
                     <p>
-                        <label for="username">锁仓名称:</label>
+                        <label for="username" class="lang" key="锁仓名称:"></label>
                         <input type="text" id="input_LockName" name="lockName" align="left">
                     </p>
                     <p>
@@ -316,17 +315,17 @@
                         <input type="text" id="input_nonce" name="nonce" align="left">
                     </p>
                     <p>
-                        <label for="username">矿工费:</label>
+                        <label for="username" class="lang" key="矿工费:"></label>
                         <input type="text" id="gas" name="gas" align="left" value="0.002" disabled="disabled">
                     </p>
                 </fieldset>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">
-                        取消
+                        <div class="lang" key="取消"></div>
                     </button>
                     <button type="button" class="btn btn-primary" onclick="onLockSubmit('ModalLock')">
-                        提交
+                        <div class="lang" key="提交"></div>
                     </button>
                 </div>
             </div>
@@ -335,6 +334,7 @@
 
     <script>
         //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+        Helper.Statusbar();
 
         if (Login.LoadPassword() == null)
             window.location.href = "index.html";
@@ -432,10 +432,13 @@
             }
             document.body.removeChild(aux);
 
-
             $("[data-toggle='popover']").popover();
             clearTimeout(hide_popover_timer);
-            hide_popover_timer = setTimeout("hide_popover()", 3000);
+            hide_popover_timer = setTimeout("hide_popover()", 15000);
+
+            var btnCopyToClip = document.getElementById("btnCopyToClip");
+            var langText = Translate.Get(btnCopyToClip.getAttribute("data-content"));
+            btnCopyToClip.setAttribute("data-content", langText)
         };
 
         function hide_popover() {
@@ -453,8 +456,10 @@
                 var remarks = $('#ModalTransfer #input_remarks').val();
                 if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
                     var hash = Helper.SendTransferSubmit(e, "contract", "", addressOut, data, "", nonce, remarks);
-                    Helper.Statusbar("statusbar", hash, "", "合约交易: " + $('#ModalTransfer #input_addressOut').val() + " 转出: " + Helper.Fix(amount), 1, nonceCur);
-                    Helper.MessageBox('交易已提交');
+                    if (hash != null) {
+                        Helper.Statusbar("statusbar", hash, "", "合约交易: " + $('#ModalTransfer #input_addressOut').val() + " 转出: " + Helper.Fix(amount), 1, nonceCur);
+                        Helper.MessageBox('交易已提交');
+                    }
                 }
             }
             else {
@@ -465,8 +470,10 @@
 
                 if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
                     var hash = Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
-                    Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonceCur);
-                    Helper.MessageBox('交易已提交');
+                    if (hash != null) {
+                        Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonceCur);
+                        Helper.MessageBox('交易已提交');
+                    }
                 }
             }
 
@@ -474,19 +481,19 @@
 
         function CheckTransfer(amount, addressOut, nonce, depend, remarks) {
             if (addressOut == "") {
-                alert('addressOut Can not be empty');
+                alert(Translate.Get('addressOut Can not be empty'));
                 return false;
             }
             if (amount.isLessThanOrEqualTo(0)) {
-                alert('amount Must be greater than zero');
+                alert(Translate.Get('amount Must be greater than zero'));
                 return false;
             }
             if (amount.isNaN()) {
-                alert('amount Must be a number');
+                alert(Translate.Get('amount Must be a number'));
                 return false;
             }
             if (isNaN(nonce)) {
-                alert('nonce Must be a number');
+                alert(Translate.Get('nonce Must be a number'));
                 return false;
             }
             return true;
@@ -494,13 +501,13 @@
 
         var transferIndex = 0;
         function onTransferInit() {
-
             $.ajax({
                 url: Helper.GetServerIP() + "/GetTransfers",
                 dataType: "text",
                 type: "get",
                 data: { address: addressCur, index: transferIndex, token: tokenAddress },
                 success: function (data) {
+
                     colorindex = 1;
                     // 删除之前的数据
                     var mytableEle = document.getElementById("mytable");
@@ -524,35 +531,35 @@
                     }
                 },
                 error: function (err) {
-                    alert("没有找到可用节点");
+                    alert(Translate.Get("没有找到可用节点"));
                 }
             });
         }
-        onTransferInit(0);
+        setTimeout(function () { onTransferInit(); }, 10);
 
         function GetAmountFormat(jsonKey) {
             var amount = new BigNumber(jsonKey["amount"]).toFormat();
 
             if (jsonKey["type"] == "transfer") {
                 if (jsonKey["addressIn"] == addressCur)
-                    amount = "转账  -" + amount;
+                    amount = Translate.Get("转账") + "  -" + amount;
                 else
                     amount = "+" + amount;
             }
             else {
                 if (jsonKey["type"] == "Reward_Rule" || jsonKey["type"] == "Reward_Mc") {
-                    amount = "出块  +" + amount;
+                    amount = Translate.Get("出块") + "  +" + amount;
                 }
                 else {
                     if (jsonKey["type"] == "contract") {
                         if (jsonKey["addressOut"] == "")
-                            amount = "合约  发布";
+                            amount = Translate.Get("合约  发布");
                         else {
-                            amount = "合约  调用";
+                            amount = Translate.Get("合约  调用");
                             try {
                                 if (jsonKey["data"].indexOf("transfer(\"") != -1) {
                                     var array = jsonKey["data"].split("\"")
-                                    amount = "转账 " + new BigNumber(array[3]).toFormat();
+                                    amount = Translate.Get("转账") + " " + new BigNumber(array[3]).toFormat();
                                 }
                             }
                             catch {
@@ -654,7 +661,7 @@
             qrcode.callback = function (imgMsg) {
                 document.getElementById('photo').style.display = "none";//不可见;
                 if (imgMsg == null || imgMsg == "error decoding QR Code") {
-                    alert("无法识别,请重试！")
+                    alert(Translate.Get("无法识别,请重试！"))
                     return;
                 }
                 document.getElementById('photo_image2').style.display = "none";//不可见;
@@ -676,8 +683,10 @@
 
             if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
                 var hash = Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
-                Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonceCur);
-                Helper.MessageBox('交易已提交');
+                if (hash != null) {
+                    Helper.Statusbar("statusbar", hash, "", Translate.Get("交易") + ": " + addressOut + Translate.Get(" 转出: ") + Helper.Fix(amount), 1, nonceCur);
+                    Helper.MessageBox(Translate.Get('交易已提交'));
+                }
             }
         }
 
@@ -700,7 +709,7 @@
                 error: function (err) {
                 }
             });
-            setTimeout(function () { OnRefreshAmount(); }, 5000);
+            setTimeout(function () { OnRefreshAmount(); }, 15000);
         }
         OnRefreshAmount();
 
@@ -710,30 +719,29 @@
 
         function onLockSubmit(e) {
             var lockTime = parseInt($('#ModalLock #input_LockTime').val());
-            if (typeof (lockTime) != 'number'){
-                alert("LockTime must be a Number");
+            if (typeof (lockTime) != 'number') {
+                alert(Translate.Get("LockTime must be a Number"));
                 return;
             }
 
             var lockHeight = lockTime * 4 * 60;
             if (typeof (lockHeight) != 'number') {
-                alert("LockTime must be a Number");
+                alert(Translate.Get("LockTime must be a Number"));
                 return;
             }
 
-            var input_nonce      = parseInt($('#ModalLock #input_nonce').val());
-            var input_amount     = new BigNumber((new BigNumber($('#ModalLock #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN));
-            var input_tokenA     = tokenAddress != "" ? tokenAddress : Helper.ERCSat();
-            var input_LockName   = $('#ModalLock #input_LockName').val();
+            var input_nonce = parseInt($('#ModalLock #input_nonce').val());
+            var input_amount = new BigNumber((new BigNumber($('#ModalLock #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN));
+            var input_tokenA = tokenAddress != "" ? tokenAddress : Helper.ERCSat();
+            var input_LockName = $('#ModalLock #input_LockName').val();
             var input_addressOut = $('#ModalLock #input_addressOut').val();
 
             if (input_LockName.indexOf(" ") != -1 || input_LockName.indexOf("   ") != -1) {
-                alert("LockName No spaces or tabs are allowed");
+                alert(Translate.Get("LockName No spaces or tabs are allowed"));
                 return;
             }
 
-            if (CheckTransfer(input_amount, input_addressOut, input_nonce, "", input_LockName))
-            {
+            if (CheckTransfer(input_amount, input_addressOut, input_nonce, "", input_LockName)) {
                 let addressOut = Helper.LockFactory();
                 let data = Helper.StringFormat("approve(\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\")", input_addressOut, input_tokenA, input_amount, lockHeight, input_LockName);
                 let depend = '';
@@ -742,16 +750,31 @@
                 console.log(addressCur + ' ' + data);
 
                 var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, input_nonce, remarks);
-
-                $("#ModalLock").modal('hide');
-                Helper.Statusbar("statusbar", hash, "", "发起锁仓: " + input_addressOut + " 序号: " + lockHeight, 1, input_nonce);
-
-                Helper.MessageBox('发起锁仓已提交');
+                if (hash != null) {
+                    $("#ModalLock").modal('hide');
+                    Helper.Statusbar("statusbar", hash, "", Translate.Get("发起锁仓: ") + input_addressOut + Translate.Get(" 序号: ") + lockHeight, 1, input_nonce);
+                    Helper.MessageBox(Translate.Get('发起锁仓已提交'));
+                }
             }
         }
 
-        Helper.Statusbar();
+        function QueryStats() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/Stats",
+                dataType: "text",
+                type: "get",
+                data: { style: "1" },
+                success: function (data) {
 
+                    var element = document.getElementById("statsLabel");
+                    element.innerHTML = data;
+
+                },
+                error: function (err) {
+                }
+            });
+        }
+        QueryStats();
 
     </script>
 

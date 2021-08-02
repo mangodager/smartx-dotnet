@@ -11,13 +11,38 @@
     <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="js/mystyle.css" type="text/css" rel="stylesheet">
 
-    <!--自定义样式-->
-    <!--<style>
-        .jumbotron {
-            background: url(images/model.png);
+    <!--ModalContract-->
+    <style>
+        .modal.fade.in {
+            top: 15%;
         }
-    </style>-->
+
+        fieldset {
+            background-color: #f1f1f1;
+            border: none;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            padding: 0 .625em;
+        }
+
+        label {
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: left;
+            width: 80px;
+            vertical-align: top;
+        }
+
+        input {
+            font-size: inherit;
+            width: 300px;
+        }
+    </style>
+
 </head>
+
 <body>
     <script src="bootstrap/jquery.min.js"></script>
     <script src="bootstrap/bootstrap.min.js"></script>
@@ -38,99 +63,133 @@
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
 
     <div class="container" id="body_container">
 
         <div class="jumbotron">
             <h1>SmartX <small id="statsLabel" style="font-size: 50%"></small></h1>
-            <!--<button type="button" class="btn btn-danger" onclick="OnClear()">清空</button>-->
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
+            &nbsp;&nbsp;
+            <div class="btn-group">
+                <button type="button" class="btn btn-danger dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
+                    <center id="poolurl">PoolList&nbsp;&nbsp;<span class="caret"></span></center>
+                </button>
+                <div class="dropdown-menu" id="poollist" style="min-width:100%;">
+                </div>
+            </div>
+            &nbsp;&nbsp;
+            <button type="button" class="btn btn-success" onclick='OnConsole()'>console</button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
         </div>
-
+        <h1> </h1>
 
         <div class="row">
             <div class="col-lg-2"></div>
             <div class="col-lg-1">
-                <h4>账户:</h4>
+                <h4 class="lang" key="账户:"></h4>
                 <h4></h4>
             </div><!-- /.col-lg-6 -->
             <div class="col-lg-5">
                 <div class="input-group">
                     <input type="text" id="searchText" class="form-control" placeholder="Address ...">
                     <span class="input-group-btn">
-                        <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>搜索</button>
+                        <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'><div class="lang" key="查找!"></div></button>
                     </span>
                 </div><!-- /input-group -->
             </div><!-- /.col-lg-6 -->
         </div><!-- /.row -->
         <h4></h4>
 
-        <div class="row">
-            <div class="col-lg-1"></div>
-            <div class="col-lg-3">
-                <h4 id="miner_count" style='text-align:left;'></h4>
-            </div>
-            <div class="col-lg-3">
-                <h4 id="totalPower" style='text-align:center;'></h4>
-            </div>
-            <div class="col-lg-3">
-                <h4 id="miner_amount" style='text-align:right;'></h4>
-            </div>
+        <!--<div class="row">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-3">
+            <h4 id="miner_Fee" style='text-align:left;'>Fee:</h4>
         </div>
-
+        <div class="col-lg-3">
+            <h4 id="miner_ver" style='text-align:center;'>Ver:</h4>
+        </div>
+        <div class="col-lg-3">
+            <h4 id="miner_state" style='text-align:right;'></h4>
+        </div>
+    </div>-->
 
         <div style="width:100%;height:100%;overflow-x:auto;">
-            <table class="table table-hover" id="billtable">
-                <caption id="bill_caption_mytable111">账单列表:</caption>
-                <thead id="bill_mytable111">
+            <table class="table table-hover" id="miner_info">
+                <caption id="miner_caption_mytable111" class="lang" key=""></caption>
+                <thead id="iner_info_mytable111">
                     <tr>
-                        <th>时间</th>
-                        <th>金额</th>
-                        <th>交易 ID</th>
-                        <th>状态</th>
+                        <th class="lang" key="矿池名"></th>
+                        <th class="lang" key="矿机数"></th>
+                        <th class="lang" key="总算力"></th>
+                        <th class="lang" key="有效提交"></th>
+                        <th class="lang" key="预计分账"></th>
                     </tr>
                 </thead>
             </table>
         </div>
-        <div style='text-align:center;' div id='BillsBtn'>
-            <button type="button" class="btn btn-default" onclick='BillsOnclickUp()'> 上 一 页</button>
-            &nbsp;&nbsp;&nbsp;
-            <button type="button" class="btn btn-default" onclick='BillsOnclickDown()'> 下 一 页</button>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="billtable">
+                <caption id="bill_caption_mytable111" class="lang" key="账单列表:"></caption>
+                <thead id="bill_mytable111">
+                    <tr>
+                        <th class="lang" key="时间"></th>
+                        <th class="lang" key="金额"></th>
+                        <th class="lang" key="交易 ID"></th>
+                        <th class="lang" key="状态"></th>
+                    </tr>
+                </thead>
+            </table>
         </div>
+
+        <div style='text-align:center;' div id='BillsBtn'>
+            <button type="button" class="btn btn-default" onclick='BillsOnclickUp()'><div class="lang" key="上 一 页"></div></button>
+            &nbsp;&nbsp;&nbsp;
+            <button type="button" class="btn btn-default" onclick='BillsOnclickDown()'><div class="lang" key="下 一 页"></div></button>
+        </div>
+
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="minertable">
-                <caption id="miner_caption_mytable111">矿机列表:</caption>
+                <caption id="miner_caption_mytable111" class="lang" key="矿机列表:(平均算力仅供参考，请以实际收益为准)"></caption>
                 <thead id="miner_mytable111">
                     <tr>
-                        <th>编号</th>
-                        <th>矿机名</th>
-                        <th>实时算力</th>
-                        <th>平均算力</th>
+                        <th><div class="lang" key="编号"></div></th>
+                        <th><div class="lang" key="矿机名"></div></th>
+                        <th><div class="lang" key="实时算力"></div></th>
+                        <th><div class="lang" key="平均算力"></div></th>
                     </tr>
                 </thead>
             </table>
         </div>
         <div style='text-align:center;' div id='MinersBtn'>
-            <button type="button" class="btn btn-default" onclick='MinersOnclickUp()'> 上 一 页</button>
+            <button type="button" class="btn btn-default" onclick='MinersOnclickUp()'><div class="lang" key="上 一 页"></div></button>
             &nbsp;&nbsp;&nbsp;
-            <button type="button" class="btn btn-default" onclick='MinersOnclickDown()'> 下 一 页</button>
+            <button type="button" class="btn btn-default" onclick='MinersOnclickDown()'><div class="lang" key="下 一 页"></div></button>
         </div>
 
     </div>
 
     <footer class="navbar-fixed-bottom navbar-inverse">
         <div class="row nav_box">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
     <script>
+        function OnRefresh(e) {
+            liOnSearch("searchText");
+        };
+        function OnConsole(e) {
+            window.location.href = "console.html?poolUrl=" + poolUrl;
+        };
 
         let MinersCurIndex = 0;
-        let BillsCurIndex  = 0;
+        let BillsCurIndex = 0;
 
         function MinersOnclickUp() {
             var temp = MinersCurIndex;
@@ -172,7 +231,7 @@
                 var pair = vars[i].split("=");
                 if (pair[0] == variable) { return pair[1]; }
             }
-            return (false);
+            return ("");
         }
 
         Login.Init();
@@ -182,17 +241,21 @@
         var colorindex = 1;
 
         var addressCur = getQueryVariable("address");
-        if (addressCur!="")
+        if (addressCur != "")
             $('#searchText').val(addressCur);
+
+        var poolUrl = getQueryVariable("poolUrl");
+        if (poolUrl == "" || poolUrl == null || poolUrl == 'null')
+            poolUrl = Helper.GetPoolIP();
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
-            window.location.href = "pool.html?address=" + text;
+            window.location.href = "pool.html?address=" + text + "&poolUrl=" + poolUrl;
         }
 
         function QueryStats() {
             $.ajax({
-                url: Helper.GetServerIP() + "/Stats",
+                url: poolUrl + "/PoolStats",
                 dataType: "text",
                 type: "get",
                 data: { style: "2" },
@@ -208,15 +271,116 @@
         }
         QueryStats();
 
-        function ShowMiners(address)
-        {
+        // ============================
+        function InitPoolList() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/GetPoolList",
+                dataType: "text",
+                type: "get",
+                data: { style: "2" },
+                success: function (data) {
+                    var poollist = JSON.parse(data);
+                    if (poollist.length > 0) {
+                        for (var key in poollist) {
+                            var value = poollist[key];
+                            var array = value.split("##");
+                            Helper.PoolList[array[0]] = array[1];
+                            Helper.PoolList[array[1]] = array[0];
+                        }
+                    }
+
+                    {
+                        var innerHTML2 = "<li role='separator' class='divider'></li>";
+                        var item_new = document.createElement("tbody");
+                        item_new.innerHTML = innerHTML2;
+                        document.getElementById("poollist").appendChild(item_new.firstChild);
+
+                        for (var key in Helper.PoolList) {
+                            var value = Helper.PoolList[key];
+                            var array = value.split("##");
+                            if (array[0].indexOf("http://") != 0) {
+                                innerHTML1 = "<a class=\"dropdown-item\" href=\"#\" style=\"user-select:none\" onclick=\"onClickCommand('" + array[0] + "')\"><center>" + array[0] + "</center></a>"
+                                item_new = document.createElement("tbody");
+                                item_new.innerHTML = innerHTML1;
+                                document.getElementById("poollist").appendChild(item_new.firstChild);
+
+                                item_new = document.createElement("tbody");
+                                item_new.innerHTML = innerHTML2;
+                                document.getElementById("poollist").appendChild(item_new.firstChild);
+                            }
+                        }
+
+                    }
+
+                    var element = document.getElementById("poolurl");
+                    element.innerHTML = Helper.PoolList[poolUrl] + "&nbsp;&nbsp;<span class='caret'></span>";
+
+                    ShowMinersAbstract(addressCur);
+                },
+                error: function (err) {
+                }
+            });
+        }
+        InitPoolList();
+
+        function onClickCommand(e) {
+            var element = document.getElementById("poolurl");
+            element.innerHTML = e + "&nbsp;&nbsp;<span class='caret'></span>";
+            Helper.SetPoolIP(Helper.PoolList[e]);
+            window.location.href = "pool.html?address=" + addressCur + "&poolUrl=" + Helper.PoolList[e];
+        }
+
+        // ============================
+        async function ShowMinersAbstract(address) {
+            if (address == null || address == "")
+                return;
+            // 删除之前的数据
+            var mytableEle2 = document.getElementById("miner_info");
+            for (var i = mytableEle2.children.length - 1; i >= 0; i--) {
+                if (mytableEle2.children[i].id.indexOf("_mytable111") == -1)
+                    mytableEle2.children[i].remove();
+            }
+
+            for (var key in Helper.PoolList) {
+                var value = Helper.PoolList[key];
+                var array = value.split("##");
+                if (array[0].indexOf("http://") != 0) {
+
+                    QueryMinersAbstract(array[0], key, address)
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+
+        }
+
+        function QueryMinersAbstract(poolname,rul, address) {
             if (address == null || address == "")
                 return;
             $.ajax({
-                url: Helper.GetServerIP() + "/Command",
+                url: rul + "/Command",
                 dataType: "text",
                 type: "get",
-                data: "".concat("input=miner ", address, " ", BillsCurIndex ," 10 " , MinersCurIndex , " 10") ,
+                data: "".concat("input=minerabstract ", address),
+                success: function (data) {
+                    if (data != "no miner" && data != "{ \"ret\": \"failed\" }") {
+                        var minerView = JSON.parse(data);
+                        var amount_cur = Helper.Fix(minerView["amount_cur"]);
+                        Helper.TableInsert("miner_info", poolname, "list-group-item-success", poolname,minerView.totalMiners, minerView["totalPower"], minerView["share"], amount_cur);
+                    }
+                },
+                error: function (err) {
+                }
+            });
+        }
+
+        function ShowMinersAddr(address) {
+            if (address == null || address == "")
+                return;
+            $.ajax({
+                url: poolUrl + "/Command",
+                dataType: "text",
+                type: "get",
+                data: "".concat("input=miner ", address, " ", BillsCurIndex, " 10 ", MinersCurIndex, " 10"),
                 success: function (data) {
                     if (data != "no miner" && data != "{ \"ret\": \"failed\" }") {
                         // 删除之前的数据
@@ -259,27 +423,18 @@
 
                             var amount = new BigNumber(transfers[key]["amount"]).toFormat();
 
-                            var state = "完成";
+                            var state = Translate.Get("完成");
                             var hash = transfers[key]["hash"];
                             if (hash == null) {
                                 hash = "";
-                                state= "正在转"
                             }
+                            if (hash == "" && amount != "0") {
+                                state = "正在转"
+                            }
+                            //state = " <button type=\"button\" class=\"btn btn-warning\" style='height:24px' onclick='liOnReSend('" + transfers[key]['data'] + "')'>" + Translate.Get("正在转") + "</button>";
 
                             Helper.TableInsert("billtable", hash, color, transfers[key]["depend"], amount, hash, state);
                         }
-
-                        var element = document.getElementById("miner_count");
-                        element.innerHTML = " 矿机数: " + minerView.totalMiners;
-
-                        var amount_cur = new BigNumber(minerView["amount_cur"]).toFormat();
-                        var element = document.getElementById("miner_amount");
-                        if ( (""+amount_cur) == "NaN" )
-                            amount_cur = "0";
-                        element.innerHTML = " 未分账: " + amount_cur;
-
-                        var element = document.getElementById("totalPower");
-                        element.innerHTML = " 总算力: " + minerView["totalPower"];
 
                         window.location.hash = '#MinersBtn';
                     }
@@ -288,7 +443,78 @@
                 }
             });
         }
+
+        function ShowMinersTop(address) {
+            if (!(address == null || address == ""))
+                return;
+
+            $.ajax({
+                url: poolUrl + "/Command",
+                dataType: "text",
+                type: "get",
+                data: "".concat("input=minertop ", MinersCurIndex, " 10"),
+                success: function (data) {
+                    if (data != "no miner" && data != "{ \"ret\": \"failed\" }") {
+                        // 删除之前的数据
+                        var mytableEle1 = document.getElementById("minertable");
+                        for (var i = mytableEle1.children.length - 1; i >= 0; i--) {
+                            if (mytableEle1.children[i].id.indexOf("_mytable111") == -1)
+                                mytableEle1.children[i].remove();
+                        }
+                        var mytableEle2 = document.getElementById("billtable");
+                        for (var i = mytableEle2.children.length - 1; i >= 0; i--) {
+                            if (mytableEle2.children[i].id.indexOf("_mytable111") == -1)
+                                mytableEle2.children[i].remove();
+                        }
+
+                        var minerView = JSON.parse(data);
+
+                        // miners
+                        var miners = minerView["miners"];
+                        var index = 1;
+
+                        // 排序
+                        var arr = new Array();
+                        for (var key in miners) {
+                            arr.push({ key: key, number: miners[key]["number"] });
+                        }
+                        //arr = arr.sort(function (a, b) { return a.number.localeCompare(b.number) })
+
+                        for (var i = 0; i < arr.length; i++) {
+                            var key = arr[i].key;
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                            Helper.TableInsert("minertable", index, color, index + MinersCurIndex, miners[key]["number"], miners[key]["power_cur"], miners[key]["power_average"]);
+                            index++;
+                        }
+                    }
+                },
+                error: function (err) {
+                }
+            });
+
+        }
+
+        function liOnclick(e) {
+            //alert(e.id);
+            if (e.id.indexOf("->") != -1)
+                onClickCommand(e.id);
+            else
+                Helper.ShowTransfer(e.id)
+        };
+
+        function liOnReSend(e) {
+            alert(e);
+        };
+
+        function ShowMiners(address) {
+            ShowMinersAddr(address);
+            ShowMinersTop(address);
+        }
+
         ShowMiners(addressCur);
+
+        Helper.Statusbar();
 
     </script>
 

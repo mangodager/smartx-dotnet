@@ -272,28 +272,29 @@ form {
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
 
     <div class="container">
 
         <div class="jumbotron">
             <h1>SmartX-dotnet <small id="statsLabel" style="font-size: 50%"></small></h1>
-            <button type="button" class="btn btn-primary" onclick='OnRefresh()'>刷新</button>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
             &nbsp;&nbsp;&nbsp;&nbsp;
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
 
         <table class="table table-hover" id="LocksLabel">
             <thead id="thead_mytable111">
                 <tr>
-                    <th style="user-select:none">名称</th>
-                    <th style='user-select:none;text-align:center;'>种类</th>
-                    <th style='user-select:none;text-align:center;'>金额</th>
-                    <th style='user-select:none;text-align:right;'>取回状态</th>
+                    <th style="user-select:none" class="lang" key="名称"></th>
+                    <th style='user-select:none;text-align:center;' class="lang" key="种类"></th>
+                    <th style='user-select:none;text-align:center;' class="lang" key="金额"></th>
+                    <th style='user-select:none;text-align:right;' class="lang" key="取回状态"></th>
                 </tr>
             </thead>
         </table>
 
-        </div>
     </div>
 
     <footer class="navbar-fixed-bottom ">
@@ -304,10 +305,10 @@ form {
             </div>
         </center>
         <div class="row nav_box navbar-inverse">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
@@ -379,7 +380,7 @@ form {
                 error: function (err) {
                 }
             });
-            setTimeout(function () { OnRefreshAmount(); }, 3000);
+            setTimeout(function () { OnRefreshAmount(); }, 15000);
         }
         OnRefreshAmount();
 
@@ -417,8 +418,7 @@ form {
             })
         }
 
-        TableInsert3 = function () 
-        {
+        TableInsert3 = function () {
             var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='liOnLockRetrieved(this)'>";
             innerHTML = innerHTML.replace(/myid/g, arguments[1]);
             innerHTML = innerHTML.replace(/mycolor/g, arguments[2]);
@@ -474,7 +474,7 @@ form {
                             state = "小于1分钟后可取回"
                 }
                 let tokenA = await getSymbol(jsonObj[key].tokenA);
-                TableInsert3("LocksLabel", jsonObj[key].LockHeight, color, jsonObj[key].Name, tokenA,jsonObj[key].Amount, state);
+                TableInsert3("LocksLabel", jsonObj[key].LockHeight, color, jsonObj[key].Name, tokenA, jsonObj[key].Amount, state);
             }
         }
 
@@ -496,12 +496,12 @@ form {
             console.log(addressOut + ' ' + data);
 
             var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            Retrieved_Transfer_Hash[LockHeight] = hash;
-
-            $("#ModalPledge").modal('hide');
-            Helper.Statusbar("statusbar", hash, "", "合约: " + addressOut + " 取回锁仓,序号: " + LockHeight, 1, nonceCur);
-            Helper.MessageBox('取回锁仓已提交');
-
+            if (hash != null) {
+                Retrieved_Transfer_Hash[LockHeight] = hash;
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", "合约: " + addressOut + " 取回锁仓,序号: " + LockHeight, 1, nonceCur);
+                Helper.MessageBox('取回锁仓已提交');
+            }
         }
 
         Helper.Statusbar();

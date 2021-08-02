@@ -746,5 +746,8 @@ namespace XLua
 #endif
             }
         }
+
+        public int ExecuteNum = 0;  // yuxj add
+
     }
 }

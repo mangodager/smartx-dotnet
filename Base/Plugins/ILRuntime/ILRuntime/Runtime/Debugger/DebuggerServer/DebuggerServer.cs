@@ -44,7 +44,7 @@ namespace ILRuntime.Runtime.Debugger
             mainLoop = new Thread(new ThreadStart(this.NetworkLoop));
             mainLoop.Start();
 
-            this.listener = new TcpListener(port);
+            this.listener = new TcpListener(System.Net.IPAddress.Any, port);
             try { listener.Start(); }
             catch
             {

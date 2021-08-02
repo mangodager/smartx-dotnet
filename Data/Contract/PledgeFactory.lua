@@ -19,7 +19,7 @@ function pairCreated(tokenA,amountInA)
 
 	local pairs_sender = luaDB.GetValue("pairs",sender);
 	lualib.Assert( pairs_sender == nil , "PAIR_EXISTS");
-
+	
 	-- tokenC
 	local  dataC = string.format("create(\"PledgeLock\",\"EPL\",\"%s\")",tokenA);
     local tokenC = lualib.Create(dataC,"PledgeLock");
@@ -40,11 +40,20 @@ function getPair(_owner)
 end
 
 function getFeeToSetter()
-	return "dQWeCkqPqRKw9q6ehB8gTxvCVRQKa3pDN","0.0001";
+	return "SMaRtxCeEXZopHLvQmxjAkkZtD5LLQmNf","0.0001";
 	--return Storages.feeTo,"0.0001";
 end
 
+function cancel(addressPair,_lockHeight)
+	local pairs = luaDB.GetValue("pairs",addressPair);
+	lualib.Assert( pairs ~= nil , "PAIR_NOT_EXISTS");
 
+	local dataA = string.format("getLockAddress()");
+    local lockAddress = lualib.Call(addressPair,dataA)[0];
+
+	local dataC = string.format("cancel(\"%s\",\"%s\",\"%s\")",addressPair,sender,_lockHeight);
+	local relC = lualib.Call(lockAddress,dataC);
+end
 
 
 

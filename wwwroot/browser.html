@@ -38,26 +38,28 @@
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
 
 
     <div class="container" id="body_container">
 
         <div class="jumbotron">
             <h1>SmartX</h1>
-            <button type="button" class="btn btn-primary" onclick='OnRefresh()'>刷新</button>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
         </div>
         <h4></h4>
         <div class="col-lg-6">
             Block:
-            <button type="button" class="btn  btn-default" onclick='liOnclickUp()'>上 一 页</button>
-            <button type="button" class="btn  btn-default" onclick='liOnclickDown()'>下 一 页</button>
+            <button type="button" class="btn  btn-default" onclick='liOnclickUp()'><div class="lang" key="上 一 页"></div></button>
+            <button type="button" class="btn  btn-default" onclick='liOnclickDown()'><div class="lang" key="下 一 页"></div></button>
             <h4></h4>
         </div>
         <div class="col-lg-6">
             <div class="input-group">
                 <input type="text" id="searchText" class="form-control">
                 <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'><div class="lang" key="查找!"></div></button>
                 </span>
             </div>
             <h4></h4>
@@ -87,10 +89,10 @@
 
     <footer class="navbar-fixed-bottom navbar-inverse">
         <div class="row nav_box">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
@@ -117,7 +119,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="liOnBlockInfoLeave()">
-                        离开
+                        <div class="lang" key="离开"></div>
                     </button>
                 </div>
             </div>
@@ -140,15 +142,13 @@
         function liOnSearch(e) {
             var text = $('#' + e).val();
             var index = new BigNumber(text);
-            if( index.isFinite() )
-            {
+            if (index.isFinite()) {
                 browserIndexCur = index.toNumber();
                 if (browserIndexCur > browserIndexMax)
                     browserIndexCur = 0;
                 onBrowserInit();
             }
-            else
-            {
+            else {
                 ShowBlock(text);
             }
         }
@@ -172,12 +172,19 @@
                             var jsonObj = JSON.parse(data);
                             for (var key in jsonObj) {
                                 var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                                if (key != "linksblk" && key != "linkstran") {
+                                if (key == "timestamp") {
                                     var tempValue = jsonObj[key];
                                     if (typeof (tempValue) == 'object')
                                         tempValue = JSON.stringify(tempValue);
-                                    Helper.TableInsert("BlockInfoTable", key, color, key, tempValue)
+                                    Helper.TableInsert("BlockInfoTable", key, color, key, tempValue + " (" + Helper.formatDate(tempValue) + ")")
                                 }
+                                else
+                                    if (key != "linksblk" && key != "linkstran") {
+                                        var tempValue = jsonObj[key];
+                                        if (typeof (tempValue) == 'object')
+                                            tempValue = JSON.stringify(tempValue);
+                                        Helper.TableInsert("BlockInfoTable", key, color, key, tempValue)
+                                    }
                             }
 
                             for (var key in jsonObj["linksblk"]) {
@@ -191,8 +198,7 @@
                             }
                             $("#BlockInfo").modal('show');
                         }
-                        else
-                        {
+                        else {
                             Helper.ShowTransfer(text);
                         }
                     },
@@ -286,6 +292,8 @@
             onBrowserInit();
 
         };
+
+        Helper.Statusbar();
 
     </script>
 

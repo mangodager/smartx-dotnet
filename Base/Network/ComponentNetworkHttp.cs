@@ -105,6 +105,60 @@ namespace ETModel
             }
         }
 
+        public static async Task<string> QueryString(string url, HttpMessage request)
+        {
+            string jsonModel = JsonHelper.ToJson(request.map);
+            using (WebClient wc = new WebClient())
+            {
+                //发送到服务端并获得返回值
+                var returnInfo = await wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false);
+                var str = System.Text.Encoding.UTF8.GetString(returnInfo); //把服务端返回的信息转成字符串
+                return str;
+            }
+        }
+
+
+        public static HttpMessage QuerySync(string url, HttpMessage request, float timeout = 1)
+        {
+            string jsonModel = JsonHelper.ToJson(request.map);
+            var timepass = new TimePass(timeout);
+            using (WebClient wc = new WebClient())
+            {
+                //发送到服务端并获得返回值
+                var awaiter = wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false).GetAwaiter();
+                while (!awaiter.IsCompleted)
+                {
+                    System.Threading.Thread.Sleep(10);
+                    if (timepass.IsPassOnce())
+                        return null;
+                }
+                var str = System.Text.Encoding.UTF8.GetString(awaiter.GetResult()); //把服务端返回的信息转成字符串
+                //var str = HttpClient.Post(url, jsonModel);
+                HttpMessage response = new HttpMessage();
+                response.map = JsonHelper.FromJson<Dictionary<string, string>>(str);
+                return response;
+            }
+        }
+
+        public static string QueryStringSync(string url, HttpMessage request, float timeout = 1)
+        {
+            string jsonModel = JsonHelper.ToJson(request.map);
+            var timepass = new TimePass(timeout);
+            using (WebClient wc = new WebClient())
+            {
+                //发送到服务端并获得返回值
+                var awaiter = wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false).GetAwaiter();
+                while (!awaiter.IsCompleted)
+                {
+                    System.Threading.Thread.Sleep(10);
+                    if (timepass.IsPassOnce())
+                        return null;
+                }
+                var str = System.Text.Encoding.UTF8.GetString(awaiter.GetResult()); //把服务端返回的信息转成字符串
+                return str;
+            }
+        }
+
         //public async void TestRun()
         //{
         //    await Task.Delay(3000);

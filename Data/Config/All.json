@@ -3,7 +3,7 @@
     "appType": "All",
 
     "NodeSessions": [
-      "192.168.1.105:58601"
+      "0.0.0.0:58600"
     ],
 
     "ComponentNetworkInner": {
@@ -32,12 +32,11 @@
 
 
     "Consensus": {
-      "transferShow" : true
+      "transferShow" : true,
     },
 
     "Rule": {
       "Run": true
-
     },
 
     "SmartxRpc": {

@@ -70,11 +70,11 @@
         var value1 = document.getElementById(e + "1").value;
         var value2 = document.getElementById(e + "2").value;
         if (value1 != value2) {
-            alert("两次输入不一样");
+            alert(Translate.Get("两次输入不一样"));
         }
         else
         if (value1 == "") {
-            alert("不可以为空");
+            alert(Translate.Get("不可以为空"));
         }
         else {
             Login.Create(value1);
@@ -125,7 +125,7 @@
             window.location.href = window.location.href;
         }
         else {
-            alert("密码错误");
+            alert(Translate.Get("密码错误"));
         }
     }
 

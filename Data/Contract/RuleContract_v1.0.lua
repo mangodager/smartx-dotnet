@@ -10,6 +10,13 @@ function create()
 		Rule.Start   = curHeight
 		Rule.End     = -1
 		Rule.LBH     = curHeight
+
+
+		local data = string.format("getPair(\"%s\")",sender);
+		local contract = lualib.Call(lualib.PledgeFactory(),data);
+		Rule.Contract = contract[0]
+
+
 		table.insert(Storages.Rules,Rule)
 	end
 end

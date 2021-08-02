@@ -87,13 +87,16 @@
     <script src='js/hashes.js'></script>
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
+    <script src="js/translate.js"></script>
 
 
     <div class="container">
 
         <div class="jumbotron">
             <h1>SmartX</h1>
-            <button type="button" class="btn btn-primary" onclick='OnSave()'>保存</button>
+            <button type="button" class="btn btn-primary" onclick='OnSave()'><div class="lang" key="保存"></div></button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
+
         </div>
 
         <h1> </h1>
@@ -104,7 +107,7 @@
         <fieldset>
             <p> </p>
             <p>
-                <label for="title">服务器地址:</label>
+                <label for="title" class="lang" key="节点http地址:"></label>
                 <input type="text" id="serverIP" name="serverIP" align="left">
             </p>
 
@@ -123,10 +126,10 @@
 
     <footer class="navbar-fixed-bottom navbar-inverse">
         <div class="row nav_box">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
@@ -145,12 +148,13 @@
             var SSFAddress = $('#SSFAddress').val();
             Helper.SetSSFAddress(SSFAddress)
 
-            
+
         };
 
         $('#serverIP').val(Helper.GetServerIP());
         $('#SSFAddress').val(Helper.GetSSFAddress());
 
+        Helper.Statusbar();
 
     </script>
 

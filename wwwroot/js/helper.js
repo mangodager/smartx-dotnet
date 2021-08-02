@@ -17,13 +17,26 @@
     Helper.GetServerIP = function () {
         var serverIP = localStorage.getItem("serverIP");
         if (serverIP == null || serverIP=="")
-            serverIP = "http://www.SmartX.com:8004";
+            serverIP = "http://www.SmartX.com:8101";
         return serverIP;
     }
 
     Helper.SetServerIP = function (serverIP) {
         localStorage.setItem("serverIP", serverIP);
     }
+
+    Helper.GetPoolIP = function () {
+        var poolIP = localStorage.getItem("poolIP");
+        if (poolIP == null || poolIP == "" || poolIP == 'null')
+            poolIP = "http://www.SmartX.com:8101";
+        return poolIP;
+    }
+
+    Helper.SetPoolIP = function (poolIP) {
+        localStorage.setItem("poolIP", poolIP);
+    }
+
+    Helper.PoolList = {}
 
     Helper.GetSSFAddress = function () {
         var SSFAddress = localStorage.getItem("SSFAddress");
@@ -145,23 +158,23 @@
         else
         if(arguments[4]==2) {
             innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-danger");
-            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #af0000'> \
-            失败 \
-            </th>";
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #af0000'> "
+            Translate.Get("失败") + 
+            "</th>";
         }
         else
         if(arguments[4]==3) {
             innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-success");
-            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> \
-            完成 \
-            </th>";
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> "
+            Translate.Get("完成") + 
+            "</th>";
         }
         else
         if(arguments[4]==4) {
             innerHTML = innerHTML.replace(/mycolor/g, "list-group-item-success");
-            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> \
-            丢失 \
-            </th>";
+            innerHTML += "<th style='width:10%;height:100%;overflow-x:hidden;text-align:center;color: #00af05'> "
+            Translate.Get("丢失") + 
+            "</th>";
         }
         innerHTML += '</tr ></tbody>';
 
@@ -209,12 +222,13 @@
                 }
             });
         }, timestamp3 > 0 ? timestamp3 : 3000 );
-
     }
 
-    Helper.Statusbar = function ()
-    {
-        if(arguments.length==0) {
+    Helper.Statusbar = function () {
+        if (arguments.length == 0) {
+            Helper.Redirect();
+
+            Translate.Init();
             var jsonStr   = localStorage.getItem("Statusbar");
             if(jsonStr!=null)
             {
@@ -255,12 +269,38 @@
             localStorage.setItem("Statusbar", jsonStr);
             
             Helper.StatusbarInsert(arguments[0],arguments[1],arguments[2],arguments[3],arguments[4],arguments[5],arguments[6]);
-        }
+            }
+
+    }
+
+    Helper.Redirect = function ()
+    {
+        if (window.location.href.indexOf("Redirect=1") != -1)
+            return;
+        $.ajax({
+            url: Helper.GetServerIP() + "/Redirect",
+            dataType: "text",
+            type: "get",
+            data: { style: "2" },
+            success: function (data) {
+                if (data.indexOf("redirect ") == 0) {
+                    // 重定向
+                    window.location.href = data.split(" ")[1] + "/pool.html?Redirect=1&poolUrl=http://" + window.location.host;
+                    return;
+                }
+            },
+            error: function (err) {
+            }
+            });
     }
 
     Helper.MessageBox = function ()
     {
-        if(arguments.length==1&&arguments[0]!=null) {
+        if (arguments.length == 1 && arguments[0] != null) {
+            if (document.body.item_new != null) {
+                document.body.removeChild(document.body.item_new);
+            }
+
             // ModalMessageBox
             var innerHTML = "\
                 <div class='modal fade' id='ModalMessageBox' data-backdrop='static' tabindex='-1' role='dialog' aria-labelledby='ModalMessageLabel' aria-hidden='true' style='top:10%;'>\
@@ -279,9 +319,9 @@
             ";
             innerHTML = innerHTML.replace(/######/g, arguments[0]);
             
-            var item_new = document.createElement("div");
-            item_new.innerHTML = innerHTML;
-            document.body.appendChild(item_new);
+            document.body.item_new = document.createElement("div");
+            document.body.item_new.innerHTML = innerHTML;
+            document.body.appendChild(document.body.item_new);
 
             $("#ModalMessageBox").modal('show');
             setTimeout(function(){$("#ModalMessageBox").modal('hide');},"1000");
@@ -416,11 +456,12 @@
     {
         if (Login.LoadPassword() == null) {
             alert("password is null!");
-            return;
+            return null;
         }
         // 取秘钥
         var addressKeyPair = Wallet.LoadFromAddress(addressCur, Login.LoadPassword());
         if (addressKeyPair == null) {
+            alert("Please import the Keystore first!");
             window.location.href = "index.html";
             return;
         }
@@ -454,37 +495,40 @@
                     var rel = jsonObj["rel"];
                     switch (rel) {
                         case -1:
-                            text = "节点无出块权限";
+                            text = Translate.Get("节点无出块权限");
                             break;
                         case -2:
-                            text = "验证错误";
+                            text = Translate.Get("验签错误");
                             break;
                         case -3:
-                            text = "余额小于0.002,无法扣除手续费";
+                            text = Translate.Get("余额小于0.002,无法扣除手续费");
                             break;
                         case -4:
-                            text = "转出账户不存在";
+                            text = Translate.Get("转出账户不存在");
                             break;
                         case -5:
-                            text = "转出余额不足";
+                            text = Translate.Get("转出余额不足");
                             break;
                         case -6:
-                            text = "小数点后位数超过8";
+                            text = Translate.Get("小数点后位数超过8");
                             break;
                         case -7:
-                            text = "节点拥堵";
+                            text = Translate.Get("节点拥堵");
                             break;
                         case -8:
-                            text = "出入地址相同";
+                            text = Translate.Get("出入地址相同");
                             break;
                         case -9:
-                            text = "交易已存在";
+                            text = Translate.Get("交易已存在");
                             break;
                         case -10:
-                            text = "转出地址无效";
+                            text = Translate.Get("转入地址无效");
+                            break;
+                        case -11:
+                            text = Translate.Get("交易包大小超过限制");
                             break;
                     }
-                    alert("提交失败: " + text);
+                    alert(Translate.Get("提交失败: ") + text);
                     Helper.liOnTransferInfoDelete(hash);
                 }
 
@@ -495,7 +539,7 @@
                 }
             },
             error: function (err) {
-                alert("网络连接错误!");
+                alert(Translate.Get("网络连接错误!"));
             }
         });
         return hash;
@@ -547,11 +591,11 @@
         bb = Helper.Fix(bb);
 
         if(aa==""||aa=="NaN") {
-            alert("请输入数额");
+            alert(Translate.Get("请输入数额"));
             return false;
         }
         if(new BigNumber(aa).isLessThanOrEqualTo(new BigNumber("0"))) {
-            alert("数额必须大于0");
+            alert(Translate.Get("数额必须大于0"));
             return false;
         }
         //if(aa!="0"&&new BigNumber(aa).isGreaterThan(new BigNumber(bb))) {
@@ -559,7 +603,7 @@
         //    return false;
         //}
         if(cc!=null&&new BigNumber(aa).isLessThan(new BigNumber(cc))) {
-            alert("数额必须大于: "+cc);
+            alert(Translate.Get("数额必须大于: ")+cc);
             return false;
         }
         return true;
@@ -591,13 +635,13 @@
                             </div>\
                             <div class=\"modal-footer\">\
                                 <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoResend(event)\" id = \"TransferInfoResend\" >\
-                                    重发\
+                                    <div class=\"lang\" key=\"重发\"></div>\
                                 </button>\
                                 <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoDelete(event)\">\
-                                    删除\
+                                    <div class=\"lang\" key=\"删除\"></div>\
                                 </button>\
                                 <button type=\"button\" class=\"btn btn-primary\" onclick=\"Helper.liOnTransferInfoLeave(event)\">\
-                                    离开\
+                                    <div class=\"lang\" key=\"离开\"></div>\
                                 </button>\
                             </div>\
                         </div>\
@@ -609,6 +653,8 @@
             item_new.innerHTML = innerHTML;
             document.body.appendChild(item_new);
             $("#TransferInfo").modal('hide');
+
+            Translate.Init();
         }
     }
 
@@ -637,18 +683,25 @@
                         var jsonObj = JSON.parse(data);
                         for (var key in jsonObj) {
                             var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+                            if (key == "timestamp") {
+                                var tempValue = jsonObj[key];
+                                if (typeof (tempValue) == 'object')
+                                    tempValue = JSON.stringify(tempValue);
+                                Helper.TableInsert("TransferInfoTable", key, color, key, tempValue + " (" + Helper.formatDate(tempValue) + ")")
+                            }
+                            else
                             if (key != "linksblk" && key != "linkstran") {
                                 Helper.TableInsert("TransferInfoTable", key, color, key, jsonObj[key])
                             }
                         }
                         var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
 
-                        let state = "交易失败";
+                        let state = Translate.Get("交易失败");
                         if(jsonObj["height"]!=0) {
-                            state = "交易已完成";
+                            state = Translate.Get("交易已完成");
                         }
 
-                        Helper.TableInsert("TransferInfoTable", "state", color, "状态", state)
+                        Helper.TableInsert("TransferInfoTable", "state", color, Translate.Get("状态"), state)
                         document.curshottransferHash = text;
                         $("#TransferInfo").modal('show');
                         $('#TransferInfoResend').attr("disabled",true);
@@ -675,18 +728,18 @@
                             }
                         }
                         
-                        var state = "交易未确认";
+                        var state = Translate.Get("交易未确认");
                         try {
-                            if (new Date().getTime()-parseInt(jsonObj["timestamp"]) > 60000)
-                                state = "交易丢失";
+                            if (new Date().getTime()-parseInt(jsonObj["timestamp"]) > 75000)
+                                state = Translate.Get("交易丢失");
                         }
                         catch{}
                         
                         var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                        Helper.TableInsert("TransferInfoTable", "state", color, "状态", state)
+                        Helper.TableInsert("TransferInfoTable", "state", color, Translate.Get("状态"), state)
                         document.curshottransferHash = text;
                         $("#TransferInfo").modal('show');
-                        if( state == "交易丢失" && (document.ResendlastTime==null||(new Date().getTime())-document.ResendlastTime>30000) ) {
+                        if (state == Translate.Get("交易丢失") && (document.ResendlastTime==null||(new Date().getTime())-document.ResendlastTime>30000) ) {
                             $('#TransferInfoResend').attr("disabled",false);
                         }
                         else {
@@ -695,7 +748,7 @@
                     }
                 },
                 error: function (err) {
-                    alert("网络连接错误!");
+                    alert(Translate.Get("网络连接错误!"));
                 }
             });
         }
@@ -730,7 +783,7 @@
             var str = Helper.GetTransfer(addressCur + tokenAddress,document.curshottransferHash);
             var transferdata = JSON.parse(str);
             if(transferdata.nonce<nonceCur) {
-                alert("transfer nonce已失效！");
+                alert(Translate.Get("transfer nonce 已失效!"));
                 return;
             }
 
@@ -742,17 +795,17 @@
                 success: function (data) {
                     var jsonObj = JSON.parse(data);
                     if (data != "{\"success\":true}") {
-                        alert("提交失败,交易数据出错或者节点无出块权限: " + jsonObj["rel"]);
+                        alert(Translate.Get("提交失败,交易数据出错或者节点无出块权限: ") + jsonObj["rel"]);
                         Helper.liOnTransferInfoDelete(document.curshottransferHash);
                     }
                     if(e!=null) {
-                        alert("交易已重发!");
+                        alert(Translate.Get("交易已重发!"));
                         $("#" + e).modal("hide");
                         //window.location.href = window.location.href;
                     }
                 },
                 error: function (err) {
-                    alert("网络连接错误!");
+                    alert(Translate.Get("网络连接错误!"));
                 }
             });
         }
@@ -782,6 +835,36 @@
             }
         }
         return result;
+    }
+
+    Helper.loadScript = function (url, callback) {
+        var script = document.createElement("script")
+        script.type = "text/javascript";
+        if (script.readyState) { //IE
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    if (callback!=null)callback();
+                }
+            };
+        } else { //Others
+            script.onload = function () {
+                if (callback != null)callback();
+            };
+        }
+        script.src = url;
+        document.head.appendChild(script);
+    }
+
+    Helper.formatDate = function(date) {
+        var date = new Date(date);
+        var YY = date.getFullYear() + '-';
+        var MM = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+        var DD = (date.getDate() < 10 ? '0' + (date.getDate()) : date.getDate());
+        var hh = (date.getHours() < 10 ? '0' + date.getHours() : date.getHours()) + ':';
+        var mm = (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) + ':';
+        var ss = (date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds());
+        return YY + MM + DD + " " + hh + mm + ss;
     }
 
 })(typeof module !== 'undefined' && module.exports ? module.exports : (self.Helper = self.Helper || {}));

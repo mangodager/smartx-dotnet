@@ -39,24 +39,28 @@
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
 
     <div class="container" id="body_container">
 
         <div class="jumbotron">
             <h1>SmartX-dotnet <small id="statsLabel" style="font-size: 50%"></small></h1>
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ModalCreate">创建</button>
-            <button type="button" class="btn btn-success" onclick="OnImport()" >导入</button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ModalCreate"><div class="lang" key="创建"></div></button>
+            <button type="button" class="btn btn-success" onclick="OnImport()"><div class="lang" key="导入"></div></button>
             <!--&nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger" onclick="OnClear()">清空账号</button>-->
+
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
+
         </div>
 
         <h4></h4>
 
         <div style="width: 60%" class="container">
             <div class="input-group">
-                <span class="input-group-addon">账户</span>
+                <span class="input-group-addon lang" key="地址"></span>
                 <input type="text" id="searchText" class="form-control">
                 <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                    <button class="btn btn-default lang" type="button" onclick='liOnSearch("searchText")' key="查找!"></button>
                 </span>
             </div>
         </div>
@@ -68,8 +72,8 @@
                 <!--<caption id="mytable_caption">账户:</caption>-->
                 <thead id="mytable_thead">
                     <tr>
-                        <th>地址</th>
-                        <th style='text-align:right;'>余额</th>
+                        <th><div class="lang" key="地址"></div></th>
+                        <th style='text-align:right;'><div class="lang" key="余额"></div></th>
                     </tr>
                 </thead>
             </table>
@@ -78,17 +82,17 @@
     </div>
 
     <footer class="navbar-fixed-bottom ">
-        <center >
+        <center>
             <div style="width:50%;height:100%;overflow-x:auto;">
                 <table class="table table-hover" id="statusbar" style='background:#ffffff'>
                 </table>
             </div>
         </center>
         <div class="row nav_box navbar-inverse">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
@@ -99,20 +103,19 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         ×
                     </button>
-                    <h4 class="modal-title" id="myModalLabel">
-                        正在创建地址
+                    <h4 class="modal-title lang" id="myModalLabel" key="正在创建地址">
                     </h4>
                 </div>
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">请输入随机数</span>
+                    <span class="input-group-addon lang" id="basic-addon3" key="请输入随机数"></span>
                     <input type="text" class="form-control" id="CreateText" aria-describedby="basic-addon3">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">
-                        取消
+                        <div class="lang" key="取消"></div>
                     </button>
                     <button type="button" class="btn btn-primary" onclick="OnCreate('CreateText')">
-                        提交
+                        <div class="lang" key="提交"></div>
                     </button>
                 </div>
             </div>
@@ -127,8 +130,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                         ×
                     </button>
-                    <h4 class="modal-title" id="myModalLabel">
-                        正在导入地址
+                    <h4 class="modal-title lang" id="myModalLabel" key="正在导入地址">
                     </h4>
                 </div>
                 <div class="input-group">
@@ -137,10 +139,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">
-                        取消
+                        <div class="lang" key="取消"></div>
                     </button>
                     <button type="button" class="btn btn-primary" onclick="OnImportPassword('ImportText')">
-                        导入
+                        <div class="lang" key="导入"></div>
                     </button>
                 </div>
             </div>
@@ -151,21 +153,20 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="myModalLabel">
-                        初始化账本
+                    <h4 class="modal-title lang" id="myModalLabel" key="初始化账本">
                     </h4>
                 </div>
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">输入密码</span>
+                    <span class="input-group-addon lang" id="basic-addon3" key="输入密码"></span>
                     <input type="password" class="form-control" id="PasswprdText1" aria-describedby="basic-addon3">
                 </div>
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">再次输入</span>
+                    <span class="input-group-addon lang" id="basic-addon3" key="再次输入"></span>
                     <input type="password" class="form-control" id="PasswprdText2" aria-describedby="basic-addon3">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="Login.OnCreate('PasswprdText')">
-                        确定
+                        <div class="lang" key="确定"></div>
                     </button>
                 </div>
             </div>
@@ -176,17 +177,16 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="myModalLabel">
-                        输入密码登录
+                    <h4 class="modal-title lang" id="myModalLabel" key="输入密码登录">
                     </h4>
                 </div>
                 <div class="input-group">
-                    <span class="input-group-addon" id="basic-addon3">输入密码</span>
+                    <span class="input-group-addon lang" id="basic-addon3" key="输入密码"></span>
                     <input type="password" class="form-control" id="PasswprdText" aria-describedby="basic-addon3">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" onclick="Login.OnLogin('PasswprdText')">
-                        登录
+                        <div class="lang" key="登录"></div>
                     </button>
                 </div>
             </div>
@@ -213,7 +213,7 @@
 
             var index = Wallet.GetCount(Login.LoadPassword());
             if (index > 100) {
-                alert("数量超出限制");
+                alert(Translate.Get("数量超出限制"));
                 return;
             }
 
@@ -228,7 +228,7 @@
             window.location.href = "index.html";
         };
 
-        // 
+        //
         let selectedFile = null;
         function fileImport() {
             selectedFile = document.getElementById('files').files[0];
@@ -257,18 +257,18 @@
                 var keyPair = Wallet.ImportKeyPair(MnemonicWord);
                 var index = Wallet.GetCount(Login.LoadPassword());
                 if (index > 100) {
-                    alert("数量超出限制");
+                    alert(Translate.Get("数量超出限制"));
                     return;
                 }
 
                 if (Wallet.ToAddress(keyPair.publicKey) != address) {
-                    alert("密码错误!");
+                    alert(Translate.Get("密码错误"));
                     return;
                 }
 
                 var keyPairOld = Wallet.LoadFromAddress(address, Login.LoadPassword());
                 if (keyPairOld != null) {
-                    alert("已存在");
+                    alert(Translate.Get("已存在"));
                     return;
                 }
 
@@ -282,10 +282,10 @@
         //// show address
         //var element = document.getElementById("address");
         //element.innerHTML = address;
-        var addressCur   = "";
+        var addressCur = "";
         var tokenAddress = "";
-        var nonceCur     = 0;
-        
+        var nonceCur = 0;
+
         var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
         var colorindex = 0;
 
@@ -330,17 +330,19 @@
         });
 
         function liOnclick(e) {
-            window.location.href = "property.html?address=" + e.id;
+            if (Wallet.CheckAddress(e.id) || e.id.indexOf('&') != -1) {
+                window.location.href = "property.html?address=" + e.id;
+            }
         };
 
         function liOnSearch(e) {
             var text = $('#' + e).val();
 
-            if(Wallet.CheckAddress(text))
+            if (Wallet.CheckAddress(text))
                 window.location.href = "property.html?address=" + text;
             else
-            if(text.length==64)
-                Helper.ShowTransfer(text);
+                if (text.length == 64)
+                    Helper.ShowTransfer(text);
         }
 
         function QueryStats() {
@@ -362,6 +364,7 @@
         QueryStats();
 
         Helper.Statusbar();
+
     </script>
 
 </body>

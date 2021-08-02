@@ -111,10 +111,10 @@ function _mint(_to)
 	local  MINIMUM_LIQUIDITY = "0"; --"3000";
 	if biglib.Equals(Storages.totalSupply,"0") then
 		liquidity = amountA;
-		--print("mint 1")
+		--print("mint 1 = " .. liquidity)
 	else
 		liquidity = biglib.Div( biglib.Mul(amountA,Storages.totalSupply), Storages.reserveA);
-		--print("mint 2")
+		--print("mint 2 = " .. liquidity)
 	end
 
 	lualib.Assert( biglib.Greater(liquidity,"0") , "PledgePair: INSUFFICIENT_LIQUIDITY_MINTED" )
@@ -138,7 +138,7 @@ function _burn(liquidity)
 	lualib.Assert( biglib.Greater(amountA,"0") , "PledgePair: INSUFFICIENT_LIQUIDITY_BURNED" );
 
 	--lualib.TransferToken(Storages.tokenA,addressThis,sender,amountA);
-	local dataA = string.format("approve(\"%s\",\"%s\",%s)",sender,amountA,"32");
+	local dataA = string.format("approve(\"%s\",\"%s\",%s)",sender,amountA,"207360");
 	local relA  = lualib.Call(Storages.tokenC,dataA);
 	lualib.Assert( relA , "PledgePair: approveA" );
 	
@@ -173,8 +173,13 @@ function allowance(_spender)
 	return lualib.Call(Storages.tokenC,dataC);
 end
 
+function getLockAddress()
+	return Storages.tokenC;
+end
 
 function addLiquidityTo(_to,amountADesired,amountAMin,deadline)
+	lualib.Assert( lualib.IsERC(sender,"PledgePair") or lualib.IsERC(sender,"PledgeLock") , "not a PledgePair or PledgeLock");
+
 	local amountA = amountADesired
 
 	-- 更新Storages.reserveA
@@ -185,10 +190,11 @@ function addLiquidityTo(_to,amountADesired,amountAMin,deadline)
 	local liquidity = _mint(_to);
 
 	--print(rapidjson.encode(Storages) );
-	lualib.TransferEvent(_to, "", "addLiquidity: " .. liquidity);
+	lualib.TransferEvent("", _to, "addLiquidityTo: " .. liquidity);
 end
 
 function diversionLiquidity(liquidity,diversionAddress)
+	lualib.Assert( addressThis ~= diversionAddress , "contract same");
 	lualib.Assert( lualib.IsERC(diversionAddress,"PledgePair") , "not a PledgePair");
 	local dataA    = string.format("getPair(\"%s\")",diversionAddress);
 	local factoryA = lualib.Call(Storages.factory,dataA);
@@ -226,7 +232,6 @@ function diversionLiquidity(liquidity,diversionAddress)
     Storages.totalSupply = biglib.Sub(Storages.totalSupply,liquidity);
 	
 	_update(balanceA,reserveA);
-
 
 end
 

@@ -229,12 +229,12 @@ namespace ETModel
                     byte[] RawUrlFileText = null;
                     if (File.Exists("./wwwroot" + RawUrl))
                     {
-                        RawUrlFileText = File.ReadAllBytes("./wwwroot" + RawUrl);
+                        RawUrlFileText = FileHelper.ReadAllBytes("./wwwroot" + RawUrl);
                     }
                     else
                     if (File.Exists("./wwwroot" + RawUrl + ".html"))
                     {
-                        RawUrlFileText = File.ReadAllBytes("./wwwroot" + RawUrl + ".html");
+                        RawUrlFileText = FileHelper.ReadAllBytes("./wwwroot" + RawUrl + ".html");
                     }
                     if(RawUrl== "/js/helper.js" && RawUrlFileText != null && ReplaceFunc!=null )
                     {

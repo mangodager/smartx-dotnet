@@ -272,40 +272,42 @@ form {
     <script src='js/wallet.js'></script>
     <script src='js/helper.js'></script>
     <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
 
     <div class="container">
 
         <div class="jumbotron">
             <h1>SmartX-dotnet <small id="statsLabel" style="font-size: 50%"></small></h1>
-            <button type="button" class="btn btn-primary" onclick='OnRefresh()'>刷新</button>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
             &nbsp;&nbsp;&nbsp;&nbsp;
-            <button type="button" class="btn btn-info" onclick='OnCreateMyPair()'>创建质押合约</button>
+            <button type="button" class="btn btn-info" onclick='OnCreateMyPair()'><div class="lang" key="创建质押合约"></div></button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
 
         <div style="width: 60%" class="container">
             <div class="input-group">
-                <span class="input-group-addon">合约</span>
+                <span class="input-group-addon lang" key="合约"></span>
                 <input type="text" id="searchText" class="form-control">
                 <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'>Search!</button>
+                    <button class="btn btn-default" type="button" onclick='liOnSearch("searchText")'><div class="lang" key="查找!"></div></button>
                 </span>
             </div>
         </div>
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="mypledge">
-                <caption id="pledgeLabel">我的质押:</caption>
+                <caption id="pledgeLabel" class="lang" key="我的质押:"></caption>
                 <thead>
                     <tr>
-                        <th>合约</th>
-                        <th>资金池</th>
-                        <th>年化率</th>
-                        <th>总额度</th>
-                        <th>我的占比</th>
-                        <th>我的凭证</th>
-                        <th>我的资金</th>
-                        <th>状态</th>
+                        <th class="lang" key="合约"></th>
+                        <th class="lang" key="资金池"></th>
+                        <th class="lang" key="年化率"></th>
+                        <th class="lang" key="总额度"></th>
+                        <th class="lang" key="我的占比"></th>
+                        <th class="lang" key="我的凭证"></th>
+                        <th class="lang" key="我的资金"></th>
+                        <th class="lang" key="状态"></th>
                     </tr>
                 </thead>
             </table>
@@ -313,13 +315,13 @@ form {
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="myrules">
-                <caption id="RulesLabel">质押合约:</caption>
+                <caption id="RulesLabel" class="lang" key="质押合约:"></caption>
                 <thead>
                     <tr>
-                        <th>合约</th>
-                        <th>资金池</th>
-                        <th>年化率</th>
-                        <th>状态</th>
+                        <th class="lang" key="合约">合约</th>
+                        <th class="lang" key="资金池">资金池</th>
+                        <th class="lang" key="年化率">年化率</th>
+                        <th class="lang" key="状态">状态</th>
                     </tr>
                 </thead>
             </table>
@@ -328,28 +330,28 @@ form {
         <div class="modal fade" id="ModalPledge" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="ModalPledgeLabel" aria-hidden="true" style="top:10%;">
             <div class="modal-dialog" style="width:460px;">
                 <div class="modal-content">
-                    
+
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <center><h4 class="modal-title" id="myModalLabel">质押合约</h4></center>
+                        <center><h4 class="modal-title lang" id="myModalLabel" key="质押合约"></h4></center>
                         <center><h4 class="modal-title" id="myLiquidityData" hidden></h4></center>
                     </div>
 
                     <div class="flat-form">
                         <ul class="tabs">
                             <li>
-                                <a href="#swap" class="active">添加</a>
+                                <a href="#swap" class="active lang" key="添加"></a>
                             </li>
                             <li>
-                                <a href="#Diversion" class="active">转移</a>
+                                <a href="#Diversion" class="active lang" key="转移"></a>
                             </li>
                             <li>
-                                <a href="#Liquidity">取回</a>
+                                <a href="#Liquidity" class="lang" key="取回"></a>
                             </li>
                         </ul>
                         <div id="swap" class="form-action show">
                             <div style="height: 8px; user-select:none"></div>
-                            <div id="myModalAmount" >余额:</div>
+                            <div id="myModalAmount" class="lang" key="余额:"></div>
                             <div style="height: 10px; user-select:none"></div>
                             <div class="input-group">
                                 <div class="input-group-btn">
@@ -357,126 +359,126 @@ form {
                                         <div id='swap_tokenA'>SAT</div><span class="caret"></span>
                                     </button>
                                 </div><!-- /btn-group -->
-                                <input type="text" class="form-control" id='swap_A' placeholder="0.0" style="height: 36px;"  >
+                                <input type="text" class="form-control" id='swap_A' placeholder="0.0" style="height: 36px;">
                             </div><!-- /input-group -->
                             <form>
                                 <ul>
                                     <div style="height: 10px; user-select:none"></div>
-                                    <h5 id='ModalPledgeParam_1'>合约地址:</h5>
-                                    <h5 id='ModalPledgeParam_2'>总额度:</h5>
-                                    <h5 id='ModalPledgeParam_3'>年化率:</h5>
-                                    <h5 id='ModalPledgeParam_4'>我的额度:</h5>
-                                    <h5 id='ModalPledgeParam_5'>节点状态:</h5>
+                                    <h5 id='ModalPledgeParam_1' class="lang" key="合约地址:"></h5>
+                                    <h5 id='ModalPledgeParam_2' class="lang" key="总额度:"></h5>
+                                    <h5 id='ModalPledgeParam_3' class="lang" key="年化率:"></h5>
+                                    <h5 id='ModalPledgeParam_4' class="lang" key="我的额度:"></h5>
+                                    <h5 id='ModalPledgeParam_5' class="lang" key="节点状态:"></h5>
                                     <div style="height: 10px; user-select:none"></div>
-                                    <center><button type="button" class="btn btn-primary" onclick="onLiquiditySubmit()" style="width: 50%;">添加</button></center>
+                                    <center><button type="button" class="btn btn-primary lang" onclick="onLiquiditySubmit()" style="width: 50%;" key="添加"></button></center>
                                 </ul>
                             </form>
                         </div>
                         <!--/#login.form-action-->
                         <div id="Diversion" class="form-action hide">
-                                <div class="input-group">
-                                    <h5 id='Diversion_Amount'>可用凭证:</h5>
-                                    <span class="input-group-btn">
-                                        <h5 id='Diversion_TotalSupply'>凭证占比:</h5>
-                                    </span>
-                                </div>
-                                <div style="height: 10px; user-select:none"></div>
-                                <input type="text" id="Diversion_Get" class="form-control" placeholder="填入可用凭证" onkeyup='return onchangeLiquidity_Get(event)' onchange='return onchangeLiquidity_Get(event)'>
+                            <div class="input-group">
+                                <h5 id='Diversion_Amount' class="lang" key="可用凭证:"></h5>
+                                <span class="input-group-btn">
+                                    <h5 id='Diversion_TotalSupply' class="lang" key="凭证占比:"></h5>
+                                </span>
+                            </div>
+                            <div style="height: 10px; user-select:none"></div>
+                            <input type="text" id="Diversion_Get" class="form-control" placeholder="input voucher" onkeyup='return onchangeLiquidity_Get(event)' onchange='return onchangeLiquidity_Get(event)'>
 
-                                <div style="height: 10px; user-select:none"></div>
+                            <div style="height: 10px; user-select:none"></div>
 
-                                <div class="btn-group btn-group-justified" role="group" aria-label="...">
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >25%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >50%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >75%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >100%</button>
-                                    </div>
+                            <div class="btn-group btn-group-justified" role="group" aria-label="...">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">25%</button>
                                 </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">50%</button>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">75%</button>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">100%</button>
+                                </div>
+                            </div>
 
-                                <div style="height: 10px; user-select:none"></div>
-                                <h5>转移资产:</h5>
-                                <div class="input-group">
-                                    <div class="input-group-btn" disabled>
-                                        <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);">
-                                            <div id='Diversion_tokenA'>SAT</div><span class="caret"></span>
-                                        </button>
-                                    </div>
-                                    <input type="text" class="form-control" id='Diversion_A' placeholder="0.0" style="height: 36px;" disabled>
+                            <div style="height: 10px; user-select:none"></div>
+                            <h5 class="lang" key="转移资产:"></h5>
+                            <div class="input-group">
+                                <div class="input-group-btn" disabled>
+                                    <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);">
+                                        <div id='Diversion_tokenA'>SAT</div><span class="caret"></span>
+                                    </button>
                                 </div>
-                                <div style="height: 10px; user-select:none"></div>
-                                <h5>转移至:</h5>
-                                <input type="text" id="Diversion_Address" placeholder="质押合约地址" class="form-control">
-                                <div style="height: 10px; user-select:none"></div>
-                                <center><h5 style="coloruser-select:none;color:red">质押转移将会扣除手续费:0.01%</h5></center>
+                                <input type="text" class="form-control" id='Diversion_A' placeholder="0.0" style="height: 36px;" disabled>
+                            </div>
+                            <div style="height: 10px; user-select:none"></div>
+                            <h5 class="lang" key="转移至:"></h5>
+                            <input type="text" id="Diversion_Address" placeholder="Pledge Address" class="form-control">
+                            <div style="height: 10px; user-select:none"></div>
+                            <center><h5 style="coloruser-select:none;color:red" class="lang" key="质押转移将会扣除手续费:0.01%"></h5></center>
                             <form>
                                 <ul>
                                     <div style="height: 15px; user-select:none"></div>
-                                    <center><button type="button" class="btn btn-primary" onclick="onDiversionSubmit()" style="width: 50%;">转移</button></center>
+                                    <center><button type="button" class="btn btn-primary lang" onclick="onDiversionSubmit()" style="width: 50%;" key="转移"></button></center>
                                 </ul>
                             </form>
 
                         </div>
                         <div id="Liquidity" class="form-action hide">
-                                <div class="input-group">
-                                    <h5 id='Liquidity_Amount'>可用凭证:</h5>
-                                    <span class="input-group-btn">
-                                        <h5 id='Liquidity_TotalSupply'>凭证占比:</h5>
-                                    </span>
-                                </div>
-                                <div style="height: 10px; user-select:none"></div>
-                                <input type="text" id="Liquidity_Get" class="form-control" placeholder="填入可用凭证" onkeyup='return onchangeLiquidity_Get(event)' onchange='return onchangeLiquidity_Get(event)'>
+                            <div class="input-group">
+                                <h5 id='Liquidity_Amount' class="lang" key="可用凭证:"></h5>
+                                <span class="input-group-btn">
+                                    <h5 id='Liquidity_TotalSupply' class="lang" key="凭证占比:"></h5>
+                                </span>
+                            </div>
+                            <div style="height: 10px; user-select:none"></div>
+                            <input type="text" id="Liquidity_Get" class="form-control" placeholder="input voucher" onkeyup='return onchangeLiquidity_Get(event)' onchange='return onchangeLiquidity_Get(event)'>
 
-                                <div style="height: 10px; user-select:none"></div>
+                            <div style="height: 10px; user-select:none"></div>
 
-                                <div class="btn-group btn-group-justified" role="group" aria-label="...">
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >25%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >50%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >75%</button>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)" >100%</button>
-                                    </div>
+                            <div class="btn-group btn-group-justified" role="group" aria-label="...">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">25%</button>
                                 </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">50%</button>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">75%</button>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-default" onclick="onLiquidityPerClick(event)">100%</button>
+                                </div>
+                            </div>
 
-                                <div style="height: 10px; user-select:none"></div>
-                                <h5>取回资产:</h5>
-                                <div class="input-group">
-                                    <div class="input-group-btn" disabled>
-                                        <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);">
-                                            <div id='Liquidity_tokenA'>SAT</div><span class="caret"></span>
-                                        </button>
-                                    </div>
-                                    <input type="text" class="form-control" id='Liquidity_A' placeholder="0.0" style="height: 36px;" disabled>
+                            <div style="height: 10px; user-select:none"></div>
+                            <h5 class="lang" key="取回资产:"></h5>
+                            <div class="input-group">
+                                <div class="input-group-btn" disabled>
+                                    <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);">
+                                        <div id='Liquidity_tokenA'>SAT</div><span class="caret"></span>
+                                    </button>
                                 </div>
-                                <div style="height: 10px; user-select:none"></div>
+                                <input type="text" class="form-control" id='Liquidity_A' placeholder="0.0" style="height: 36px;" disabled>
+                            </div>
+                            <div style="height: 10px; user-select:none"></div>
                             <form>
                                 <ul>
                                     <div style="height: 15px; user-select:none"></div>
-                                    <center><button type="button" class="btn btn-primary" onclick="onLiquidityRemove()" style="width: 50%;">取回</button></center>
+                                    <center><button type="button" class="btn btn-primary lang" onclick="onLiquidityRemove()" style="width: 50%;" key="取回"></button></center>
                                 </ul>
                             </form>
 
                             <div style="height: 24px; user-select:none"></div>
                             <div style="width:100%;height:100%;overflow-x:auto;">
                                 <table class="table table-hover" id="ModalPledgeTable">
-                                    <caption id="caption_mytable111" style="user-select:none;text-align:center;background-color:#ffeeee;">取回状态:</caption>
+                                    <caption id="caption_mytable111" style="user-select:none;text-align:center;background-color:#ffeeee;" class="lang" key="取回状态:"></caption>
                                     <thead id="thead_mytable111">
                                         <tr>
-                                            <th style="user-select:none">序号</th>
-                                            <th style='user-select:none;text-align:center;'>金额</th>
-                                            <th style='user-select:none;text-align:right;'>状态</th>
+                                            <th style="user-select:none" class="lang" key="序号"></th>
+                                            <th style='user-select:none;text-align:center;' class="lang" key="金额"></th>
+                                            <th style='user-select:none;text-align:right;' class="lang" key="状态"></th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -495,12 +497,12 @@ form {
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                    <center><h4 class="modal-title" id="myModalLabel">创建质押合约</h4></center>
+                    <center><h4 class="modal-title lang" id="myModalLabel" key="创建质押合约"></h4></center>
                 </div>
                 <form>
                     <ul>
                         <div style="height: 10px; user-select:none"></div>
-                        <h5>资金池:</h5>
+                        <h5 class="lang" key="资金池:"></h5>
                         <div class="input-group">
                             <div class="input-group-btn" disabled>
                                 <button type="button" class="btn btn-default dropdown-toggle" style="height: 36px; width: 82px; background-color: rgb(253 214 91);">
@@ -512,59 +514,82 @@ form {
                         <div style="height: 10px; user-select:none"></div>
 
                         <div style="height: 24px; user-select:none"></div>
-                        <center><button type="button" class="btn btn-primary" onclick="OnCreateMyPair2()" style="width: 50%;">创建</button></center>
+                        <center><button type="button" class="btn btn-primary lang" onclick="OnCreateMyPair2()" style="width: 50%;" key="创建"></button></center>
                         <div style="height: 10px; user-select:none"></div>
                     </ul>
                 </form>
-                
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="delcfmModel">
+        <div class="modal-dialog">
+            <div class="modal-content message_align">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                    <p class="modal-title lang" key="确认信息"></p>
+                </div>
+                <div class="modal-body">
+                    <div style="height: 10px; user-select:none"></div>
+                    <center><h4 id="delcfmMsg" class="lang" key="您确认要撤销取回吗?"></h4></center>
+                    <div style="height: 10px; user-select:none"></div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="submitUrl" />
+                    <a onclick="CancelSubmit()" class="btn btn-success lang" data-dismiss="modal" key="提交"></a>
+                    <button type="button" class="btn btn-default lang" data-dismiss="modal" key="离开"></button>
+                </div>
             </div>
         </div>
     </div>
 
     <footer class="navbar-fixed-bottom ">
-        <center >
+        <center>
             <div style="width:50%;height:100%;overflow-x:auto;">
                 <table class="table table-hover" id="statusbar" style='background:#ffffff'>
                 </table>
             </div>
         </center>
         <div class="row nav_box navbar-inverse">
-            <div class="qx_1"><a href="index.html"><h3 class="text-primary">钱包</h3></a></div>
-            <div class="qx_1"><a href="browser.html"><h3 class="text-success">区块</h3></a></div>
-            <div class="qx_1"><a href="rules.html"><h3 class="text-danger">节点</h3></a></div>
-            <div class="qx_1"><a href="setting.html"><h3 class="text-warning">设置</h3></a></div>
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
 
     <script>
-        (function( $ ) {
+        (function ($) {
             // constants
             var SHOW_CLASS = 'show',
                 HIDE_CLASS = 'hide',
                 ACTIVE_CLASS = 'active';
-            
-            $( '.tabs' ).on( 'click', 'li a', function(e){
-                e.preventDefault();
-                var $tab = $( this ),
-                    href = $tab.attr( 'href' );
-            
-                $( '.active' ).removeClass( ACTIVE_CLASS );
-                $tab.addClass( ACTIVE_CLASS );
-            
-                $( '.show' )
-                    .removeClass( SHOW_CLASS )
-                    .addClass( HIDE_CLASS )
-                    .hide();
-                
-                $(href)
-                    .removeClass( HIDE_CLASS )
-                    .addClass( SHOW_CLASS )
-                    .hide()
-                    .fadeIn( 550 );
-            });
-        })( jQuery );
 
-        
+            $('.tabs').on('click', 'li a', function (e) {
+                e.preventDefault();
+                var $tab = $(this),
+                    href = $tab.attr('href');
+
+                $('.active').removeClass(ACTIVE_CLASS);
+                $tab.addClass(ACTIVE_CLASS);
+
+                $('.show')
+                    .removeClass(SHOW_CLASS)
+                    .addClass(HIDE_CLASS)
+                    .hide();
+
+                $(href)
+                    .removeClass(HIDE_CLASS)
+                    .addClass(SHOW_CLASS)
+                    .hide()
+                    .fadeIn(550);
+            });
+        })(jQuery);
+
+
         function liOnclick(e) {
             //alert(e.id);
         };
@@ -572,7 +597,7 @@ form {
             window.location.href = window.location.href;
         };
 
-        
+
         function OnCreateMyPair(e) {
             $("#ModalCreate").modal('show');
 
@@ -592,28 +617,28 @@ form {
             });
 
         };
-        
+
         function OnCreateMyPair_async(e) {
-            if(e==null) {
-                alert("合约已存在");
+            if (e == null) {
+                alert(Translate.Get("合约已存在"));
                 return;
             }
             let amountADesired = $("#ModalCreate_A").val();
 
-            if(!Helper.CheckAmount(amountADesired,amountCur,"100000")) {
+            if (!Helper.CheckAmount(amountADesired, amountCur, "100000")) {
                 return;
             }
 
             let addressOut = Helper.PledgeFactory();
-            let data    = 'pairCreated(\"' + Helper.ERCSat() + '\",\"' + Helper.Fix(amountADesired) + '\")';
-            let depend  = '';
+            let data = 'pairCreated(\"' + Helper.ERCSat() + '\",\"' + Helper.Fix(amountADesired) + '\")';
+            let depend = '';
             let remarks = '';
 
-            console.log( data );
+            console.log(data);
 
             var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            Helper.Statusbar("statusbar",hash,"","创建质押合约: " + Helper.Fix(amountADesired), 1, nonceCur);
-            Helper.MessageBox('创建质押合约已提交');
+            Helper.Statusbar("statusbar", hash, "", Translate.Get("创建质押合约: ") + Helper.Fix(amountADesired), 1, nonceCur);
+            Helper.MessageBox(Translate.Get('创建质押合约已提交'));
             $("#ModalCreate").modal('hide');
         }
 
@@ -627,7 +652,7 @@ form {
 
         if (Login.LoadPassword() == null)
             window.location.href = "index.html";
-            
+
         // 地址栏参数
         function getQueryVariable(variable, search) {
             if (search == null)
@@ -641,10 +666,10 @@ form {
             return (false);
         }
 
-        var addressCur   = getQueryVariable("address");
+        var addressCur = getQueryVariable("address");
         var tokenAddress = "";
-        var amountCur    = 0;
-        var nonceCur     = 0;
+        var amountCur = 0;
+        var nonceCur = 0;
         var colorindex = 1
         var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
         var platform = Helper.checkPlatform();
@@ -660,12 +685,12 @@ form {
                     var amount = new BigNumber(jsonObj["amount"]).toFormat();
                     var nonce = parseInt(jsonObj["nonce"]);
                     amountCur = amount;
-                    nonceCur  = nonce + 1;
+                    nonceCur = nonce + 1;
                 },
                 error: function (err) {
                 }
             });
-            setTimeout(function(){OnRefreshAmount();}, 3000 );
+            setTimeout(function () { OnRefreshAmount(); }, 15000);
         }
         OnRefreshAmount();
 
@@ -680,8 +705,8 @@ form {
 
                     var element = document.getElementById("statsLabel");
                     element.innerHTML = data;
-                    
-                    var height = data.split(" ")[0].replace("H:","");
+
+                    var height = data.split(" ")[0].replace("H:", "");
                     curHeight = parseInt(height);
 
                 },
@@ -689,47 +714,49 @@ form {
                 }
             });
         }
-        QueryStats();        
-        
+        QueryStats();
+
         let jsonRules = null;
-        $.ajax({
-            url: Helper.GetServerIP() + "/Rules",
-            dataType: "text",
-            type: "get",
-            data: { get: "all" },
-            success: function (data) {
+        function ShowRules() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/Rules",
+                dataType: "text",
+                type: "get",
+                data: { get: "all" },
+                success: function (data) {
 
-                var jsonObj = JSON.parse(data);
-                jsonRules = jsonObj;
-                var index = 0;
-                for (var key in jsonObj) {
+                    var jsonObj = JSON.parse(data);
+                    jsonRules = jsonObj;
+                    var index = 0;
+                    for (var key in jsonObj) {
 
-                    var color = colorlist[colorindex % colorlist.length]; colorindex++;
-                    if(jsonObj[key]["Contract"]!=null)
-                    {
-                        index++;
+                        var color = colorlist[colorindex % colorlist.length]; colorindex++;
+                        if (jsonObj[key]["Contract"] != null && parseInt(jsonRules[key]["LBH"]) > (curHeight - 120) ) {
+                            index++;
 
-                        var annualizedYield = new BigNumber( Helper.Div(Helper.GetRewardRule(),jsonObj[key]["Amount"]) ).toFormat(0);
+                            var annualizedYield = new BigNumber(Helper.Div(Helper.GetRewardRule(), jsonObj[key]["Amount"])).toFormat(0);
 
-                        var item = Helper.TableInsert("myrules", jsonObj[key]["Contract"], color,
-                            Helper.Simplify(jsonObj[key]["Contract"], platform),
-                            jsonObj[key]["Amount"],
-                            Helper.Fix(annualizedYield)+"%",
-                            "良好");
-                        item.innerHTML = item.innerHTML.replace(/liOnclick/g, "liOnPledge");                            
+                            var item = Helper.TableInsert("myrules", jsonObj[key]["Contract"], color,
+                                Helper.Simplify(jsonObj[key]["Contract"], platform),
+                                jsonObj[key]["Amount"],
+                                Helper.Fix(annualizedYield) + "%",
+                                Translate.Get("良好"));
+                            item.innerHTML = item.innerHTML.replace(/liOnclick/g, "liOnPledge");
+                        }
                     }
+
+                    var element = document.getElementById("RulesLabel");
+                    element.innerHTML = Translate.Get("质押合约:") + " " + index;
+
+                    onLiquidityInit();
+                },
+                error: function (err) {
+                    //alert("提交失败");
                 }
+            });
+        }
+        setTimeout(function () { ShowRules(); }, 10);
 
-                var element = document.getElementById("RulesLabel");
-                element.innerHTML = "质押合约: " + index;
-
-                onLiquidityInit();
-            },
-            error: function (err) {
-                //alert("提交失败");
-            }
-        });
-        
         function onLiquidityInit() {
             colorindex = 1;
 
@@ -737,12 +764,12 @@ form {
                 url: Helper.GetServerIP() + "/GetLiquidity",
                 dataType: "text",
                 type: "get",
-                data: { Address: addressCur,Factory: Helper.PledgeFactory(),Pair:"PledgePair"},
+                data: { Address: addressCur, Factory: Helper.PledgeFactory(), Pair: "PledgePair" },
                 success: function (data) {
                     onLiquidityInit_async(data);
                 },
                 error: function (err) {
-                    alert("没有找到可用节点");
+                    alert(Translate.Get("没有找到可用节点"));
                 }
             });
         }
@@ -752,8 +779,8 @@ form {
                 colorindex = 1;
                 var jsonObj = JSON.parse(data);
                 for (var key in jsonObj) {
-                    var array    = JSON.parse(jsonObj[key]);
-                    if(array[7]==false)
+                    var array = JSON.parse(jsonObj[key]);
+                    if (array[7] == false)
                         continue;
                     var address = array[0];
                     var symbol1 = array[1];
@@ -762,36 +789,34 @@ form {
                     let totalSupply = new BigNumber(array[6]);
 
                     let per = (liquidity.multipliedBy(100).dividedBy(totalSupply).toFormat());
-                    if(per=="NaN")
+                    if (per == "NaN")
                         per = "0";
 
-                    var state = "离线";
+
+                    var state = Translate.Get("离线");
                     for (var key2 in jsonRules) {
-                        if(jsonRules[key2]["Contract"]==address)
-                        {
-                            state = "良好";
+                        if (jsonRules[key2]["Contract"] == address && parseInt(jsonRules[key2]["LBH"]) > (curHeight - 120) ) {
+                            state = Translate.Get("良好");
                             break;
                         }
                     }
 
-                    var annualizedYield = new BigNumber( Helper.Div(Helper.GetRewardRule(),array[3]) ).toFormat(0);
+                    var annualizedYield = new BigNumber(Helper.Div(Helper.GetRewardRule(), array[3])).toFormat(0);
 
-                    var profit = Helper.Div( Helper.Mul(array[3], liquidity), totalSupply) ;
+                    var profit = Helper.Div(Helper.Mul(array[3], liquidity), totalSupply);
 
                     var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                    var item  = Helper.TableInsert("mypledge", address, color, address, array[3],Helper.Fix(annualizedYield)+"%",totalSupply,Helper.Fix(per)+"%",liquidity,Helper.Fix(profit),state);
+                    var item = Helper.TableInsert("mypledge", address, color, address, array[3], Helper.Fix(annualizedYield) + "%", totalSupply, Helper.Fix(per) + "%", liquidity, Helper.Fix(profit), state);
                     item.innerHTML = item.innerHTML.replace(/liOnclick/g, "liOnPledge");
                 }
             }
         }
 
-        function liOnPledge(e) 
-        {
+        function liOnPledge(e) {
             ShowPledgePair(e.id);
         }
 
-        function liOnSearch(e) 
-        {
+        function liOnSearch(e) {
             var text = $('#' + e).val();
 
             if (text != "") {
@@ -799,8 +824,7 @@ form {
             }
         }
 
-        function ShowPledgePair(text) 
-        {
+        function ShowPledgePair(text) {
             var calldata = "liquidityOf(\"" + addressCur + "\",\"" + Helper.PledgeFactory() + "\")";
 
             $.ajax({
@@ -815,43 +839,42 @@ form {
                     let liquidity = new BigNumber(jsonObj[5]);
                     let totalSupply = new BigNumber(jsonObj[6]);
                     let per = (liquidity.multipliedBy(100).dividedBy(totalSupply).toFormat());
-                    if(per=="NaN")
+                    if (per == "NaN")
                         per = "0";
                     per = Helper.Fix(per);
 
-                    var annualizedYield = new BigNumber( Helper.Div(Helper.GetRewardRule(),jsonObj[3]) ).toFormat(0);
+                    var annualizedYield = new BigNumber(Helper.Div(Helper.GetRewardRule(), jsonObj[3])).toFormat(0);
 
-                    var state = "离线";
+                    var state = Translate.Get("离线");
                     for (var key2 in jsonRules) {
-                        if(jsonRules[key2]["Contract"]==text)
-                        {
-                            state = "良好";
+                        if (jsonRules[key2]["Contract"] == text && parseInt(jsonRules[key2]["LBH"]) > (curHeight - 120)) {
+                            state = Translate.Get("良好");
                             break;
                         }
                     }
 
                     $("#ModalPledge").modal('show');
-                    $("#myModalAmount").html("余额: " + amountCur);
-                    $("#ModalPledgeParam_1").html("地址: " + text);
-                    $("#ModalPledgeParam_2").html("总凭证: "  + jsonObj[3]);
-                    $("#ModalPledgeParam_3").html("年化率: "  + Helper.Fix(annualizedYield) + "%");
-                    $("#ModalPledgeParam_4").html("我的凭证: " + Helper.Fix(liquidity));
-                    $("#ModalPledgeParam_5").html("节点状态: " + state);
+                    $("#myModalAmount").html(Translate.Get("余额:") + " " + amountCur);
+                    $("#ModalPledgeParam_1").html(Translate.Get("地址:") + " " + text);
+                    $("#ModalPledgeParam_2").html(Translate.Get("总凭证:") + " " + jsonObj[3]);
+                    $("#ModalPledgeParam_3").html(Translate.Get("年化率:") + " " + Helper.Fix(annualizedYield) + "%" + " " + Translate.Get("(冷启动期间收益只有1/3)") );
+                    $("#ModalPledgeParam_4").html(Translate.Get("我的凭证:") + " " + Helper.Fix(liquidity));
+                    $("#ModalPledgeParam_5").html(Translate.Get("节点状态:") + " " + state);
 
-                    $("#myLiquidityData").html( data );
+                    $("#myLiquidityData").html(data);
                     $('#swap_A').val('');
-                    
-                    $("#Liquidity_Amount").html("可用凭证: " + Helper.Fix(liquidity));
-                    $("#Liquidity_TotalSupply").html( "凭证占比:"+ per + '%' );
+
+                    $("#Liquidity_Amount").html(Translate.Get("可用凭证:") + " " + Helper.Fix(liquidity));
+                    $("#Liquidity_TotalSupply").html(Translate.Get("凭证占比:") + " " + per + '%');
                     $("#Liquidity_Get").val('');
                     $("#Liquidity_A").val('');
 
-                    $("#Diversion_Amount").html("可用凭证: " + Helper.Fix(liquidity));
-                    $("#Diversion_TotalSupply").html( "凭证占比:"+ per + '%' );
+                    $("#Diversion_Amount").html(Translate.Get("可用凭证:") + " " + Helper.Fix(liquidity));
+                    $("#Diversion_TotalSupply").html(Translate.Get("凭证占比:") + " " + per + '%');
                     $("#Diversion_Get").val('');
                     $("#Diversion_A").val('');
                     $('#Diversion_Address').val('');
-                    
+
                     onModalPledgeTable(jsonObj);
                 },
                 error: function (err) {
@@ -859,8 +882,7 @@ form {
             });
         }
 
-        TableInsert3 = function () 
-        {
+        TableInsert3 = function () {
             var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='liOnclick(this)'>";
             innerHTML = innerHTML.replace(/myid/g, arguments[1]);
             innerHTML = innerHTML.replace(/mycolor/g, arguments[2]);
@@ -875,9 +897,8 @@ form {
             item_new.innerHTML = innerHTML;
             document.getElementById(arguments[0]).appendChild(item_new);
         }
-        
-        function onModalPledgeTable(jsonLiquidity)
-        {
+
+        function onModalPledgeTable(jsonLiquidity) {
             $.ajax({
                 url: Helper.GetServerIP() + "/callFun",
                 dataType: "text",
@@ -899,20 +920,25 @@ form {
                         var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
 
                         var state = "";
-                        if(parseInt(jsonObj[key].LockHeight)<curHeight) {
-                            state = "<button type=\"button\" class=\"btn btn-danger\" onclick='liOnPledgeRetrieved("+ jsonObj[key].LockHeight +")'>取回</button>";
+                        if (parseInt(jsonObj[key].LockHeight) < curHeight) {
+                            state = "<button type=\"button\" class=\"btn btn-danger\" onclick='liOnPledgeRetrieved(" + jsonObj[key].LockHeight + ")'>" + Translate.Get("取回") + "</button>";
                         }
                         else {
                             var height = parseInt(jsonObj[key].LockHeight) - curHeight;
-                            if(new BigNumber(height / 240).toFormat(0)!="0")
-                                state = new BigNumber(height / 240).toFormat(0) + "小时后可取回"
-                            else
-                            if(new BigNumber(height / 240).multipliedBy(60).toFormat(0)!="0")
-                                state = new BigNumber(height / 240).multipliedBy(60).toFormat(0) + "分钟后可取回"
-                            else
-                                state = "小于1分钟后可取回"
+                            if (new BigNumber(height / 240).toFormat(0) != "0") {
+                                state = new BigNumber(height / 240).toFormat(0) + Translate.Get("小时后可取回");
+                            }
+                            else {
+                                if (new BigNumber(height / 240).multipliedBy(60).toFormat(0) != "0") {
+                                    state = new BigNumber(height / 240).multipliedBy(60).toFormat(0) + Translate.Get("分钟后可取回");
+                                }
+                                else {
+                                    state = Translate.Get("小于1分钟后可取回");
+                                }
+                            }
+                            state += " <button type=\"button\" class=\"btn btn-warning\" onclick='liOnPledgeCancel(" + jsonObj[key].LockHeight + ")'>" + Translate.Get("撤销") + "</button>";
                         }
-                        TableInsert3("ModalPledgeTable", jsonObj[key].LockHeight, color, jsonObj[key].LockHeight, jsonObj[key].Amount,state);
+                        TableInsert3("ModalPledgeTable", jsonObj[key].LockHeight, color, jsonObj[key].LockHeight, jsonObj[key].Amount, state);
                     }
                 },
                 error: function (err) {
@@ -920,10 +946,9 @@ form {
             });
         }
 
-        function onLiquidityPerClick(e) 
-        {
-            let per = e.currentTarget.innerHTML.replace("%","");
-            
+        function onLiquidityPerClick(e) {
+            let per = e.currentTarget.innerHTML.replace("%", "");
+
             let array = JSON.parse($("#myLiquidityData").html());
             let reserveA = new BigNumber(array[3]);
             let reserveB = new BigNumber(array[4]);
@@ -931,11 +956,11 @@ form {
             let totalSupply = new BigNumber(array[6]);
 
             let bigper = liquidity.multipliedBy(new BigNumber(per)).dividedBy(100);
-            $("#Liquidity_Get").val(bigper.toFormat());
-            $("#Diversion_Get").val(bigper.toFormat());
-            
+            $("#Liquidity_Get").val(Helper.Fix(bigper));
+            $("#Diversion_Get").val(Helper.Fix(bigper));
+
             reserveA = reserveA.multipliedBy(bigper).dividedBy(totalSupply).toFormat();
-            if(reserveA=="NaN") {
+            if (reserveA == "NaN") {
                 reserveA = "0";
             }
 
@@ -943,9 +968,8 @@ form {
             $("#Diversion_A").val(Helper.Fix(reserveA));
         }
 
-        function onchangeLiquidity_Get(e)
-        {
-            let text = $("#"+e.currentTarget.id).val();
+        function onchangeLiquidity_Get(e) {
+            let text = $("#" + e.currentTarget.id).val();
 
             let array = JSON.parse($("#myLiquidityData").html());
             let reserveA = new BigNumber(array[3]);
@@ -956,7 +980,7 @@ form {
             let bigper = new BigNumber(text);
 
             reserveA = reserveA.multipliedBy(bigper).dividedBy(totalSupply).toFormat();
-            if(reserveA=="NaN") {
+            if (reserveA == "NaN") {
                 reserveA = "0";
             }
 
@@ -967,91 +991,124 @@ form {
             $("#Diversion_A").val(Helper.Fix(reserveA));
         }
 
-        function onLiquidityRemove() 
-        {
+        function onLiquidityRemove() {
             let array = JSON.parse($("#myLiquidityData").html());
             let liquidity = $("#Liquidity_Get").val();
 
             let addressOut = array[0];
-            let data    = 'removeLiquidity(\"' + Helper.Fix(liquidity) + '\")';
-            let depend  = '';
+            let data = 'removeLiquidity(\"' + Helper.Fix(liquidity) + '\")';
+            let depend = '';
             let remarks = '';
 
-            console.log( addressOut + ' ' + data );
+            console.log(addressOut + ' ' + data);
 
-            if(!Helper.CheckAmount(liquidity,array[5])) {
+            if (!Helper.CheckAmount(liquidity, array[5])) {
                 return;
             }
 
             var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            $("#ModalPledge").modal('hide');
-            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 取回质押: " + Helper.Fix(liquidity),1,nonceCur);
-            Helper.MessageBox('取回质押已提交');
+            if (hash != null) {
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + " " + Translate.Get("解除质押") + ": " + Helper.Fix(liquidity), 1, nonceCur);
+                Helper.MessageBox(Translate.Get('解除质押已提交'));
+            }
         }
 
-        function onDiversionSubmit()
-        {
+        function onDiversionSubmit() {
             let array = JSON.parse($("#myLiquidityData").html());
             let liquidity = $("#Liquidity_Get").val();
             let diversion = $("#Diversion_Address").val();
 
             let addressOut = array[0];
-            let data    = 'diversionLiquidity(\"' + Helper.Fix(liquidity) + '\",\"' + diversion +'\")';
-            let depend  = '';
+            let data = 'diversionLiquidity(\"' + Helper.Fix(liquidity) + '\",\"' + diversion + '\")';
+            let depend = '';
             let remarks = '';
 
-            console.log( addressOut + ' ' + data );
+            console.log(addressOut + ' ' + data);
 
-            if(!Helper.CheckAmount(liquidity,array[5])) {
+            if (!Helper.CheckAmount(liquidity, array[5])) {
                 return;
             }
 
-            var hash =  Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            $("#ModalPledge").modal('hide');
-            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 转移质押: " + Helper.Fix(liquidity) ,1,nonceCur);
-            Helper.MessageBox('转移质押已提交');
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            if (hash != null) {
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + " " + Translate.Get("转移质押") + ": " + Helper.Fix(liquidity), 1, nonceCur);
+                Helper.MessageBox(Translate.Get('转移质押已提交'));
+            }
         }
 
-        function onLiquiditySubmit()
-        {
+        function onLiquiditySubmit() {
             let array = JSON.parse($("#myLiquidityData").html());
             let amountADesired = $('#swap_A').val();
             let swap_B_Min = amountADesired;
 
-            if(!Helper.CheckAmount(amountADesired,amountCur)) {
+            if (!Helper.CheckAmount(amountADesired, amountCur,"1000")) {
+                return;
+            }
+
+            if (new BigNumber(Helper.Add(amountADesired, "0.002")).isGreaterThan(new BigNumber(Helper.Fix(amountCur)))) {
+                alert(Translate.Get("余额小于0.002,无法扣除手续费"));
                 return;
             }
 
             let addressOut = array[0];
-            let data    = 'addLiquidity(\"' + Helper.Fix(amountADesired) + '\",\"' + Helper.Fix(swap_B_Min) +'\")';
-            let depend  = '';
+            let data = 'addLiquidity(\"' + Helper.Fix(amountADesired) + '\",\"' + Helper.Fix(swap_B_Min) + '\")';
+            let depend = '';
             let remarks = '';
-            
-            console.log( addressOut + ' ' + data );
-            
-            var hash =  Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            $("#ModalPledge").modal('hide');
-            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 增加质押: " + Helper.Fix(amountADesired),1,nonceCur);
-            Helper.MessageBox('增加质押已提交');
+
+            console.log(addressOut + ' ' + data);
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            if (hash != null) {
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + " " + Translate.Get("增加质押") + ": " + Helper.Fix(amountADesired), 1, nonceCur);
+                Helper.MessageBox(Translate.Get('增加质押已提交'));
+            }
         }
 
-        function liOnPledgeRetrieved(LockHeight) 
-        {
+        function liOnPledgeRetrieved(LockHeight) {
             let array = JSON.parse($("#myLiquidityData").html());
             let addressOut = array[0];
-            let data    = 'retrieved(\"' + LockHeight + '\")';
-            let depend  = '';
+            let data = 'retrieved(\"' + LockHeight + '\")';
+            let depend = '';
             let remarks = '';
 
-            console.log( addressOut + ' ' + data );
+            console.log(addressOut + ' ' + data);
 
-            var hash =  Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
-            $("#ModalPledge").modal('hide');
-            Helper.Statusbar("statusbar",hash,"","合约: " + addressOut +" 取回质押,序号: " + LockHeight, 1, nonceCur);
-            Helper.MessageBox('取回质押已提交');
+            var hash = Helper.SendTransferSubmit(null, "contract", '', addressOut, data, depend, nonceCur, remarks);
+            if (hash != null) {
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + Translate.Get(" 取回质押,序号: ") + LockHeight, 1, nonceCur);
+                Helper.MessageBox(Translate.Get('取回质押已提交'));
+            }
+        }
+
+        let s_LockHeight = 0;
+        function liOnPledgeCancel(LockHeight) {
+            s_LockHeight = LockHeight;
+            $('#delcfmModel').modal();
+            return;
 
         }
 
+        function CancelSubmit() {
+            let array = JSON.parse($("#myLiquidityData").html());
+            let addressOut = array[0];
+            let data = 'cancel(\"' + addressOut + '\",\"' + s_LockHeight + '\")';
+            let depend = '';
+            let remarks = '';
+
+            console.log(Helper.PledgeFactory() + ' ' + data);
+
+            var hash = Helper.SendTransferSubmit(null, "contract", '', Helper.PledgeFactory(), data, depend, nonceCur, remarks);
+            if (hash != null) {
+                $("#ModalPledge").modal('hide');
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + Translate.Get(" 撤销取回,序号: ") + s_LockHeight, 1, nonceCur);
+                Helper.MessageBox(Translate.Get('撤销取回已提交'));
+            }
+
+        }
 
         Helper.Statusbar();
     </script>

@@ -3,12 +3,12 @@
     "appType": "All",
 
     "NodeSessions": [
-      "seednode.smartx.one:57601"
+      "seednode.smartx.one:58600"
     ],
 
     "ComponentNetworkInner": {
       "protocol": "TCP",
-      "address": "0:58602",
+      "address": "0.0.0.0:58601",
       "CheckHearBeat": false,
       "CheckKcpWaitsnd": false
     },
@@ -23,8 +23,8 @@
 
     "LuaVMEnv": {
     },
-    "NodeManager": {
 
+    "NodeManager": {
     },
 
     "BlockMgr": {
@@ -32,12 +32,10 @@
 
 
     "Consensus": {
-      "transferShow" : true
     },
 
     "Rule": {
       "Run": true
-
     },
 
     "SmartxRpc": {
@@ -58,7 +56,6 @@
 
     },
     "HttpPool": {
-      "Entity": "HttpRule",
       "ComponentNetworkHttp": {
         "protocol": "HttpSocket",
         "address": "http://0.0.0.0:9101/"
@@ -73,7 +70,7 @@
       "Entity": "RelayNetwork",
       "ComponentNetworkInner": {
         "protocol": "TCP",
-        "address": "0:57601",
+        "address": "0.0.0.0:57601",
         "CheckHearBeat": false,
         "CheckKcpWaitsnd": false
       },

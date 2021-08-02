@@ -106,20 +106,20 @@ function addLiquidity(amountADesired,amountBDesired,amountAMin,amountBMin,deadli
 	lualib.TransferToken(Storages.tokenA,sender,addressThis,amountA);
 	lualib.TransferToken(Storages.tokenB,sender,addressThis,amountB);
 
-	local liquidity = mint();
+	local liquidity = _mint();
 
 	--print(rapidjson.encode(Storages) );
 	lualib.TransferEvent(sender, "", "addLiquidity: " .. addressThis);
 end
 
-function _mint(_to,value)
+function __mint(_to,value)
 	Storages.totalSupply  = biglib.Add(Storages.totalSupply,value)
 	local value_to = luaDB.GetValue("balances",_to);
     value_to = biglib.Add(value_to,value);
 	luaDB.SetValue("balances",_to,value_to);
 end
 
-function mint()
+function _mint()
 	--lualib.Assert()
     local balanceA = lualib.BalanceOf(Storages.tokenA,addressThis);
     local balanceB = lualib.BalanceOf(Storages.tokenB,addressThis);
@@ -131,16 +131,16 @@ function mint()
 	local  MINIMUM_LIQUIDITY = "0"; --"3000";
 	if biglib.Equals(Storages.totalSupply,"0") then
 		liquidity = biglib.Sub( biglib.Sqrt( biglib.Mul(amountA,amountB) ) , MINIMUM_LIQUIDITY)
-		--print("mint 1")
+		--print("_mint 1")
 	else
 		local  liquidityA = biglib.Div( biglib.Mul(amountA,Storages.totalSupply), Storages.reserveA);
 		local  liquidityB = biglib.Div( biglib.Mul(amountB,Storages.totalSupply), Storages.reserveB);
 		liquidity = biglib.Min( liquidityA, liquidityB);
-		--print("mint 2")
+		--print("_mint 2")
 	end
 
 	lualib.Assert( biglib.Greater(liquidity,"0") , "SatswapPair: INSUFFICIENT_LIQUIDITY_MINTED" )
-    _mint(sender, liquidity);
+    __mint(sender, liquidity);
 
 	_update(balanceA, balanceB, _reserveA, _reserveB);
 
@@ -149,11 +149,11 @@ end
 
 function removeLiquidity(liquidity)
 	transfer(addressThis,liquidity);
-	burn(liquidity)
+	_burn(liquidity)
 
 end
 
-function burn(liquidity)
+function _burn(liquidity)
 
 	local reserveA = Storages.reserveA
 	local reserveB = Storages.reserveB

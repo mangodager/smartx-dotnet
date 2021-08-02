@@ -52,7 +52,7 @@ function approve(_spender, _value, _lockTime)
 
 	local newAllowed = {};
 	newAllowed.Amount = _value;
-	newAllowed.LockHeight = curHeight + _lockTime;
+	newAllowed.LockHeight = tonumber(curHeight) + _lockTime;
 
 	table.insert(Storages.allowed[sender][_spender],newAllowed)
 	
@@ -71,19 +71,20 @@ function retrieved(_from, _to, _lockHeight)
 
 	local Allowed = Storages.allowed[_from][_to];
 	for i=1,#Allowed do
-		if Allowed[i].LockHeight == _lockHeight and Allowed[i].LockHeight < curHeight then
+		if tostring(Allowed[i].LockHeight) == tostring(_lockHeight) and tonumber(Allowed[i].LockHeight) < tonumber(curHeight) then
 			lualib.TransferToken(Storages.tokenA, addressThis, _to, Allowed[i].Amount);
 			table.remove(Storages.allowed[_from][_to], i)
 			break;
 		end
 	end
 
+	lualib.TransferEvent(_to, "", "retrieved: " .. _lockHeight);
+
     return true;
 end
 
 --返回 _spender仍然被允许从 _owner提取的金额
 function allowance(_owner, _spender)
-	
 	if Storages.allowed[_owner] == nil then
 		return false;
 	end
@@ -98,3 +99,25 @@ function allowance(_owner, _spender)
 	return rapidjson.encode(Storages.allowed[_owner][_spender]);
 end
 
+function cancel(_from, _to, _lockHeight)
+	lualib.Assert( lualib.IsERC(sender,"PledgeFactory") , "not a PledgeFactory");
+
+	if Storages.allowed[_from] == nil then
+		return false;
+	end
+	if Storages.allowed[_from][_to] == nil then
+		return false;
+	end
+
+	local Allowed = Storages.allowed[_from][_to];
+	for i=1,#Allowed do
+		if tostring(Allowed[i].LockHeight) == tostring(_lockHeight) then
+			local dataA = string.format("addLiquidityTo(\"%s\",\"%s\",\"%s\",\"0\")",_to,Allowed[i].Amount,Allowed[i].Amount);
+			local relA  = lualib.Call(_from,dataA);
+			table.remove(Storages.allowed[_from][_to], i)
+			break;
+		end
+	end
+
+    return true;
+end

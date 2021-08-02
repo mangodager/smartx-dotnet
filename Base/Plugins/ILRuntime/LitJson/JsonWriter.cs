@@ -230,48 +230,48 @@ namespace LitJson
 	        writer.Write('"');
 	        return;
 
-			int n = str.Length;
-            for (int i = 0; i < n; i++) {
-                switch (str[i]) {
-                case '\n':
-                    writer.Write ("\\n");
-                    continue;
+			//int n = str.Length;
+   //         for (int i = 0; i < n; i++) {
+   //             switch (str[i]) {
+   //             case '\n':
+   //                 writer.Write ("\\n");
+   //                 continue;
 
-                case '\r':
-                    writer.Write ("\\r");
-                    continue;
+   //             case '\r':
+   //                 writer.Write ("\\r");
+   //                 continue;
 
-                case '\t':
-                    writer.Write ("\\t");
-                    continue;
+   //             case '\t':
+   //                 writer.Write ("\\t");
+   //                 continue;
 
-                case '"':
-                case '\\':
-                    writer.Write ('\\');
-                    writer.Write (str[i]);
-                    continue;
+   //             case '"':
+   //             case '\\':
+   //                 writer.Write ('\\');
+   //                 writer.Write (str[i]);
+   //                 continue;
 
-                case '\f':
-                    writer.Write ("\\f");
-                    continue;
+   //             case '\f':
+   //                 writer.Write ("\\f");
+   //                 continue;
 
-                case '\b':
-                    writer.Write ("\\b");
-                    continue;
-                }
+   //             case '\b':
+   //                 writer.Write ("\\b");
+   //                 continue;
+   //             }
 
-                if ((int) str[i] >= 32 && (int) str[i] <= 126) {
-                    writer.Write (str[i]);
-                    continue;
-                }
+   //             if ((int) str[i] >= 32 && (int) str[i] <= 126) {
+   //                 writer.Write (str[i]);
+   //                 continue;
+   //             }
 
-                // Default, turn into a \uXXXX sequence
-                IntToHex ((int) str[i], hex_seq);
-                writer.Write ("\\u");
-                writer.Write (hex_seq);
-            }
+   //             // Default, turn into a \uXXXX sequence
+   //             IntToHex ((int) str[i], hex_seq);
+   //             writer.Write ("\\u");
+   //             writer.Write (hex_seq);
+   //         }
 
-            writer.Write ('"');
+   //         writer.Write ('"');
         }
 
         private void Unindent ()
