@@ -152,6 +152,13 @@ smartx-dotnet-2.0.2b版本发布。
 1、通过增加cache优化合约调用
 2、修改命令启动行
 
+## 2021-08-02 3.2.0d版项目公告
+1、正式版本的PoW和PoS的参数调整
+2、加入最小算力提交限制
+3、PoW挖矿算法修改为randomX
+4、修复RandomX内存泄漏问题
+5、3.2.0d多线程版本
+
 # English development logger
 
 ### 2020-10-29 Project announcement
@@ -289,3 +296,10 @@ The smartx-dotnet-2.0.2 version is released, which fixes some bugs of the satswa
 ## 2021-04-07 Project announcement
 1. Optimizing contract calls by adding cache
 2. Modify command start line
+
+## 2021-08-02 Version 3.2.0d Project Announcement
+1. Parameter adjustment of the official version of PoW and PoS
+2. Add the minimum computing power submission limit
+3. The PoW mining algorithm is modified to randomX
+4. Fix RandomX memory leak problem
+5. 3.2.0d multi-threaded version
