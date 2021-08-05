@@ -56,8 +56,8 @@ namespace ETModel
             //Wallet.Import("");
             //return;
 
-            BigHelper.Test();
-            return;
+            //BigHelper.Test();
+            //return;
 
             //CalculatePower.Test();
             //return;
