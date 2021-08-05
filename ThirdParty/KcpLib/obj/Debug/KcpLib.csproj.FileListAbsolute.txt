@@ -48,3 +48,13 @@ E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.As
 E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
 E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
 E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+E:\github\github版本编译2\smartx-dotnet\Bin\libkcp.dylib
+E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.deps.json
+E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.dll
+E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.pdb
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
+E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {}
+    "E:\\github\\github版本编译2\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {}
   },
   "projects": {
-    "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {
+    "E:\\github\\github版本编译2\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+        "projectUniqueName": "E:\\github\\github版本编译2\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
         "projectName": "KcpLib",
-        "projectPath": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
+        "projectPath": "E:\\github\\github版本编译2\\smartx-dotnet\\ThirdParty\\KcpLib\\KcpLib.csproj",
         "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-        "outputPath": "E:\\github\\github版本编译\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
+        "outputPath": "E:\\github\\github版本编译2\\smartx-dotnet\\ThirdParty\\KcpLib\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

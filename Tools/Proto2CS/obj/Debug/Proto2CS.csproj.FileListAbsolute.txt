@@ -58,3 +58,15 @@ E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csp
 E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
 E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
 E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
+E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.deps.json
+E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
+E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
+E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.dll
+E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.pdb
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
+E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache

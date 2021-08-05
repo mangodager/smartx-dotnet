@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "5w8VQj9zp+MfScgpYhoPbZ8Y9wRNz/iLmQl1T1LO+93FAnhvw4KjxpzafQ56L6DQ9FsrMCWJDxv7zqGhToV5Uw==",
+  "dgSpecHash": "y64xV/QI98fIMOGGtPx2sytXrXSwzYrTxrSlReke1X4pVJv4vzLtU0cgIwIiTzVvRTaHJ1w4I/Sj/ZRLTNIM5g==",
   "success": true,
-  "projectFilePath": "E:\\github\\github版本编译\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
+  "projectFilePath": "E:\\github\\github版本编译2\\smartx-dotnet\\Tools\\Proto2CS\\Proto2CS.csproj",
   "expectedPackageFiles": [
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.app\\2.1.0\\microsoft.netcore.app.2.1.0.nupkg.sha512",
     "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder\\microsoft.netcore.dotnetapphost\\2.1.0\\microsoft.netcore.dotnetapphost.2.1.0.nupkg.sha512",
