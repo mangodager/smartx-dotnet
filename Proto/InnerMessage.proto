@@ -144,6 +144,17 @@ message R2P_HasBlock // IResponseProto
 	bool has = 1;
 }
 
+message Q2P_Pool // IRequestProto
+{
+	string josn = 1;
+}
+
+message R2P_Pool // IResponseProto
+{
+	string josn = 1;
+}
+
+
 
 
 

@@ -1,70 +1,25 @@
-E:\tmp\smartx_dotnet\Bin\Google.Protobuf.deps.json
-E:\tmp\smartx_dotnet\Bin\Google.Protobuf.dll
-E:\tmp\smartx_dotnet\Bin\Google.Protobuf.pdb
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CopyComplete
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\tmp\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
-E:\smartx_dotnet\Bin\snappy32.dll
-E:\smartx_dotnet\Bin\snappy64.dll
-E:\smartx_dotnet\Bin\libzstd.dll
-E:\smartx_dotnet\Bin\Google.Protobuf.deps.json
-E:\smartx_dotnet\Bin\Google.Protobuf.dll
-E:\smartx_dotnet\Bin\Google.Protobuf.pdb
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\smartx_dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
-E:\github\smartx-dotnet\Bin\snappy32.dll
-E:\github\smartx-dotnet\Bin\snappy64.dll
-E:\github\smartx-dotnet\Bin\libzstd.dll
-E:\github\smartx-dotnet\Bin\Google.Protobuf.deps.json
-E:\github\smartx-dotnet\Bin\Google.Protobuf.dll
-E:\github\smartx-dotnet\Bin\Google.Protobuf.pdb
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\github\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
-E:\www\smartx-dotnet\Bin\snappy32.dll
-E:\www\smartx-dotnet\Bin\snappy64.dll
-E:\www\smartx-dotnet\Bin\libzstd.dll
-E:\www\smartx-dotnet\Bin\Google.Protobuf.deps.json
-E:\www\smartx-dotnet\Bin\Google.Protobuf.dll
-E:\www\smartx-dotnet\Bin\Google.Protobuf.pdb
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\www\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
-E:\github\github版本编译\smartx-dotnet\Bin\snappy32.dll
-E:\github\github版本编译\smartx-dotnet\Bin\snappy64.dll
-E:\github\github版本编译\smartx-dotnet\Bin\libzstd.dll
-E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.deps.json
-E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.dll
-E:\github\github版本编译\smartx-dotnet\Bin\Google.Protobuf.pdb
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\github\github版本编译\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
-E:\github\github版本编译2\smartx-dotnet\Bin\snappy32.dll
-E:\github\github版本编译2\smartx-dotnet\Bin\snappy64.dll
-E:\github\github版本编译2\smartx-dotnet\Bin\libzstd.dll
-E:\github\github版本编译2\smartx-dotnet\Bin\Google.Protobuf.deps.json
-E:\github\github版本编译2\smartx-dotnet\Bin\Google.Protobuf.dll
-E:\github\github版本编译2\smartx-dotnet\Bin\Google.Protobuf.pdb
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+D:\Code\smartx_dotnet 2.0\Bin\snappy32.dll
+D:\Code\smartx_dotnet 2.0\Bin\snappy64.dll
+D:\Code\smartx_dotnet 2.0\Bin\libzstd.dll
+D:\Code\smartx_dotnet 2.0\Bin\Google.Protobuf.deps.json
+D:\Code\smartx_dotnet 2.0\Bin\Google.Protobuf.dll
+D:\Code\smartx_dotnet 2.0\Bin\Google.Protobuf.pdb
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csprojAssemblyReference.cache
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
+D:\Code\smartx_dotnet 2.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+D:\Code\smartx_dotnet 3.0.0\Bin\snappy32.dll
+D:\Code\smartx_dotnet 3.0.0\Bin\snappy64.dll
+D:\Code\smartx_dotnet 3.0.0\Bin\libzstd.dll
+D:\Code\smartx_dotnet 3.0.0\Bin\Google.Protobuf.deps.json
+D:\Code\smartx_dotnet 3.0.0\Bin\Google.Protobuf.dll
+D:\Code\smartx_dotnet 3.0.0\Bin\Google.Protobuf.pdb
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.AssemblyInfo.cs
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.dll
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.pdb
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.csproj.AssemblyReference.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\Google.Protobuf\obj\Debug\Google.Protobuf.GeneratedMSBuildEditorConfig.editorconfig

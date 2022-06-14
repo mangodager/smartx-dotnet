@@ -28,7 +28,6 @@ namespace ETModel
 
         }
         public List<TransferHandle> transfers = new List<TransferHandle>();
-        public string rulerRpc = null;
         static HttpPoolRelay httpPoolRelay = null;
 
         public void AddTransferHandle(string addressIn, string addressOut, string amount, string unique,long height=0)
@@ -73,16 +72,7 @@ namespace ETModel
 
         public void ThreadRun(object data)
         {
-            System.Threading.Thread.Sleep(1000);
-
-            // check url
-            rulerRpc = rulerRpc ?? Entity.Root.Find("SmartxRpc")?.GetComponent<SmartxRpc>()?.GetIPEndPoint();
-            if (httpPoolRelay!=null&&GetHeight(rulerRpc, 5) == 0)
-            {
-                Log.Error($"rulerRpc: {rulerRpc} can't connect");
-                System.Diagnostics.Process.GetCurrentProcess().Kill();
-                return;
-            }
+            System.Threading.Thread.Sleep(10000);
 
             LoadTransferFromDB();
 
@@ -120,7 +110,7 @@ namespace ETModel
                                 continue;
                             }
 
-                            var transfer = GetUniqueTransfer(rulerRpc, transfers[ii].unique);
+                            var transfer = GetUniqueTransfer(transfers[ii].unique);
                             if (transfer != null)
                             {
                                 if (transfer.data == transfers[ii].unique&&transfer.height!=0)
@@ -137,7 +127,7 @@ namespace ETModel
                         }
                     }
 
-                    using (DbSnapshot snapshot = Entity.Root.GetComponent<Pool>().PoolDBStore.GetSnapshot())
+                    using (DbSnapshot snapshot = Entity.Root.GetComponent<Pool>().PoolDBStore.GetSnapshot(0, true))
                     {
                         bool remove = transfersDel.Count != 0;
                         // Successfully deleted from table
@@ -156,9 +146,9 @@ namespace ETModel
 
                     accounts.Clear();
 
-                    long curHeight = GetHeight(rulerRpc);
+                    long curHeight = GetHeight();
                     if (curHeight == 0) {
-                        Log.Warning($"rulerRpc: {rulerRpc} can't connect");
+                        Log.Error($"poolUrl: {httpPoolRelay.poolUrl} can't connect");
                         continue;
                     }
 
@@ -180,7 +170,7 @@ namespace ETModel
                             Account account = null;
                             if (!accounts.TryGetValue(transfers[ii].addressIn, out account))
                             {
-                                account = GetAccount(rulerRpc, transfers[ii].addressIn);
+                                account = GetAccount(transfers[ii].addressIn);
                                 if (account == null)
                                     continue;
                                 accounts.Add(transfers[ii].addressIn, account);
@@ -202,7 +192,7 @@ namespace ETModel
                             transfer.sign = transfer.ToSign(Wallet.GetWallet().GetCurWallet());
 
                             //int rel = Entity.Root.GetComponent<Rule>().AddTransfer(transfer, false);
-                            int rel = SendTransfer(rulerRpc, transfer);
+                            int rel = SendTransfer(transfer);
                             if (rel == -1) {
                                 transfers[ii].sendCount--;
                                 continue;
@@ -220,21 +210,37 @@ namespace ETModel
                         SaveTransferToDB();
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    Log.Warning($"TransferProcess throw Exception: {rulerRpc}");
+                    Log.Warning($"TransferProcess throw Exception: {e.ToString()}");
+                    Log.Error(e.ToString());
                 }
             }
         }
 
         public static string GetMinerTansfer(DbSnapshot dbSnapshot,string unique)
         {
-            return dbSnapshot.Get($"unique_{unique}"); // Query transaction cross reference table
+            var hash = dbSnapshot.Get($"unique_{unique}");
+            if (string.IsNullOrEmpty(hash))
+            {
+                if (httpPoolRelay == null)
+                {
+                    using (DbSnapshot dbSnapshot2 = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+                    {
+                        hash = dbSnapshot2.Get($"unique_{unique}");
+                    }
+                    if (!string.IsNullOrEmpty(hash))
+                    {
+                        dbSnapshot.Add($"unique_{unique}", hash);
+                    }
+                }
+            }
+            return hash;  // Query transaction cross reference table
         }
 
         public void SaveTransferToDB()
         {
-            using (DbSnapshot snapshot = Entity.Root.GetComponent<Pool>().PoolDBStore.GetSnapshot())
+            using (DbSnapshot snapshot = Entity.Root.GetComponent<Pool>().PoolDBStore.GetSnapshot(0,true))
             {
                 snapshot.Add($"TransferProcess", JsonHelper.ToJson(transfers));
                 snapshot.Commit();
@@ -251,7 +257,7 @@ namespace ETModel
             }
         }
 
-        static Account GetAccount(string url, string address)
+        static Account GetAccount(string address)
         {
             try
             {
@@ -266,15 +272,13 @@ namespace ETModel
                 var list = new List<string>();
                 list.Add(address);
 
-                HttpMessage quest = new HttpMessage();
+                var quest = new PoolMessage();
                 quest.map = new Dictionary<string, string>();
                 quest.map.Add("cmd", "getaccounts");
                 quest.map.Add("List", Base58.Encode(JsonHelper.ToJson(list).ToByteArray()));
 
-                var result = ComponentNetworkHttp.QueryStringSync($"http://{url}", quest);
-                var accounts = JsonHelper.FromJson<Dictionary<string, Account>>(result);
+                var accounts = httpPoolRelay.QueryPoolSync<Dictionary<string, Account>>(quest);
                 accounts.TryGetValue(address, out Account acc);
-
                 return acc;
             }
             catch (Exception )
@@ -283,7 +287,7 @@ namespace ETModel
             return null;
         }
 
-        static BlockSub GetUniqueTransfer(string url, string unique)
+        static BlockSub GetUniqueTransfer(string unique, float timeout = 5)
         {
             try
             {
@@ -300,14 +304,12 @@ namespace ETModel
                     return null;
                 }
 
-                HttpMessage quest = new HttpMessage();
+                var quest = new PoolMessage();
                 quest.map = new Dictionary<string, string>();
                 quest.map.Add("cmd", "uniquetransfer");
-                quest.map.Add("unique", unique);          
-                var result = ComponentNetworkHttp.QueryStringSync($"http://{url}", quest);
-                if (string.IsNullOrEmpty(result) || result == "{\"ret\":\"failed\"}")
-                    return null;
-                return JsonHelper.FromJson<BlockSub>(result);
+                quest.map.Add("unique", unique);
+                var result = httpPoolRelay.QueryPoolSync<BlockSub>(quest, timeout);
+                return result;
             }
             catch (Exception )
             {
@@ -315,7 +317,7 @@ namespace ETModel
             return null;
         }
 
-        static public long GetHeight(string url,float timeout=1)
+        static public long GetHeight(float timeout = 5)
         {
             try
             {
@@ -323,12 +325,12 @@ namespace ETModel
                     return Entity.Root.GetComponent<Consensus>().transferHeight;
                 }
 
-                HttpMessage quest = new HttpMessage();
+                var quest = new PoolMessage();
                 quest.map = new Dictionary<string, string>();
                 quest.map.Add("cmd", "stats");
                 quest.map.Add("style", "1");
-                var result = ComponentNetworkHttp.QuerySync($"http://{url}", quest, timeout);
-                return result==null?0:long.Parse(result.map["H"]);
+                var result = httpPoolRelay.QueryPoolSync<Dictionary<string, string>>(quest, timeout);
+                return result==null?0:long.Parse(result["H"]);
             }
             catch (Exception )
             {
@@ -336,7 +338,7 @@ namespace ETModel
             return 0;
         }
 
-        static int SendTransfer(string url , BlockSub blockSub)
+        static int SendTransfer(BlockSub blockSub,float timeout= 30)
         {
             try
             {
@@ -345,7 +347,7 @@ namespace ETModel
                     return Entity.Root.GetComponent<Rule>().AddTransfer(blockSub, false);
                 }
 
-                var quest = new HttpMessage();
+                var quest = new PoolMessage();
                 quest.map = new Dictionary<string, string>();
                 quest.map.Clear();
                 quest.map.Add("cmd", "transfer");
@@ -362,12 +364,11 @@ namespace ETModel
                 quest.map.Add("remarks", System.Web.HttpUtility.UrlEncode(blockSub.remarks));
                 quest.map.Add("depend", System.Web.HttpUtility.UrlEncode(blockSub.depend));
                 quest.map.Add("extend", System.Web.HttpUtility.UrlEncode(JsonHelper.ToJson(blockSub.extend)));
-                
-                var result = ComponentNetworkHttp.QuerySync($"http://{url}", quest);
 
-                if (result.map["success"] == "false")
+                var result = httpPoolRelay.QueryPoolSync<Dictionary<string, string>>(quest, timeout);
+                if (result["success"] == "false")
                 {
-                    return int.Parse(result.map["rel"]);
+                    return int.Parse(result["rel"]);
                 }
             }
             catch (Exception )
@@ -376,18 +377,6 @@ namespace ETModel
             return -1;
         }
 
-        public static void Test()
-        {
-            SmartxRpc smartxRpc = Entity.Root.Find("SmartxRpc").GetComponent<SmartxRpc>();
-
-            Account account  = GetAccount(smartxRpc.GetIPEndPoint(), "Yuxj7Q8UQ1W7gRyRJ1KRsb3PUoZmRfw61");
-            Log.Info($"{account.address} , {account.amount} , {account.nonce} ");
-
-            BlockSub blockSub = GetUniqueTransfer(smartxRpc.GetIPEndPoint(), "de569b3e0b04b25b850af0ed71fd0522670632542bf0df1cee8ac8443de2b24b");
-            Log.Info($"{blockSub.hash} , {blockSub.data} , {blockSub.addressOut}, {blockSub.amount} ");
-
-            Log.Info($"H:{GetHeight(smartxRpc.GetIPEndPoint()) } ");
-        }
 
     }
 

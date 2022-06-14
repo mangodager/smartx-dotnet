@@ -300,7 +300,10 @@ form {
             <div style="height: 20px; user-select:none"></div>
             <form>
                 <ul>
-                    <div style="height: 24px; user-select:none" class="lang" key="输入 :"></div>
+                    <ul class="list-inline">
+                        <li style="height: 24px; user-select:none" class="lang" key="输入 :"></li>
+                        <li style="color:#00000080" id="balanceA" > </li>
+                    </ul>
                     <div class="input-group">
                         <input type="text" class="form-control" id='swap_A' placeholder="0.0" onkeyup='return onchangeSwap(event)' onchange='return onchangeSwap(event)' style="height: 36px;">
                         <div class="input-group-btn">
@@ -311,7 +314,10 @@ form {
                     </div><!-- /input-group -->
                     <div style="height: 20px; user-select:none"></div>
                     <div class="sc-jzJRlG sc-kAzzGY sc-kGXeez bBFMKx" style="padding: 0px 1rem;"><div class="sc-cooIXK fOtoIU"><svg xmlns="http://www.w3.org/2000/svg" onclick="swapTransform()" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#565A69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg></div></div>
-                    <div style="height: 24px; user-select:none" class="lang" key="输入 :"></div>
+                    <ul class="list-inline">
+                        <li style="height: 24px; user-select:none" class="lang" key="输入 :"></li>
+                        <li style="color:#00000080" id="balanceB"> </li>
+                    </ul>
                     <div class="input-group">
                         <input type="text" class="form-control" id='swap_B' placeholder="0.0" onkeyup='return onchangeSwap(event)' onchange='return onchangeSwap(event)' style="height: 36px;">
                         <div class="input-group-btn">
@@ -321,11 +327,12 @@ form {
                         </div><!-- /btn-group -->
                     </div><!-- /input-group -->
                     <div style="height: 8px; user-select:none"></div>
-                    <center><h6 id='reserve' style="height: 24px;color: rgb(255 8 8);"></h6></center>
+                    <center><h6 id='exchange' style="height: 24px;color: rgb(255 8 8);"></h6></center>
+                    <center><h6 id='reserve' style="height: 24px;color: rgb(78 158 58);"></h6></center>
                 </ul>
             </form>
             <div id="swap" class="form-action show">
-                <div style="height: 24px; user-select:none"></div>
+                <div style="height: 12px; user-select:none"></div>
                 <form>
                     <ul>
                         <center><button type="button" class="btn btn-primary lang" onclick="swapSubmit()" style="width: 50%;" key="兑换"></button></center>
@@ -341,7 +348,7 @@ form {
                     </ul>
                 </form>
 
-                <div style="height: 24px; user-select:none"></div>
+                <div style="height: 12px; user-select:none"></div>
                 <div style="width:100%;height:100%;overflow-x:auto;">
                     <table class="table table-hover" id="mytable">
                         <caption id="caption_mytable111" style="user-select:none;text-align:center;background-color:#ffeeee;" class="lang" key="我的流动性:"></caption>
@@ -358,10 +365,10 @@ form {
             </div>
             <!--/#register.form-action-->
             <div id="createPair" class="form-action hide">
-                <div style="height: 24px; user-select:none"></div>
+                <div style="height: 12px; user-select:none"></div>
                 <form>
                     <ul>
-                        <center><h6 id='reserve' style="height: 24px;color: rgb(255 8 8);" class="lang" key="创建交易对需要支付100SAT"></h6></center>
+                        <center><h6 id='notice' style="height: 24px;color: rgb(255 8 8);" class="lang" key="创建交易对需要支付100SAT"></h6></center>
                         <center><button type="button" class="btn btn-primary lang" onclick="createPairSubmit()" style="width: 50%;" key="创建交易对"></button></center>
                     </ul>
                 </form>
@@ -499,6 +506,8 @@ form {
     </footer>
 
     <script>
+        $("#swap_B").prop("disabled", true);
+
         (function ($) {
             // constants
             var SHOW_CLASS = 'show',
@@ -523,6 +532,13 @@ form {
                     .addClass(SHOW_CLASS)
                     .hide()
                     .fadeIn(550);
+
+                if ($('#swap').hasClass("show"))
+                    $("#swap_B").prop("disabled",true);
+                else
+                    $("#swap_B").prop("disabled", false);
+
+                ModalSwapTokenSel();
             });
         })(jQuery);
 
@@ -694,21 +710,26 @@ form {
                 return _getLiquidityAmountB(amountA, reserveA, reserveB);
         }
 
+        //B to A: (reserveA - reserveA * reserveB / (reserveB + amountB)) * 0.997 = amountA
         function _getSwapAmountA(amountB, reserveA, reserveB) {
-            let numerator = Helper.Mul(Helper.Mul(reserveA, amountB), "1000");
-            let denominator = Helper.Mul(Helper.Sub(reserveB, amountB), "997");
-            let _amount = Helper.Add(Helper.Div(numerator, denominator), "0.00000001");
+            let reserve = Helper.Mul(reserveA, reserveB)
+            let numerator = Helper.Add(reserveB, amountB)
+            let denominator = Helper.Div(reserve, numerator)
 
-            return _amount;
+            let amountA = Helper.Mul(Helper.Sub(reserveA, denominator), "0.997")
+
+            return amountA;
         }
 
+        //A to B: (reserveB - reserveA * reserveB / (reserveA + amountA)) * 0.997 = amountB
         function _getSwapAmountB(amountA, reserveA, reserveB) {
-            let amountInWithFee = Helper.Mul(amountA, "997");
-            let numerator = Helper.Mul(amountInWithFee, reserveB);
-            let denominator = Helper.Add(Helper.Mul(reserveA, "1000"), amountInWithFee);
-            let _amount = Helper.Div(numerator, denominator);
+            let reserve = Helper.Mul(reserveA, reserveB)
+            let numerator = Helper.Add(reserveA, amountA)
+            let denominator = Helper.Div(reserve, numerator)
 
-            return _amount;
+            let amountB = Helper.Mul(Helper.Sub(reserveB, denominator), "0.997")
+
+            return amountB;
         }
 
         function _getLiquidityAmountA(amountB, reserveA, reserveB) {
@@ -731,18 +752,27 @@ form {
             $('#swap_A').val(amountBDesired);
             $('#swap_B').val(amountADesired);
 
+            let elementA = document.getElementById("balanceA");
+            let elementB = document.getElementById("balanceB");
+            let elementTemp = elementA.innerHTML;
+            elementA.innerHTML = elementB.innerHTML;
+            elementB.innerHTML = elementTemp;
+
             let event2 = {};
             event2.currentTarget = document.getElementById('swap_A');
             onchangeSwap(event2);
-            OnRefreshReserve();
+            //OnRefreshReserve();
         }
 
         async function OnRefreshReserve() {
             // var currTab = $('#swap').hasClass("show");
             // if(!currTab)
             //     return;
+            var exchangeEle = document.getElementById("exchange");
+            exchangeEle.innerHTML = Translate.Get('没有找到交易对!');
+
             var reserveEle = document.getElementById("reserve");
-            reserveEle.innerHTML = Translate.Get('没有找到交易对!');
+            reserveEle.innerHTML = '';
 
             let swap_A = $('#swap_tokenA').html();
             let swap_B = $('#swap_tokenB').html();
@@ -770,7 +800,31 @@ form {
                     temp = _getAmountB(amount, reserves[0], reserves[1]);
                 }
             }
-            reserveEle.innerHTML = "1 " + swap_A + " ≈ " + Helper.Fix(temp) + " " + swap_B;
+            exchangeEle.innerHTML = "1 " + swap_A + " ≈ " + Helper.Fix(temp) + " " + swap_B;
+
+            var reserveEle = document.getElementById("reserve");
+            if (!(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0)) {
+                reserveEle.innerHTML = reserves[0] + " " + swap_A + " <=> " + reserves[1] + " " + swap_B;
+            }
+            else {
+                reserveEle.innerHTML = reserves[0] + " " + swap_B + " <=> " + reserves[1] + " " + swap_A;
+            }
+
+        }
+
+        async function OnRefreshReserveCurr(amountA, amountB) {
+            if ($('#liquidity').hasClass("show")) {
+                OnRefreshReserve();
+                return;
+            }
+
+            temp = Helper.Div(amountB,amountA);
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            var exchangeEle = document.getElementById("exchange");
+            exchangeEle.innerHTML = "1 " + swap_A + " ≈ " + Helper.Fix(temp) + " " + swap_B;
+
         }
 
         async function onchangeSwap(event) {
@@ -806,7 +860,11 @@ form {
                     else {
                         temp = _getAmountA(amount, reserves[0], reserves[1]);
                     }
-                    $('#' + changeid).val((new BigNumber(temp.replace(/,/g, "")).toFormat(8)));
+                    temp = Helper.Fix(temp);
+                    if (!$('#createPair').hasClass("show"))
+                        $('#' + changeid).val((new BigNumber(temp.replace(/,/g, "")).toFormat(8)));
+
+                    OnRefreshReserveCurr(amount, $('#' + changeid).val());
                 }
                 else {
                     if (!(Symbols_Inverse[swap_A].localeCompare(Symbols_Inverse[swap_B]) < 0)) {
@@ -815,11 +873,15 @@ form {
                     else {
                         temp = _getAmountB(amount, reserves[0], reserves[1]);
                     }
-                    $('#' + changeid).val(Helper.Fix(temp));
+                    temp = Helper.Fix(temp);
+                    if (!$('#createPair').hasClass("show"))
+                        $('#' + changeid).val((new BigNumber(temp.replace(/,/g, "")).toFormat(8)));
+
+                    OnRefreshReserveCurr($('#' + changeid).val(), amount);
                 }
+
             }
         }
-
 
         function ModalSwapTokenShow(event, callback) {
             $("#ModalSwapToken").modal('show');
@@ -849,25 +911,31 @@ form {
 
             let event2 = {};
             event2.currentTarget = document.getElementById(mydataEle.innerHTML.replace(/token/g, '').replace(/B/g, 'A'));
-            onchangeSwap(event2);
             OnRefreshReserve();
+            onchangeSwap(event2);
+
+            let swap_A = $('#swap_tokenA').html();
+            let swap_B = $('#swap_tokenB').html();
+            OnShowAmount(Symbols_Inverse[swap_A], "balanceA");
+            OnShowAmount(Symbols_Inverse[swap_B], "balanceB");
         }
 
         async function ModalSwapTokenSel(event) {
+            var mydataEle = document.getElementById("myModalLabelData");
+            let event2 = {};
+            event2.currentTarget = document.getElementById(mydataEle.innerHTML.replace(/token/g, '').replace(/B/g, 'A'));
+            OnRefreshReserve();
+            onchangeSwap(event2);
+
             let value = $("#ModalSwapTokenText").val();
             if (value == null || value == "")
                 return;
             let symbol = await getSymbol(value);
             if (symbol == null || symbol == "")
                 return;
-            var mydataEle = document.getElementById("myModalLabelData");
             $("#" + mydataEle.innerHTML).html(symbol);
             $("#ModalSwapToken").modal('hide');
 
-            let event2 = {};
-            event2.currentTarget = document.getElementById(mydataEle.innerHTML.replace(/token/g, '').replace(/B/g, 'A'));
-            onchangeSwap(event2);
-            OnRefreshReserve();
         }
 
         function swapSubmit() {
@@ -1140,6 +1208,28 @@ form {
                 Helper.Statusbar("statusbar", hash, "", Translate.Get("合约") + ": " + addressOut + " 取回流行性: " + Helper.Fix(liquidity), 1, nonceCur);
                 Helper.MessageBox(Translate.Get('取回流行性已提交'));
                 $("#ModalLiquidity").modal('hide');
+            }
+        }
+
+        function OnShowAmount(address,eleID) {
+            var element = document.getElementById(eleID);
+            element.innerHTML = "";
+
+            if (address != null && address != "") {
+                $.ajax({
+                    url: Helper.GetServerIP() + "/balanceOf",
+                    dataType: "text",
+                    type: "get",
+                    data: { Address: addressCur, token: address },
+                    success: function (data) {
+                        var jsonObj = JSON.parse(data);
+                        var amount = new BigNumber(jsonObj["amount"]).toFormat();
+
+                        element.innerHTML = "" + amount;
+                    },
+                    error: function (err) {
+                    }
+                });
             }
         }
 

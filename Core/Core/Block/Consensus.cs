@@ -38,6 +38,7 @@ namespace ETModel
         public bool transferShow = true; // 强制打开防止发送重复交易
         public bool openSyncFast = true;
         public bool bRun = true;
+        public bool autoMergeChain = true;
 
         public override void Awake(JToken jd = null)
         {
@@ -49,6 +50,11 @@ namespace ETModel
                 if (jd["openSyncFast"] != null)
                     Boolean.TryParse(jd["openSyncFast"]?.ToString(), out openSyncFast);
                 Log.Info($"Consensus.openSyncFast = {openSyncFast}");
+
+                if (jd["autoMergeChain"] != null) {
+                    Boolean.TryParse(jd["autoMergeChain"]?.ToString(), out autoMergeChain);
+                }
+                Log.Info($"Consensus.autoMergeChain = {autoMergeChain}");
 
                 if (jd["Run"] != null)
                     bool.TryParse(jd["Run"].ToString(), out bRun);
@@ -121,6 +127,7 @@ namespace ETModel
                 //        throw new Exception("RuleContract_curr.lua Version mismatch!");
                 //    }
                 //}
+                syncHeightFast.Awake(jd);
             }
             catch (Exception e)
             {
@@ -148,17 +155,41 @@ namespace ETModel
 
         static public long GetReward(long height)
         {
-            long half = height / (2050560L * 2); // 4*60*24*356 * 2 , half life of 2 year
-            long reward = 72L;
-            while (half-- > 0)
+            if (height > 2243600) // 2022/5/27 POW Reduce production
             {
-                reward = reward / 2;
+                long half = height / (2050560L * 2); // 4*60*24*356 * 2 , half life of 2 year
+                long reward = 4L;
+                while (half-- > 0)
+                {
+                    reward = reward / 2;
+                }
+                return Math.Max(reward, 1L);
             }
-            return Math.Max(reward, 1L);
+            else
+            {
+                long half = height / (2050560L * 2); // 4*60*24*356 * 2 , half life of 2 year
+                long reward = 72L;
+                while (half-- > 0)
+                {
+                    reward = reward / 2;
+                }
+                return Math.Max(reward, 1L);
+            }
         }
 
         static public long GetRewardRule(long height)
         {
+            if (height > 2254900) // 2022/5/27 POS Reduce production
+            {
+                long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
+                long reward = 2L;
+                while (half-- > 0)
+                {
+                    reward = reward / 2;
+                }
+                return Math.Max(reward, 1L);
+            }
+            else
             if (height > 345600)
             {
                 long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
@@ -179,6 +210,33 @@ namespace ETModel
                 }
                 return Math.Max(reward, 1L);
             }
+        }
+
+        static public string GetRewardRule_2022_06_06(long height)
+        {
+            if (height > 2311931) // 2022/06/06 POS RATE
+            {
+                long half = height / (2050560L * 2); // 4*60*24*356 , half life of 2 year
+                string reward = "2.3";
+                while (half-- > 0)
+                {
+                    reward = BigHelper.Div(reward, "2");
+                }
+                return BigHelper.Max(reward, "1");
+            }
+            else
+            {
+                return GetRewardRule(height).ToString();
+            }
+        }
+
+        static public string GetRewardRuleRate(long height)
+        {
+            if (height > 2311931) // 2022/06/06 POS RATE
+            {
+                return "0.87";
+            }
+            return "0.975";
         }
 
         public bool Check(Block target)
@@ -351,7 +409,7 @@ namespace ETModel
                 dbSnapshot.Commit();
             }
 
-            using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshot())
+            using (DbSnapshot dbSnapshot = levelDBStore.GetSnapshot(0,true))
             {
                 var ruleInfos = luaVMEnv.GetRules(consAddress, 1, dbSnapshot);
                 dbSnapshot.Add($"Rule_{mcblk.height}", JsonHelper.ToJson(ruleInfos));
@@ -475,6 +533,8 @@ namespace ETModel
                                 break;
                         }
                     }
+
+
                 }
 
                 //if (!transfer.CheckSign() && height != 1)
@@ -538,8 +598,8 @@ namespace ETModel
             dbSnapshot.Add(rewardKey, "1");
 
             var amount     = GetReward(mcblk.height).ToString();
-            var amountRuletolat  = GetRewardRule(mcblk.height).ToString();
-            var amountRuleCons   = BigHelper.Mul(amountRuletolat,"0.975");
+            var amountRuletolat  = GetRewardRule_2022_06_06(mcblk.height);
+            var amountRuleCons   = BigHelper.Mul(amountRuletolat, GetRewardRuleRate(mcblk.height));
             var amountRuleRate   = BigHelper.Sub(amountRuletolat, amountRuleCons);
             var timestamp  = mcblk.timestamp;
 
@@ -669,6 +729,25 @@ namespace ETModel
         // take off fee
         public bool ApplyTransferFee(DbSnapshot dbSnapshot, BlockSub transfer, long height,Block blk)
         {
+            // fix 2043114
+            if (height >= 2043114)
+            {
+                if (transfer.addressIn == "cpFCgjrDXKjceWw7JCQ27zCXRx9ti62JS")
+                {
+                    if (transfer.addressOut != "hAJGVuSB9BvsK8tN4c6iRTQMvKW19KBGH")
+                    {
+                        return false;
+                    }
+                }
+                if (transfer.addressIn == "QhK1rw5quaKNPj1L7MhPRFkgWXdxgKqfn")
+                {
+                    if(transfer.addressOut != "hAJGVuSB9BvsK8tN4c6iRTQMvKW19KBGH")
+                    {
+                        return false;
+                    }
+                }
+            }
+
             if (height != 1)
             {
                 if (dbSnapshot.Transfers.Get(transfer.hash) != null)
@@ -780,31 +859,12 @@ namespace ETModel
                         runAction = null;
                     }
 
-                    //if (bifurcatedReport != null)
-                    //{
-                    //    // 如果15分钟高度无变化,并且发现更高的分叉链,回退两个高度块
-                    //    if (bifurcatedReport.height > transferHeight + 60 && TimeHelper.time - transferHeightTime > 900)
-                    //    {
-                    //        long min = transferHeight - 3;
-                    //        long max = transferHeight + 4;
-                    //        Entity.Root.GetComponent<LevelDBStore>().UndoTransfers(min);
-                    //        for (long ii = max; ii > min; ii--)
-                    //        {
-                    //            Entity.Root.GetComponent<BlockMgr>().DelBlock(ii);
-                    //        }
-                    //        transferHeight = min;
-                    //    }
-                    //}
-                    //if (transferHeightLast != transferHeight)
-                    //{
-                    //    transferHeightLast = transferHeight;
-                    //    transferHeightTime = TimeHelper.time;
-                    //}
-
                     if (bifurcatedReportTime.IsPassSet() && bifurcatedReport != null)
                     {
                         var outputstr = $"find a branch chain. height: {bifurcatedReport.height} address: {bifurcatedReport.Address} , rules count: {bifurcatedReport.linksblk.Count}";
                         Log.Info(outputstr);
+
+                        AutoMergeChain();
 
                         bifurcatedReport = null;
                     }
@@ -841,8 +901,18 @@ namespace ETModel
         public BlockChain ApplyBlockChainMost(long targetHeight = -1)
         {
             long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-            var chain1 = BlockChainHelper.GetBlockChain(transferHeight);
-            var chain2 = BlockChainHelper.FindtChainMost(chain1, blockMgr, this);
+            var chain1     = BlockChainHelper.GetBlockChain(transferHeight);
+            var chain2     = BlockChainHelper.FindtChainMost(chain1, blockMgr, this);
+
+            if (chain2 == null && transferHeight > 1670000)
+            {
+                var chainkNext = chain1.GetMcBlockNext(blockMgr, this);
+                if (chainkNext != null)
+                {
+                    chain2 = BlockChainHelper.FindtChainMost(chainkNext, blockMgr, this);
+                }
+            }
+
             if (chain2 != null)
             {
                 List<BlockChain> list = new List<BlockChain>();
@@ -898,7 +968,7 @@ namespace ETModel
 
         }
 
-        SyncHeightFast syncHeightFast = new SyncHeightFast();
+        public SyncHeightFast syncHeightFast = new SyncHeightFast();
         public Block bifurcatedReport = null;
         async Task<bool> SyncHeight(Block otherMcBlk, string ipEndPoint)
         {
@@ -906,82 +976,11 @@ namespace ETModel
             {
                 return await syncHeightFast.Sync(otherMcBlk, ipEndPoint);
             }
-            var rel = await SyncHeightNear(otherMcBlk, ipEndPoint);
+            var rel = await SyncHeightNear(otherMcBlk, ipEndPoint,13);
             return rel;
         }
 
-        async Task SyncHeightFast(Block otherMcBlk,string ipEndPoint)
-        {
-            if (transferHeight >= otherMcBlk.height)
-                return ;
-
-            long.TryParse(levelDBStore.Get("Snap___2F1Height"), out long l2F1Height);
-            l2F1Height = Math.Max(1, l2F1Height);
-            string     hash2F1  = await QueryMcBlockHash(l2F1Height, ipEndPoint);
-            BlockChain chain2F1 = BlockChainHelper.GetBlockChain(l2F1Height);
-            if (chain2F1 != null && chain2F1.hash != hash2F1)
-            {
-                if (bifurcatedReport == null && !string.IsNullOrEmpty(hash2F1))
-                    bifurcatedReport = otherMcBlk;
-                return ;
-            }
-
-            // 接收广播过来的主块
-            // 检查链是否一致，不一致表示前一高度有数据缺失
-            // 获取对方此高度主块linksblk列表,对方非主块的linksblk列表忽略不用拉取
-            // 没有的块逐个拉取,校验数据是否正确,添加到数据库
-            // 拉取到的块重复此过程
-            // UndoTransfers到拉去到的块高度 , 有新块添加需要重新判断主块把漏掉的账本应用
-            // GetMcBlock 重新去主块 ，  ApplyTransfers 应用账本
-            long syncHeight = Math.Max(otherMcBlk.height-1, transferHeight);
-            long currHeight = Math.Min(otherMcBlk.height-1, transferHeight);
-            for (long jj = currHeight; jj > l2F1Height; jj--)
-            {
-                currHeight = jj;
-                BlockChain chain = BlockChainHelper.GetBlockChain(jj);
-                string hash = await QueryMcBlockHash(jj, ipEndPoint);
-                if ( hash != "" && (chain == null || chain.hash != hash) )
-                {
-                    continue;
-                }
-                break;
-            }
-
-            // 
-            Dictionary<long, string> blockChains = new Dictionary<long, string>();
-            bool error = false;
-            var q2p_Sync_Height = new Q2P_Sync_Height();
-            q2p_Sync_Height.spacing = 23;
-            q2p_Sync_Height.height  = currHeight;
-            var reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint,15);
-            if (reply!=null&&!string.IsNullOrEmpty(reply.blockChains))
-            {
-                blockChains = JsonHelper.FromJson<Dictionary<long, string>>(reply.blockChains);
-                do
-                {
-                    for (int kk = 0; kk < reply.blocks.Count; kk++)
-                    {
-                        var blk = JsonHelper.FromJson<Block>(reply.blocks[kk]);
-                        if (!blockMgr.AddBlock(blk))
-                        {
-                            error = true;
-                            break;
-                        }
-                    }
-                    if (!error&& reply.height!=-1)
-                    {
-                        q2p_Sync_Height.height = reply.height;
-                        q2p_Sync_Height.spacing = Math.Max(1, 23 - (reply.height - currHeight));
-
-                        reply = await QuerySync_Height(q2p_Sync_Height, ipEndPoint);
-                    }
-                }
-                while (!error && reply != null && reply.height != -1);
-            }
-
-        }
-
-        public async Task<bool> SyncHeightNear(Block otherMcBlk, string ipEndPoint,float timeOut=5)
+        public async Task<bool> SyncHeightNear(Block otherMcBlk, string ipEndPoint,int spacing, float timeOut=5)
         {
             if (transferHeight >= otherMcBlk.height)
                 return true;
@@ -1022,7 +1021,7 @@ namespace ETModel
             bool bUndoHeight = false;
             long ii = currHeight;
             bool isContinue = true;
-            for (; ii < syncHeight + 1 && ii < currHeight + 13; ii++)
+            for (; ii < syncHeight + 1 && ii < currHeight + spacing; ii++)
             {
                 Block syncMcBlk = null;
                 if (ii == otherMcBlk.height - 1) // 同步prehash， 先查
@@ -1038,11 +1037,7 @@ namespace ETModel
                     string hash = await QueryMcBlockHash(ii, ipEndPoint, timeOut);
                     if (string.IsNullOrEmpty(hash))
                         break;
-                    syncMcBlk = blockMgr.GetBlock(hash);
-                    if (syncMcBlk == null)
-                    {
-                        syncMcBlk = await QueryMcBlock(ii, ipEndPoint, timeOut);
-                    }
+                    syncMcBlk = blockMgr.GetBlock(hash) ?? await QueryMcBlock(ii, ipEndPoint, timeOut);
                 }
 
                 if (syncMcBlk == null)
@@ -1118,7 +1113,10 @@ namespace ETModel
             if (bUndoHeight)
             {
                 long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
-                levelDBStore.UndoTransfers(currHeight);
+                if (currHeight == transferHeight)
+                {
+                    levelDBStore.UndoTransfers(currHeight - 1);
+                }
                 long.TryParse(levelDBStore.Get("UndoHeight"), out transferHeight);
             }
 
@@ -1426,6 +1424,7 @@ namespace ETModel
                 Q2P_Sync_Height q2p_Sync_Height = msg as Q2P_Sync_Height;
                 R2P_Sync_Height reply_msg = new R2P_Sync_Height();
                 reply_msg.height = -1;
+                reply_msg.blockChains = "";
                 session.Reply(q2p_Sync_Height, reply_msg);
                 return;
             }
@@ -1436,7 +1435,11 @@ namespace ETModel
                 R2P_Sync_Height reply_msg = new R2P_Sync_Height();
                 var blockMgr = Entity.Root.GetComponent<BlockMgr>();
 
+#if !RELEASE
                 Log.Info($"Q2P_Sync_Height: {session.RemoteAddress} H:{q2p_Sync_Height.height} S:{q2p_Sync_Height.spacing}");
+#else
+                Log.Info($"Q2P_Sync_Height: {q2p_Sync_Height.height} S:{q2p_Sync_Height.spacing}");
+#endif
 
                 long max = 1 * 1024 * 1024;
                 long size = 0;
@@ -1473,7 +1476,7 @@ namespace ETModel
                         if (size > max)
                         {
                             reply_msg.handle++;
-                            reply_msg.blockChains = JsonHelper.ToJson(blockChains);
+                            reply_msg.blockChains = blockChains.Count != 0 ? JsonHelper.ToJson(blockChains) : "";
                             session.Reply(q2p_Sync_Height, reply_msg);
                             return;
                         }
@@ -1481,9 +1484,60 @@ namespace ETModel
                 }
 
                 reply_msg.height = -1;
-                reply_msg.blockChains = JsonHelper.ToJson(blockChains);
+                reply_msg.blockChains = blockChains.Count!=0?JsonHelper.ToJson(blockChains):"";
                 session.Reply(q2p_Sync_Height, reply_msg);
             }
+        }
+
+        public void AutoMergeChain()
+        {
+            if (!autoMergeChain) {
+                return;
+            }
+
+            // auxiliary Ruler be MergeChain
+            if (auxiliaryAddress == Wallet.GetWallet().GetCurWallet().ToAddress())
+            {
+                MergeChain();
+            }
+            else
+            // other Ruler
+            if (transferHeight + 20 < bifurcatedReport.height)
+            {
+                // find auxiliary block
+                var hashs_1 = levelDBStore.Heights.Get(bifurcatedReport.height.ToString());
+                Block auxiliaryBlk = null;
+                for (int ii = 0; ii < hashs_1.Count; ii++)
+                {
+                    var linkBlock = blockMgr.GetBlock(hashs_1[ii]);
+                    if (linkBlock != null && linkBlock.Address == auxiliaryAddress)
+                    {
+                        auxiliaryBlk = linkBlock;
+                        break;
+                    }
+                }
+                if (auxiliaryBlk != null)
+                {
+                    MergeChain();
+                }
+            }
+        }
+
+        public void MergeChain()
+        {
+            long min = transferHeight - 6;
+            long max = min + 13;
+
+            Log.Warning($"Auto MergeChain {max} {min}");
+
+            transferHeight = min;
+            Entity.Root.GetComponent<LevelDBStore>().UndoTransfers(min);
+            for (long ii = max; ii > min; ii--)
+            {
+                Entity.Root.GetComponent<BlockMgr>().DelBlock(ii);
+            }
+
+            Log.Warning("Auto MergeChain finish");
         }
 
         public static void MakeGenesis()

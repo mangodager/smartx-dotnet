@@ -66,7 +66,9 @@ namespace ETModel
                     hearbeat.map = new Dictionary<string, string>();
                     hearbeat.map.Add("cmd", "hearbeat");
                 }
+#if RELEASE
                 _ = ComponentNetworkHttp.Query(this.prefix, hearbeat);
+#endif
             }
 
             if(httpThread == null)
@@ -236,7 +238,7 @@ namespace ETModel
                     {
                         RawUrlFileText = FileHelper.ReadAllBytes("./wwwroot" + RawUrl + ".html");
                     }
-                    if(RawUrl== "/js/helper.js" && RawUrlFileText != null && ReplaceFunc!=null )
+                    if (RawUrl == "/js/helper.js" && RawUrlFileText != null && ReplaceFunc != null)
                     {
                         RawUrlFileText = ReplaceFunc(RawUrlFileText, request);
                     }

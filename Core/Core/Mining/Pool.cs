@@ -92,6 +92,7 @@ namespace ETModel
                 catch (Exception e)
                 {
                     Log.Error(e);
+                    System.Threading.Thread.Sleep(7500);
                 }
             }
         }
@@ -284,9 +285,9 @@ namespace ETModel
 
                             var miner = miners.Values.FirstOrDefault(c => c.random.IndexOf(mcblk.random)!=-1);
                             if (miner == null)
-                            {
                                 continue;
-                            }
+                            if (string.IsNullOrEmpty(miner.address))
+                                continue;
 
                             // Total power
                             double powerSum = 0;
@@ -417,27 +418,30 @@ namespace ETModel
                             var miner = miners.Values.FirstOrDefault(c => c.random.IndexOf(mcblk.random) != -1);
                             if (miner != null)
                             {
-                                BigFloat reward = new BigFloat(Consensus.GetReward(rewardheight));
-                                reward = reward * (1.0f - GetServiceFee());
-
-                                var transfer = new BlockSub();
-                                transfer.addressIn  = addressIn;
-                                transfer.addressOut = miner.address;
-                                string pay = BigHelper.Round8(reward.ToString());
-
-                                if (minerTransfer.TryGetValue(miner.address, out transfer))
+                                if (!string.IsNullOrEmpty(miner.address))
                                 {
-                                    transfer.amount = BigHelper.Add(transfer.amount, pay);
-                                }
-                                else
-                                {
-                                    transfer = new BlockSub();
-                                    transfer.addressIn  = addressIn;
+                                    BigFloat reward = new BigFloat(Consensus.GetReward(rewardheight));
+                                    reward = reward * (1.0f - GetServiceFee());
+
+                                    var transfer = new BlockSub();
+                                    transfer.addressIn = addressIn;
                                     transfer.addressOut = miner.address;
-                                    transfer.amount = BigHelper.Sub(pay, "0.002"); // 扣除交易手续费
-                                    transfer.type = "100%"; // 有效提交百分比
-                                    transfer.data = CryptoHelper.Sha256($"{mcblk.hash}_{maxHeight}_{ownerAddress}_{miner.address}_Reward_SOLO");
-                                    minerTransfer.Add(transfer.addressOut, transfer);
+                                    string pay = BigHelper.Round8(reward.ToString());
+
+                                    if (minerTransfer.TryGetValue(miner.address, out transfer))
+                                    {
+                                        transfer.amount = BigHelper.Add(transfer.amount, pay);
+                                    }
+                                    else
+                                    {
+                                        transfer = new BlockSub();
+                                        transfer.addressIn = addressIn;
+                                        transfer.addressOut = miner.address;
+                                        transfer.amount = BigHelper.Sub(pay, "0.002"); // 扣除交易手续费
+                                        transfer.type = "100%"; // 有效提交百分比
+                                        transfer.data = CryptoHelper.Sha256($"{mcblk.hash}_{maxHeight}_{ownerAddress}_{miner.address}_Reward_SOLO");
+                                        minerTransfer.Add(transfer.addressOut, transfer);
+                                    }
                                 }
                             }
                         }
@@ -502,7 +506,7 @@ namespace ETModel
             }
 
             // 交易确认
-            using (DbSnapshot snapshot = PoolDBStore.GetSnapshot())
+            using (DbSnapshot snapshot = PoolDBStore.GetSnapshot(0,true))
             {
                 int TopIndex = snapshot.Queue.GetTopIndex($"Pool_MT_{address}");
                 for (int ii = 1; ii <= (int)transferColumn; ii++)
@@ -524,8 +528,11 @@ namespace ETModel
                     if (transfer.addressIn == transfer.addressOut)
                         transfer.hash = transfer.addressIn;
                     else
+                    {
                         transfer.hash = TransferProcess.GetMinerTansfer(snapshot, transfer.data);
+                    }
                 }
+                snapshot.Commit();
             }
 
             var miners = httpPool.GetMinerRewardMin(out long miningHeight);
@@ -574,6 +581,25 @@ namespace ETModel
 
             getMinerViewCache.Add($"{address}_{transferIndex}_{transferColumn}_{minerIndex}_{minerColumn}", minerView);
             return minerView;
+        }
+
+        public bool ReSendTansfer(string address, long transferIndex, long transferColumn, long minerIndex, long minerColumn, string unique)
+        {
+            if (!getMinerViewCache.TryGetValue($"{address}_{transferIndex}_{transferColumn}_{minerIndex}_{minerColumn}", out MinerView minerViewLast))
+            {
+                return false;
+            }
+
+            for (var ii = 0; ii < minerViewLast.transfers.Count; ii++)
+            {
+                var transfer = minerViewLast.transfers[ii];
+                if (transfer.data == unique)
+                {
+                    transferProcess.AddTransferHandle(transfer.addressIn, transfer.addressOut, transfer.amount, transfer.data, transfer.height);
+                    break;
+                }
+            }
+            return true;
         }
 
         TimePass minerViewAbstractTimePass = new TimePass(15);

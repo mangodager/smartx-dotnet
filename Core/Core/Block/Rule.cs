@@ -23,6 +23,7 @@ namespace ETModel
         HttpPool     httpRule = null;
         LevelDBStore levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
         NodeManager  nodeManager = null;
+        TransferComponent transferComponent = null;
 
         bool bRun = true;
 
@@ -39,6 +40,7 @@ namespace ETModel
             httpRule     = Entity.Root.GetComponent<HttpPool>();
             nodeManager  = Entity.Root.GetComponent<NodeManager>();
             relayNetwork = Entity.Root.GetComponentInChild<RelayNetwork>();
+            transferComponent = Entity.Root.GetComponentInChild<TransferComponent>();
 
             if (bRun) {
                 Run();
@@ -152,6 +154,7 @@ namespace ETModel
                 }
                 catch (Exception )
                 {
+                    //Log.Debug(e.ToString());
                     await Task.Delay(1000);
                 }
             }
@@ -267,6 +270,14 @@ namespace ETModel
             if(transfer.addressIn==transfer.addressOut)
                 return -8;
 
+            var length = JsonHelper.ToJson(transfer).Length;
+            if (length > 1024 * 4) {
+                return -11;
+            }
+
+            if (!consensus.IsRule(height, Wallet.GetWallet().GetCurWallet().ToAddress()))
+                return -1;
+
             lock (blockSubs)
             {
                 if (blockSubs.Count >= 600)
@@ -282,14 +293,6 @@ namespace ETModel
                 blockSubs.Remove(transfer.hash);
                 blockSubs.Add(transfer.hash, transfer);
             }
-
-            var length = JsonHelper.ToJson(transfer).Length;
-            if (length > 1024 * 4) {
-                return -11;
-            }
-
-            if (!consensus.IsRule(height, Wallet.GetWallet().GetCurWallet().ToAddress()))
-                return -1;
 
             return 1;
         }
@@ -326,7 +329,19 @@ namespace ETModel
 
             CalculatePower.SetDT(myblk,preblk, httpRule);
 
-            RefTransfer(myblk);
+            if (transferComponent != null)
+            {
+                if (!transferComponent.RefTransfer(myblk))
+                {
+                    RefTransfer(myblk);
+                }
+            }
+            else
+            {
+                RefTransfer(myblk);
+            }
+            transferComponent?.OnCreateBlock(myblk);
+
             myblk.prehashmkl = myblk.ToHashMerkle(blockMgr);
 
             bBlkMining = true;
@@ -375,7 +390,31 @@ namespace ETModel
 
         public int GetTransfersCount()
         {
-            return blockSubs.Count + blockSubQueue.Count*600;
+            int transferComponentCount = transferComponent!=null?transferComponent.GetTransferCount():0;
+            return blockSubs.Count + blockSubQueue.Count*600 + transferComponentCount;
+        }
+
+        public BlockSub GetTransferState(string hash)
+        {
+            BlockSub tran = null;
+            if (blockSubs.TryGetValue(hash, out tran))
+            {
+                return tran;
+            }
+            else
+            {
+                foreach (var subs in blockSubQueue)
+                {
+                    if (subs.TryGetValue(hash, out tran))
+                    {
+                        return tran;
+                    }
+                }
+            }
+
+            tran = transferComponent?.GetTransferState(hash);
+
+            return tran;
         }
 
         double diff_max  = 0;

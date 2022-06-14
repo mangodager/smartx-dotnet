@@ -22,6 +22,46 @@ namespace ETModel
         int GetFunCount = 0;
         List<long> record = new List<long>();
 
+        public void Awake(JToken jd = null)
+        {
+            if (!string.IsNullOrEmpty(Program.jdNode["SyncHeightFast"]?.ToString()))
+            {
+                if (!string.IsNullOrEmpty(Program.jdNode["SyncHeightFast"]["FullNodes"]?.ToString()))
+                {
+                    List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["SyncHeightFast"]["FullNodes"].ToString());
+                    if (list != null && list.Count != 0)
+                    {
+                        fullNodes = new NodeManager.NodeData[list.Count];
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            var item = new NodeManager.NodeData();
+                            item.ipEndPoint = list[i];
+                            fullNodes[i] = item;
+                        }
+                    }
+                }
+            }
+        }
+
+        NodeManager.NodeData[] fullNodes = null;
+        NodeManager.NodeData[] GetNode(long state)
+        {
+            if (fullNodes!=null&&fullNodes.Length != 0)
+            {
+                return fullNodes;
+            }
+            return nodeManager.GetNode(state);
+        }
+
+        string GetRandomNode(long state)
+        {
+            if (fullNodes != null && fullNodes.Length != 0)
+            {
+                return fullNodes[RandomHelper.Random() % fullNodes.Length].ipEndPoint.ToString();
+            }
+            return nodeManager.GetRandomNode(state);
+        }
+
         public async Task<bool> Sync(Block otherMcBlk,string ipEndPoint)
         {
             nodeManager = nodeManager ?? Entity.Root.GetComponent<NodeManager>();
@@ -39,20 +79,19 @@ namespace ETModel
             // 拉取到的块重复此过程
             // UndoTransfers到拉去到的块高度 , 有新块添加需要重新判断主块把漏掉的账本应用
             // GetMcBlock 重新去主块 ，  ApplyTransfers 应用账本
+            long spacing = 2;
             long syncHeight = otherMcBlk.height;
-            long currHeight = (int)(cons.transferHeight / 10) * 10;
+            long currHeight = (int)(cons.transferHeight / spacing) * spacing;
 
-            var nodes = nodeManager.GetNode(NodeManager.EnumState.openSyncFast);
+            var nodes = GetNode(NodeManager.EnumState.openSyncFast);
             if (nodes.Length != 0)
             {
-                long spacing = 10;
-
                 int ii = 0;
                 int random = RandomHelper.Random() % nodes.Length;
                 while (GetFunCount <= nodes.Length)
                 {
                     long h = currHeight + ii * spacing;
-                    if (h > cons.transferHeight + 300)
+                    if (h > cons.transferHeight + 25*spacing)
                         break;
 
                     if (record.IndexOf(h) == -1)
@@ -65,7 +104,20 @@ namespace ETModel
 
             record.RemoveAll(x => x < currHeight);
 
-            return await cons.SyncHeightNear(otherMcBlk, nodeManager.GetRandomNode(NodeManager.EnumState.openSyncFast),1f);
+            _= SyncHeightNear(otherMcBlk, GetRandomNode(NodeManager.EnumState.openSyncFast), 13, 30f);
+
+            return await cons.SyncHeightNear(otherMcBlk, ipEndPoint, (int)spacing+3, 3f);
+        }
+
+        int SyncHeightNearCount = 0;
+        async ETVoid SyncHeightNear(Block otherMcBlk, string ipEndPoint, int spacing, float timeOut = 5)
+        {
+            if (SyncHeightNearCount >= 6)
+                return;
+
+            SyncHeightNearCount++;
+            await cons.SyncHeightNear(otherMcBlk, ipEndPoint, spacing, timeOut);
+            SyncHeightNearCount--;
         }
 
         async void Get(long height, long spacing, string ipEndPoint)
@@ -84,12 +136,17 @@ namespace ETModel
                 var reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint, 30);
                 if (reply == null)
                 {
-                    ipEndPoint = nodeManager.GetRandomNode().ipEndPoint;
+                    ipEndPoint = GetRandomNode(NodeManager.EnumState.transferShow);
                     reply = await cons.QuerySync_Height(q2p_Sync_Height, ipEndPoint, 30);
                 }
                 if (reply != null && !string.IsNullOrEmpty(reply.blockChains))
                 {
+#if !RELEASE
                     Log.Info($"SyncHeightFast.Get AddBlock {height} {ipEndPoint}");
+#else
+                    Log.Info($"SyncHeightFast.Get AddBlock {height}");
+#endif
+
                     blockChains = JsonHelper.FromJson<Dictionary<long, string>>(reply.blockChains);
                     do
                     {
@@ -114,12 +171,22 @@ namespace ETModel
                 }
                 else
                 {
+#if !RELEASE
                     Log.Info($"SyncHeightFast.Get Remove {height} {ipEndPoint}");
+#else
+                    Log.Info($"SyncHeightFast.Get Remove {height}");
+#endif
                     record.Remove(height);
                 }
             }
             catch (Exception)
             {
+#if !RELEASE
+                Log.Info($"SyncHeightFast.Get Remove {height} {ipEndPoint}");
+#else
+                    Log.Info($"SyncHeightFast.Get Remove {height}");
+#endif
+                record.Remove(height);
             }
 
             GetFunCount--;

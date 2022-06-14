@@ -12,12 +12,24 @@ namespace ETModel
     public class SmartxRpc : Component
     {
         ComponentNetworkHttp networkHttp;
+        bool openRecentNode = false;
+        bool openContractTran = false;
 
         public override void Awake(JToken jd = null)
         {
             ComponentNetMsg componentNetMsg = Entity.Root.GetComponent<ComponentNetMsg>();
             componentNetMsg.registerMsg(NetOpcodeBase.HttpMessage, OnHttpMessage);
 
+            if (jd["openRecentNode"] != null)
+            {
+                Boolean.TryParse(jd["openRecentNode"]?.ToString(), out openRecentNode);
+                Log.Info($"SmartxRpc.openRecentNode = {openRecentNode}");
+            }
+            if (jd["openContractTran"] != null)
+            {
+                Boolean.TryParse(jd["openContractTran"]?.ToString(), out openContractTran);
+                Log.Info($"SmartxRpc.openContractTran = {openContractTran}");
+            }
         }
 
         public override void Start()
@@ -76,6 +88,12 @@ namespace ETModel
                 case "transferstate":
                     OnTransferState(httpMessage);
                     break;
+                case "transferstate2":
+                    OnTransferState2(httpMessage);
+                    break;
+                case "transferstatequick":
+                    OnTransferStateQuick(httpMessage);
+                    break;
                 case "uniquetransfer":
                     UniqueTransfer(httpMessage);
                     break;
@@ -124,14 +142,20 @@ namespace ETModel
                 case "transactions": //根据地址查询该地址的交易记录
                     OnTransactions(httpMessage);
                     break;
+                case "transfercount":
+                    OnTransferCount(httpMessage);
+                    break;
+                case "transactionsquick": //根据地址查询该地址的交易记录
+                    OnTransactionsQuick(httpMessage);
+                    break;
+                case "transfercountquick":
+                    OnTransferCountQuick(httpMessage);
+                    break;
                 case "info":  //info
                     OnInfo(httpMessage);
                     break;
                 case "latest-block-height"://latest-block-height
                     OnLatestBlockHeight(httpMessage);
-                    break;
-                case "transfercount":
-                    OnTransferCount(httpMessage);
                     break;
                 case "miner":
                     OnMiner(httpMessage);
@@ -148,6 +172,15 @@ namespace ETModel
                 case "adressreg":
                     AdressReg(httpMessage);
                     break;
+                case "getrecentblocknode":
+                    getRecentNode(httpMessage);
+                    break;
+                case "getrecentblocknodetran":
+                    getRecentNodeTran(httpMessage);
+                    break;
+                case "getproductinfo":
+                    getProductInfo(httpMessage);
+                    break;
                 case "getfactorydata":
                     getDactoryData(httpMessage);
                     break;
@@ -156,8 +189,244 @@ namespace ETModel
                         httpMessage.result = "welcome join SmartX.net";
                     }
                     break;
+                case "getrankingdata":
+                    getRankingData(httpMessage);
+                    break;
                 default:
                     break;
+            }
+        }
+
+        private void getRankingData(HttpMessage httpMessage)
+        {
+
+            if (!GetParam(httpMessage, "1", "browserIndex", out string browserIndexStr))
+            {
+                httpMessage.result = "command error! \nexample: GetNearBlock browserIndex";
+                return;
+            }
+            long.TryParse(browserIndexStr, out long browserIndex);
+            var getdata = Entity.Root.GetComponent<Getdata>();
+            int showCount = 20;//每页显示20条
+            if (getdata.array.Any() && getdata.array != null)
+            {
+                JArray PageData = new JArray();
+                for (int i = (showCount * (int)browserIndex) - showCount; i < showCount * (int)browserIndex; i++)
+                {
+                    PageData.Add(getdata.array[i]);
+                }
+                httpMessage.result = JsonHelper.ToJson(PageData);
+            }
+            else
+            {
+                httpMessage.result = "";
+            }
+
+        }
+
+        public void getProductInfo(HttpMessage httpMessage)
+        {
+            if (!openRecentNode)
+                return;
+
+            try
+            {
+                //httpMessage.result = JsonHelper.ToJson(GetProduct.productInfo);
+            }
+            catch (Exception e)
+            {
+                httpMessage.result = "false";
+            }
+        }
+
+        public void getRecentNodeTran(HttpMessage httpMessage)
+        {
+            if (!openRecentNode)
+                return;
+
+            try
+            {
+                string recentheight;
+                string startheight;
+                string endheight;
+                if (!GetParam(httpMessage, "recentheight", "recentheight", out recentheight))
+                {
+                    recentheight = "20";
+                }
+                if (!GetParam(httpMessage, "startheight", "startheight", out startheight))
+                {
+                    startheight = "0";
+                }
+                if (!GetParam(httpMessage, "endheight", "endheight", out endheight))
+                {
+                    endheight = "0";
+                }
+                long searchHeight = long.Parse(recentheight);
+                long searchHeightStart = long.Parse(startheight);
+                long searchHeightEnd = long.Parse(endheight);
+                var consensus = Entity.Root.GetComponent<Consensus>();
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+                Dictionary<string, long> res = new Dictionary<string, long>();
+                var height = consensus.transferHeight;
+                if (searchHeightStart != 0 && searchHeightEnd != 0 && searchHeightStart <= searchHeightEnd)
+                {
+
+                }
+                else
+                {
+                    searchHeightStart = height - searchHeight + 1;
+                    searchHeightEnd = height;
+                }
+                for (long i = searchHeightStart; i <= searchHeightEnd; i++)
+                {
+                    Block myblk = BlockChainHelper.GetMcBlock(i);
+                    for (int ii = 0; ii < myblk.linksblk.Count; ii++)
+                    {
+                        var hash = myblk.linksblk[ii];
+                        var linkBlock = blockMgr.GetBlock(hash);
+                        var address = linkBlock.Address;
+                        var tranCount = linkBlock.linkstran.Count;
+                        long val;
+                        if (res.TryGetValue(address, out val))
+                        {
+                            //如果指定的字典的键存在
+                            res[address] = val + tranCount;
+                        }
+                        else
+                        {
+                            //不存在，则添加
+                            res.Add(address, tranCount);
+                        }
+                    }
+                }
+                res.Add("startheight", searchHeightStart);
+                res.Add("endheight", searchHeightEnd);
+                var result = from pair in res orderby pair.Value descending select pair;
+                httpMessage.result = JsonHelper.ToJson(result);
+            }
+            catch (Exception ex)
+            {
+                httpMessage.result = "";
+            }
+        }
+
+        public void getRecentNode(HttpMessage httpMessage)
+        {
+            if (!openRecentNode)
+                return;
+
+            try
+            {
+                string recentheight;
+                string startheight;
+                string endheight;
+                if (!GetParam(httpMessage, "recentheight", "recentheight", out recentheight))
+                {
+                    recentheight = "20";
+                }
+                if (!GetParam(httpMessage, "startheight", "startheight", out startheight))
+                {
+                    startheight = "0";
+                }
+                if (!GetParam(httpMessage, "endheight", "endheight", out endheight))
+                {
+                    endheight = "0";
+                }
+                long searchHeight = long.Parse(recentheight);
+                long searchHeightStart = long.Parse(startheight);
+                long searchHeightEnd = long.Parse(endheight);
+                var consensus = Entity.Root.GetComponent<Consensus>();
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+                Dictionary<string, long> res = new Dictionary<string, long>();
+                Dictionary<string, List<string>> res2 = new Dictionary<string, List<string>>();
+
+                var height = consensus.transferHeight;
+                if (searchHeightStart != 0 && searchHeightEnd != 0 && searchHeightStart < searchHeightEnd)
+                {
+
+                }
+                else
+                {
+                    searchHeightStart = height - searchHeight + 1;
+                    searchHeightEnd = height;
+                }
+
+                Dictionary<string, int> addressTransCount = new Dictionary<string, int>();
+
+                // 得到节点ip
+                var nodes = Entity.Root.GetComponent<NodeManager>().GetNodeList();
+                nodes.Sort((a, b) => b.kIndex - a.kIndex);
+
+                for (long i = searchHeightStart; i <= searchHeightEnd; i++)
+                {
+                    Block myblk = BlockChainHelper.GetMcBlock(i);
+                    for (int ii = 0; ii < myblk.linksblk.Count; ii++)
+                    {
+                        Block linkblk = blockMgr.GetBlock(myblk.linksblk[ii]);
+                        if (linkblk == null)
+                        {
+                            return;
+                        }
+                        if (linkblk.height != 1)
+                        {
+                            for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                            {
+                                //addressTransCount.Add(linkblk.Address);
+                                linkblk.linkstran[jj].height = 0;
+                            }
+                        }
+                    }
+
+                    for (int ii = 0; ii < myblk.linksblk.Count; ii++)
+                    {
+                        var hash = myblk.linksblk[ii];
+                        var linkBlock = blockMgr.GetBlock(hash);
+                        var address = linkBlock.Address;
+                        long val;
+                        if (res.TryGetValue(address, out val))
+                        {
+                            //如果指定的字典的键存在
+                            res[address] = val + 1;
+                            res2[address][1] = (val + 1).ToString();
+                        }
+                        else
+                        {
+                            for (int j = 0; j < nodes.Count; j++)
+                            {
+                                if (address == nodes[j].address)
+                                {
+                                    List<string> tmplist = new List<string>();
+                                    tmplist.Add(nodes[j].ipEndPoint);
+                                    tmplist.Add("1");
+                                    tmplist.Add(searchHeightStart.ToString());
+                                    tmplist.Add(searchHeightEnd.ToString());
+                                    res2.TryAdd(address, tmplist);
+
+                                    //不存在，则添加
+                                    res.Add(address, 1);
+                                    break;
+                                }
+                            }
+
+                            
+                        }
+                    }
+                }
+
+                res.Add("startheight", searchHeightStart);
+                res.Add("endheight", searchHeightEnd);
+
+                //res2.Add("startheight", searchHeightStart);
+                //res2.Add("endheight", searchHeightEnd);
+
+                var result = from pair in res orderby pair.Value descending select pair;
+                var result2 = from pair in res2 orderby pair.Value[1] descending select pair;
+                //httpMessage.result = JsonHelper.ToJson(result);
+                httpMessage.result = JsonHelper.ToJson(result2);
+            }
+            catch (Exception ex)
+            {
+                httpMessage.result = "";
             }
         }
 
@@ -174,13 +443,22 @@ namespace ETModel
 
         private void OnContractTran(HttpMessage httpMessage)
         {
+            if (!openContractTran) {
+                httpMessage.result = "!SmartxRpc.openContractTran";
+                return;
+            }
+
             string indexStr;
-            if (!GetParam(httpMessage, "Index", "index", out  indexStr))
+            if (!GetParam(httpMessage, "Index", "index", out indexStr))
             {
                 indexStr = "0";
             }
-            int index = int.Parse(indexStr);
-            long num = 0;
+            int.TryParse(indexStr,out int index);
+            if (index > 10){
+                index = 10;// limit 
+            }
+
+            int num = (12 * (index + 1));
             OnProperty(httpMessage);
             Dictionary<string, string> res = new Dictionary<string, string>();
             res = JsonHelper.FromJson<Dictionary<string, string>>(httpMessage.result);
@@ -200,11 +478,7 @@ namespace ETModel
                 using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
                 {
                     int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}{tokenAddress}");
-                    if (num > (12 * (index+1)))
-                    {
-                        break;
-                    }
-                    for (int ii = TFA_Count; ii > 0; ii--)
+                    for (int ii = TFA_Count; ii > 0 && ii >= (TFA_Count-num); ii--)
                     {
                         string hasht = dbSnapshot.List.Get($"TFA__{address}{tokenAddress}", ii - 1);
                         if (hasht != null)
@@ -263,6 +537,7 @@ namespace ETModel
                 httpMessage.result = "{\"count\":" + TFA_Count + "}";
             }
         }
+
         public void OnProperty(HttpMessage httpMessage)
         {
             if (!GetParam(httpMessage, "1", "address", out string address))
@@ -315,6 +590,7 @@ namespace ETModel
                 httpMessage.result = JsonHelper.ToJson(map);
             }
         }
+
         private void OnGetNonce(HttpMessage httpMessage)
         {
             string address = httpMessage.map["address"];
@@ -448,9 +724,9 @@ namespace ETModel
             httpMessage.result = JsonHelper.ToJson(infomsg);
         }
 
-        private void OnTransactions(HttpMessage httpMessage)
+        private List<BlockSub> OnTransactions(HttpMessage httpMessage)
         {
-            if (!GetParam(httpMessage, "Index", "index", out string index))
+            if (!GetParam(httpMessage, "1", "index", out string index))
             {
                 index = "0";
             }
@@ -458,20 +734,24 @@ namespace ETModel
             List<BlockSub> transactionList = new List<BlockSub>();
             using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
             {
-                if (!GetParam(httpMessage, "1", "address", out string address))
+                if (!GetParam(httpMessage, "2", "address", out string address))
                 {
                     httpMessage.result = "please input address";
                 }
-                var account = dbSnapshot.Accounts.Get(address);
-
-                if (account != null)
+                if (!GetParam(httpMessage, "3", "token", out string tokenAddress))
                 {
-                    int TFA_Count = dbSnapshot.List.GetCount($"TFA__{address}");
+                }
+
+                //var account = dbSnapshot.Accounts.Get(address);
+                //if (account != null)
+                {
+                    var key = string.IsNullOrEmpty(tokenAddress) ? $"TFA__{address}" : $"TFA__{address}{tokenAddress}";
+                    var TFA_Count = dbSnapshot.List.GetCount(key);
                     Index = TFA_Count - Index * 12;
 
                     for (int ii = Index; ii > Index - 12 && ii > 0; ii--)
                     {
-                        string hasht = dbSnapshot.List.Get($"TFA__{address}", ii-1);
+                        string hasht = dbSnapshot.List.Get(key, ii-1);
                         if (hasht != null)
                         {
                             var transfer = dbSnapshot.Transfers.Get(hasht);
@@ -495,8 +775,130 @@ namespace ETModel
                 }
                 httpMessage.result = JsonHelper.ToJson(transactionList);
             }
+            return transactionList;
 
+        }
 
+        // FloatChat Quick confirmation
+        private void GetTransactionsQuick(int Index,string address, string tokenAddress, ref List<BlockSub> transactionList,ref int TFA_Count)
+        {
+            var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+            var rule = Entity.Root.GetComponent<Rule>();
+            var lastblk = rule.GetLastMcBlock();
+            if (lastblk != null)
+            {
+                var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+                // 取最新高度
+                long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
+
+                using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+                {
+                    var key = string.IsNullOrEmpty(tokenAddress) ? $"TFA__{address}": $"TFA__{address}{tokenAddress}";
+                    TFA_Count = dbSnapshot.List.GetCount(key);
+                }
+
+                List<Block> blks = new List<Block>();
+                var curblk = lastblk;
+                for (long height = curblk.height; height > transferHeight; height--)
+                {
+                    blks.Insert(0,curblk);
+                    curblk = blockMgr.GetBlock(curblk.prehash);
+                }
+
+                for (var blks_index = 0; blks_index < blks.Count; blks_index++)
+                {
+                    var mcblk = blks[blks_index];
+                    for (int ii = 0; ii < mcblk.linksblk.Count; ii++)
+                    {
+                        Block linkblk = blockMgr.GetBlock(mcblk.linksblk[ii]);
+                        if (linkblk == null)
+                        {
+                            continue;
+                        }
+                        if (linkblk.height != 1)
+                        {
+                            for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                            {
+                                if (linkblk.linkstran[jj].addressIn==address||linkblk.linkstran[jj].data.IndexOf(address)!=-1)
+                                {
+                                    if (transactionList.IndexOf(linkblk.linkstran[jj]) == -1)
+                                    {
+                                        transactionList.Insert(0,linkblk.linkstran[jj]);
+                                        TFA_Count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<Block> linksblks = blockMgr.GetBlock(lastblk.height);
+                for (int ii = 0; ii < linksblks.Count; ii++)
+                {
+                    Block linkblk = linksblks[ii];
+                    for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                    {
+                        if (linkblk.linkstran[jj].addressIn==address||linkblk.linkstran[jj].data.IndexOf(address)!=-1)
+                        {
+                            if (transactionList.IndexOf(linkblk.linkstran[jj]) == -1)
+                            {
+                                transactionList.Insert(0,linkblk.linkstran[jj]);
+                                TFA_Count++;
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            transactionList = transactionList.TakeLast(12).ToList();
+
+        }
+
+        // FloatChat Quick confirmation
+        private void OnTransactionsQuick(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "index", out string index))
+            {
+                index = "0";
+            }
+            if (!GetParam(httpMessage, "2", "address", out string address))
+            {
+                httpMessage.result = "please input address";
+                return;
+            }
+            if (!GetParam(httpMessage, "3", "token", out string tokenAddress))
+            {
+            }
+
+            List<BlockSub> transactionList = OnTransactions(httpMessage);
+            int Index = int.Parse(index);
+            if (Index != 0)
+                return;
+
+            int TFA_Count = 0;
+            GetTransactionsQuick(Index, address, tokenAddress, ref transactionList, ref TFA_Count);
+
+            httpMessage.result = JsonHelper.ToJson(transactionList);
+
+        }
+
+        // FloatChat Quick confirmation
+        private void OnTransferCountQuick(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "address", out string address))
+            {
+                httpMessage.result = "please input address";
+                return;
+            }
+            if (!GetParam(httpMessage, "2", "token", out string tokenAddress))
+            {
+            }
+            int TFA_Count = 0;
+            List<BlockSub> transactionList = new List<BlockSub>();
+            GetTransactionsQuick(0, address, tokenAddress, ref transactionList, ref TFA_Count);
+
+            httpMessage.result = "{\"count\":" + TFA_Count + "}";
 
         }
 
@@ -711,9 +1113,25 @@ namespace ETModel
 
         public void OnNode(HttpMessage httpMessage)
         {
+#if !RELEASE
             var nodes = Entity.Root.GetComponent<NodeManager>().GetNodeList();
             nodes.Sort((a, b) => b.kIndex - a.kIndex);
             httpMessage.result = JsonHelper.ToJson(nodes);
+#else
+            var nodes = new List<NodeManager.NodeData>();
+            Entity.Root.GetComponent<NodeManager>().GetNodeList().ForEach(x => nodes.Add(new NodeManager.NodeData()
+            {
+                //ipEndPoint = x.ipEndPoint.Substring(x.ipEndPoint.Length/3, x.ipEndPoint.Length-x.ipEndPoint.Length/3),
+                ipEndPoint = "",
+                kIndex = x.kIndex,
+                nodeId = x.nodeId,
+                state = x.state,
+                version = x.version,
+                address = x.address,
+            }));
+            nodes.Sort((a, b) => b.kIndex - a.kIndex);
+            httpMessage.result = JsonHelper.ToJson(nodes);
+#endif
         }
 
         public void OnMiner(HttpMessage httpMessage)
@@ -931,6 +1349,175 @@ namespace ETModel
                 else
                     httpMessage.result = "";
             }
+        }
+
+        public void OnTransferState2(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "hash", out string hash))
+            {
+                httpMessage.result = "command error! \nexample: transferstate hash";
+                return;
+            }
+
+            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                var transfer = dbSnapshot.Transfers.Get(hash);
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    return;
+                }
+            }
+
+            {
+                var transfer = Entity.Root.GetComponent<Rule>().GetTransferState(hash);
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    var temp = JsonHelper.FromJson<BlockSub>(httpMessage.result);
+                    if (temp.temp == null)
+                    {
+                        temp.temp = new List<string>();
+                    }
+                    temp.temp.Add("Transfer In Queue");
+                    httpMessage.result = JsonHelper.ToJson(temp);
+                    return;
+                }
+            }
+
+            var lastblk = Entity.Root.GetComponent<Rule>().GetLastMcBlock();
+            if (lastblk != null)
+            {
+                BlockSub transfer = null;
+                long transferHeight = Entity.Root.GetComponent<Consensus>().transferHeight;
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+
+                List<Block> blks = new List<Block>();
+                var curblk = lastblk;
+                for (long height = curblk.height; height > transferHeight; height--)
+                {
+                    blks.Insert(0, curblk);
+                    curblk = blockMgr.GetBlock(curblk.prehash);
+                }
+
+                for (var blks_index = 0; blks_index < blks.Count && transfer == null; blks_index++)
+                {
+                    var mcblk = blks[blks_index];
+                    for (int ii = 0; ii < mcblk.linksblk.Count && transfer == null; ii++)
+                    {
+                        Block linkblk = blockMgr.GetBlock(mcblk.linksblk[ii]);
+                        if (linkblk == null)
+                        {
+                            continue;
+                        }
+                        if (linkblk.height != 1)
+                        {
+                            for (int jj = 0; jj < linkblk.linkstran.Count && transfer == null; jj++)
+                            {
+                                if (linkblk.linkstran[jj].hash == hash)
+                                {
+                                    transfer = linkblk.linkstran[jj];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<Block> linksblks = blockMgr.GetBlock(lastblk.height);
+                for (int ii = 0; ii < linksblks.Count && transfer == null; ii++)
+                {
+                    Block linkblk = linksblks[ii];
+                    for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                    {
+                        if (linkblk.linkstran[jj].hash == hash)
+                        {
+                            transfer = linkblk.linkstran[jj];
+                        }
+                    }
+                }
+
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    var temp = JsonHelper.FromJson<BlockSub>(httpMessage.result);
+                    if (temp.temp == null)
+                    {
+                        temp.temp = new List<string>();
+                    }
+                    temp.temp.Add("Waiting for block confirmation");
+                    httpMessage.result = JsonHelper.ToJson(temp);
+                    return;
+                }
+            }
+
+            httpMessage.result = "";
+        }
+
+        public void OnTransferStateQuick(HttpMessage httpMessage)
+        {
+            httpMessage.result = "";
+            if (!GetParam(httpMessage, "1", "hash", out string hash))
+            {
+                httpMessage.result = "command error! \nexample: transferstate hash";
+                return;
+            }
+
+            var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+            var rule = Entity.Root.GetComponent<Rule>();
+            var lastblk = rule.GetLastMcBlock();
+            if (lastblk != null)
+            {
+                var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+                // 取最新高度
+                long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
+
+                List<Block> blks = new List<Block>();
+                var curblk = lastblk;
+                for (long height = curblk.height; height > transferHeight; height--)
+                {
+                    blks.Insert(0, curblk);
+                    curblk = blockMgr.GetBlock(curblk.prehash);
+                }
+
+                for (var blks_index = 0; blks_index < blks.Count; blks_index++)
+                {
+                    var mcblk = blks[blks_index];
+                    for (int ii = 0; ii < mcblk.linksblk.Count; ii++)
+                    {
+                        Block linkblk = blockMgr.GetBlock(mcblk.linksblk[ii]);
+                        if (linkblk == null)
+                        {
+                            continue;
+                        }
+                        if (linkblk.height != 1)
+                        {
+                            for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                            {
+                                if (linkblk.linkstran[jj].hash == hash)
+                                {
+                                    httpMessage.result = JsonHelper.ToJson(linkblk.linkstran[jj]);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<Block> linksblks = blockMgr.GetBlock(lastblk.height);
+                for (int ii = 0; ii < linksblks.Count; ii++)
+                {
+                    Block linkblk = linksblks[ii];
+                    for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                    {
+                        if (linkblk.linkstran[jj].hash == hash)
+                        {
+                            httpMessage.result = JsonHelper.ToJson(linkblk.linkstran[jj]);
+                            return;
+                        }
+                    }
+                }
+            }
+
         }
 
         public void UniqueTransfer(HttpMessage httpMessage)

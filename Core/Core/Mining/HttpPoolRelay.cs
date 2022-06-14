@@ -25,7 +25,6 @@ namespace ETModel
         Pool pool     = null;
         HttpRpc  httpRpc  = null;
         HttpPool httpPool = null;
-        public string rulerRpc = null;
         public string rulerWeb = null;
 
         static public float rulerServiceFee = 0; // Ruler的手续费
@@ -33,33 +32,41 @@ namespace ETModel
         public override void Awake(JToken jd = null)
         {
             address = Wallet.GetWallet().GetCurWallet().ToAddress();
+            var protocol= jd["protocol"]?.ToString();
             number  = jd["number"]?.ToString();
             poolUrl = jd["poolUrl"]?.ToString();
-            rulerRpc = jd["rulerRpc"]?.ToString();
             rulerWeb = jd["rulerWeb"]?.ToString();
             thread = 0;
             intervalTime = 100;
 
             poolUrl  = poolUrl.Replace("http://", "");
-            rulerRpc = rulerRpc.Replace("http://", "");
             rulerWeb = rulerWeb.Replace("http://", "");
 
             Log.Info($" poolUrl:{poolUrl}");
-            Log.Info($"rulerRpc:{rulerRpc}");
             Log.Info($"rulerWeb:{rulerWeb}");
+
+            poolUrl = poolUrl.Replace(" ", "");
+            if (!string.IsNullOrEmpty(protocol))
+            {
+                strJson = strJson.Replace("TCP", protocol);
+            }
+            strJson = strJson.Replace("0:9101", poolUrl);
+            var newEntity = new Entity("Network");
+            this.entity.AddChild(newEntity);
+            newEntity.AddComponent<ComponentNetMsg>();
+            networkOuter = newEntity.AddComponent<ComponentNetworkOuter>(JToken.Parse(strJson));
 
             changeCallback += OnMiningChange;
         }
 
         public async override void Start()
         {
-            timePass1 = new TimePass(0.1f);
-            timePass2 = new TimePass(0.1f);
+            timePass1 = new TimePass(0.2f);
+            timePass2 = new TimePass(0.2f);
 
             pool = Entity.Root.GetComponentInChild<Pool>();
             httpPool = Entity.Root.GetComponentInChild<HttpPool>();
             httpRpc  = Entity.Root.GetComponentInChild<HttpRpc>();
-            pool.transferProcess.rulerRpc = rulerRpc;
 
             System.Threading.Thread thread = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(RunRegisterPool));
             thread.IsBackground = true;//设置为后台线程
@@ -126,23 +133,25 @@ namespace ETModel
         // Pool Call
         public void RegisterPool()
         {
-            HttpMessage quest = new HttpMessage();
+            var quest = new PoolMessage();
             quest.map = new Dictionary<string, string>();
             quest.map.Clear();
             quest.map.Add("cmd", "registerPool");
             quest.map.Add("version", version);
             quest.map.Add("password", HttpPool.poolPassword);
             quest.map.Add("poolInfo", $"{number}->0.0.0.0:{httpPool.GetHttpAdderrs().Port}##http://0.0.0.0:{httpRpc.GetHttpAdderrs().Port}");
-            HttpMessage result = null;
-            result = ComponentNetworkHttp.QuerySync($"http://{poolUrl}/mining", quest,5);
-            if (result != null && result.map != null)
+            var result = QueryPoolSync<Dictionary<string, string>>(quest,5);
+            if (result == null)
+                return ;
+
+            if (result != null)
             {
-                if (result.map.TryGetValue("report", out string report) && report!= "accept")
+                if (result.TryGetValue("report", out string report) && report!= "accept")
                 {
-                    Log.Warning($"\n {result.map["tips"]}");
+                    Log.Warning($"\n {result["tips"]}");
                     return;
                 }
-                if (result.map.TryGetValue("ownerAddress",out string ownerAddress))
+                if (result.TryGetValue("ownerAddress",out string ownerAddress))
                 {
                     if (pool.ownerAddress != ownerAddress)
                     {
@@ -150,7 +159,7 @@ namespace ETModel
                         Log.Info($"RegisterPool addr: {ownerAddress}");
                     }
                 }
-                if (result.map.TryGetValue("serviceFee", out string serviceFee))
+                if (result.TryGetValue("serviceFee", out string serviceFee))
                 {
                     float.TryParse(serviceFee, out float fee);
                     if (rulerServiceFee != fee)
@@ -163,16 +172,16 @@ namespace ETModel
         }
 
         // Ruler Call 
-        public static void OnRegisterPool(HttpMessage httpMessage)
+        public static void OnRegisterPool(PoolMessage poolMessage)
         {
             Dictionary<string, string> map = new Dictionary<string, string>();
-            string version = httpMessage.map["version"];
+            string version = poolMessage.map["version"];
             if (version != Miner.version)
             {
                 map.Remove("report");
                 map.Add("report", "error");
                 map.Add("tips", $"Miner.version: {Miner.version}");
-                httpMessage.result = JsonHelper.ToJson(map);
+                poolMessage.result = JsonHelper.ToJson(map);
                 return;
             }
 
@@ -180,21 +189,21 @@ namespace ETModel
             {
                 map.Add("report", "refuse");
                 map.Add("tips", $"Ruler no support registerPool!");
-                httpMessage.result = JsonHelper.ToJson(map);
+                poolMessage.result = JsonHelper.ToJson(map);
                 return;
             }
 
-            httpMessage.map.TryGetValue("password", out string password);
+            poolMessage.map.TryGetValue("password", out string password);
             if ( !string.IsNullOrEmpty(HttpPool.poolPassword) && password != HttpPool.poolPassword)
             {
                 map.Add("report", "refuse");
                 map.Add("tips", $"poolPassword error");
-                httpMessage.result = JsonHelper.ToJson(map);
+                poolMessage.result = JsonHelper.ToJson(map);
                 return;
             }
 
-            string IPAddress = httpMessage.request.RemoteEndPoint.Address.ToString();
-            string poolInfo = httpMessage.map["poolInfo"].Replace("0.0.0.0", IPAddress);
+            string IPAddress = poolMessage.session.RemoteAddress.Address.ToString();
+            string poolInfo = poolMessage.map["poolInfo"].Replace("0.0.0.0", IPAddress);
 
             if (poolInfos.IndexOf(poolInfo) == -1) {
                 Log.Info($"RegisterPool: {IPAddress} {poolInfo}");
@@ -207,7 +216,7 @@ namespace ETModel
             map.Add("report", "accept");
             map.Add("ownerAddress", Wallet.GetWallet().GetCurWallet().ToAddress());
             map.Add("serviceFee", Pool.serviceFee.ToString());
-            httpMessage.result = JsonHelper.ToJson(map);
+            poolMessage.result = JsonHelper.ToJson(map);
         }
 
         public Block GetMcBlock(long ___height)
@@ -215,32 +224,37 @@ namespace ETModel
             if (___height <= 1)
                 return null;
 
+            PoolBlock poolBlock = null;
             try
             {
-                PoolBlock poolBlock = null;
                 using (DbSnapshot snapshot = pool.PoolDBStore.GetSnapshot())
                 {
                     var str = snapshot.Get($"PoolBlock_{___height}");
-                    if(!string.IsNullOrEmpty(str)) {
+                    if (!string.IsNullOrEmpty(str)) {
                         poolBlock = JsonHelper.FromJson<PoolBlock>(str);
-                        if(poolBlock!=null&&Wallet.CheckAddress(poolBlock.Address)) {
-                            return new Block() { hash = poolBlock.hash , Address = poolBlock.Address ,random = poolBlock.random };
+                        if (poolBlock != null && Wallet.CheckAddress(poolBlock.Address)) {
+                            return new Block() { hash = poolBlock.hash, Address = poolBlock.Address, random = poolBlock.random };
                         }
                     }
                 }
+            }
+            catch (Exception)
+            {
+            }
 
-                HttpMessage quest = new HttpMessage();
+            try
+            {
+                PoolMessage quest = new PoolMessage();
                 quest.map = new Dictionary<string, string>();
                 quest.map.Add("cmd", "GetMcBlock");
-                quest.map.Add("version", version);
+                quest.map.Add("version", Miner.version);
                 quest.map.Add("height", ___height.ToString());
-                var result = ComponentNetworkHttp.QueryStringSync($"http://{poolUrl}", quest, 5);
-                if (string.IsNullOrEmpty(result))
+                poolBlock = QueryPoolSync<PoolBlock>(quest);
+                if (poolBlock == null)
                     return null;
-                poolBlock = JsonHelper.FromJson<PoolBlock>(result);
                 if (poolBlock!=null&&Wallet.CheckAddress(poolBlock.Address))
                 {
-                    using (DbSnapshot snapshot = pool.PoolDBStore.GetSnapshot())
+                    using (DbSnapshot snapshot = pool.PoolDBStore.GetSnapshot(0,true))
                     {
                         snapshot.Add($"PoolBlock_{___height}",JsonHelper.ToJson(poolBlock));
                         snapshot.Commit();
@@ -254,11 +268,11 @@ namespace ETModel
             return null;
         }
 
-        public static void OnGetMcBlock(HttpMessage httpMessage)
+        public static void OnGetMcBlock(PoolMessage poolMessage)
         {
             Dictionary<string, string> map = new Dictionary<string, string>();
             // 版本检查
-            string version = httpMessage.map["version"];
+            string version = poolMessage.map["version"];
             if (version != Miner.version)
             {
                 map.Remove("report");
@@ -268,13 +282,13 @@ namespace ETModel
             }
 
             // 矿池登记检查
-            if (Pool.registerPool &&poolIpAddress.IndexOf(httpMessage.request.RemoteEndPoint.Address.ToString())==-1)
+            if (Pool.registerPool &&poolIpAddress.IndexOf(poolMessage.session.RemoteAddress.Address.ToString())==-1)
             {
                 map.Add("tips", "need register Pool");
                 return;
             }
 
-            long ___height = long.Parse(httpMessage.map["height"]);
+            long ___height = long.Parse(poolMessage.map["height"]);
 
             var mcblk = BlockChainHelper.GetMcBlock(___height);
             if (mcblk != null)
@@ -283,7 +297,7 @@ namespace ETModel
                 poolBlock.hash    = mcblk.hash;
                 poolBlock.Address = mcblk.Address ;
                 poolBlock.random  = mcblk.random  ;
-                httpMessage.result = JsonHelper.ToJson(poolBlock);
+                poolMessage.result = JsonHelper.ToJson(poolBlock);
             }
         }
 

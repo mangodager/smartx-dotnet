@@ -16,14 +16,10 @@ namespace ETModel
         private  SnapShot    snapshot;
         private  WriteBatch  batch;
         private  ReadOptions options;
-#if MultiThread
         private readonly bool bWrite;
-#endif
 
         DbUndo Undos = null;    // 数据回退
         public DbCache<string>       Snap { get; }
-        public DbCache<Block>        Blocks { get; }
-        public DbCache<List<string>> Heights { get; }
         public DbCache<BlockSub>     Transfers { get; }
         public DbCache<Account>      Accounts { get; }
         public DbCache<LuaVMScript>  Contracts { get; }
@@ -31,26 +27,34 @@ namespace ETModel
         public DbCache<string>       StoragesMap { get; }
         public DbCache<List<string>> ABC { get; } // Accounts Bind Contracts
 
+        // Warning! Non consensus , Snapshots are not supported
+        public DbCache<Block>        Blocks { get; }
         public DbCache<BlockChain>   BlockChains { get; }
         public DbList<string>        List { get; }
         public DbQueue<string>       Queue { get; }
+        public DbCache<List<string>> Heights { get; }
+        //-----------------------------------------------------
 
         public DbSnapshot(DB db, long height, bool bUndo, bool bWrite)
         {
-#if MultiThread
-            this.bWrite = bWrite;
-            if(this.bWrite){
-                Monitor.Enter(db);
+            if (LevelDBStore.db_MultiThread)
+            {
+                this.bWrite = bWrite;
+                if (this.bWrite)
+                {
+                    Monitor.Enter(db);
+                }
+                this.db = db;
+                this.snapshot = db.CreateSnapshot();
+                this.batch = bWrite ? new WriteBatch() : null;
             }
-            this.db = db;
-            this.snapshot = db.CreateSnapshot();
-            this.batch    = bWrite ? new WriteBatch() : null;
-#else
-            Monitor.Enter(db);
-            this.db = db;
-            this.snapshot = db.CreateSnapshot();
-            this.batch = new WriteBatch();
-#endif
+            else
+            {
+                Monitor.Enter(db);
+                this.db = db;
+                this.snapshot = db.CreateSnapshot();
+                this.batch = new WriteBatch();
+            }
 
             this.options  = new ReadOptions { FillCache = false, Snapshot = snapshot };
 
@@ -80,11 +84,13 @@ namespace ETModel
 
         public void Commit()
         {
-#if MultiThread
-            if (!this.bWrite) {
-                throw new Exception("Subthread Commit Error!");
+            if (LevelDBStore.db_MultiThread)
+            {
+                if (!this.bWrite) {
+                    Log.Error("Subthread Commit Error!");
+                    throw new Exception("Subthread Commit Error!");
+                }
             }
-#endif
 
             Snap.Commit();
             Blocks.Commit();
@@ -105,6 +111,8 @@ namespace ETModel
                 batch?.Put("UndoHeight", Undos.height.ToString());
             }
             db.Write(batch, new WriteOptions { Sync = true });
+
+            //CheckHardDiskSpace();
         }
 
         public virtual void Dispose()
@@ -118,13 +126,17 @@ namespace ETModel
                 batch = null;
                 snapshot = null;
 
-#if MultiThread
-                if (this.bWrite) {
+                if (LevelDBStore.db_MultiThread)
+                {
+                    if (this.bWrite)
+                    {
+                        Monitor.Exit(db);
+                    }
+                }
+                else
+                {
                     Monitor.Exit(db);
                 }
-#else
-                Monitor.Exit(db);
-#endif
             }
         }
 
@@ -152,6 +164,43 @@ namespace ETModel
         {
             Snap.Delete(key);
         }
+
+
+        // Unit MB
+        static private TimePass checkDHSTime = new TimePass(30);
+        static private long hardDiskSpace    = -1;
+
+        public static long GetHardDiskSpace()
+        {
+            if (checkDHSTime.IsPassSet()||hardDiskSpace==-1)
+            {
+                string AppPath = AppContext.BaseDirectory;
+                string str_HardDiskName = AppPath.Substring(0, AppPath.IndexOf(':'));
+
+                str_HardDiskName = str_HardDiskName + ":\\";
+                System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
+                foreach (System.IO.DriveInfo drive in drives)
+                {
+                    if (drive.Name == str_HardDiskName)
+                    {
+                        hardDiskSpace = drive.TotalFreeSpace / (1024 * 1024);
+                        break;
+                    }
+                }
+            }
+            return hardDiskSpace;
+        }
+
+        // Check hard disk space every 30 seconds
+        public static void CheckHardDiskSpace()
+        {
+            if (GetHardDiskSpace() < 200)
+            {
+                Log.Error("Hard disk space is less than 200MB");
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+            }
+        }
+
 
     }
 }

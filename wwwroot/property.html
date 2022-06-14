@@ -87,10 +87,12 @@
                 <div class="lang" key="复制地址"></div>
             </button>
             <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#ModalExport"><div class="lang" key="导出"></div></button>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalContract"><div class="lang" key="发布智能合约"></div></button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalContract"><div class="lang" key="发布合约"></div></button>
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#ModalCall"><div class="lang" key="调用合约"></div></button>
             <button type="button" class="btn btn-info" onclick="liOnPledge()"><div class="lang" key="质押合约"></div></button>
-            <button type="button" class="btn btn-info" onclick="liOnLock()"><div class="lang" key="锁仓"></div></button>
-            <!--<button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>-->
+            <button type="button" class="btn btn-info" onclick="liOnNFT()"><div class="lang" key="数字资产"></div></button>
+            <button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>
+            <button type="button" class="btn btn-primary" onclick="liOnCorssChain()" id="CorssChainBtn"><div class="lang" key="跨链"></div></button>
             <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
@@ -188,6 +190,14 @@
                             <label for="title" class="lang" key="转账金额:"></label>
                             <input type="text" id="scan_amount" align="left">
                         </p>
+                        <p>
+                            <label for="username">nonce:</label>
+                            <input type="text" id="scan_nonce" name="nonce" align="left" disabled="disabled">
+                        </p>
+                        <p>
+                            <label for="username" class="lang" key="备注:"></label>
+                            <input type="text" id="scan_remarks" name="remarks" align="left">
+                        </p>
                     </fieldset>
                     <input type="text" id="scan_nonce" align="left" style="display:none">
                     <input type="text" id="scan_remarks" align="left">
@@ -241,7 +251,7 @@
                         </p>
                         <p>
                             <label for="username" class="lang" key="合约模板:"></label>
-                            <input type="text" id="input_depend" value="ERC20" name="remarks" align="left">
+                            <input type="text" id="input_depend" value="ERC20" name="depend" align="left">
                         </p>
                         <p>
                             <label for="username" class="lang" key="参数:"></label>
@@ -273,318 +283,402 @@
             </div>
         </div>
 
-        <script>
-            //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
+        <div class="modal fade" id="ModalCall" tabindex="-1" role="dialog" aria-labelledby="ModalCallLabel" aria-hidden="true" onload="onTransferLoad()">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                            ×
+                        </button>
+                        <h5 class="modal-title lang" id="myModalLabel" key="合约  调用">
+                        </h5>
+                    </div>
 
-            if (Login.LoadPassword() == null)
-                window.location.href = "index.html";
+                    <fieldset>
+                        <p> </p>
+                        <p>
+                            <label for="title" class="lang" key="发布地址:"></label>
+                            <input type="text" id="input_addressIn2" name="addressIn" align="left" disabled="disabled">
+                        </p>
+                        <p>
+                            <label for="title" class="lang" key="合约地址:"></label>
+                            <input type="text" id="input_addressOut2" name="addressOut" align="left">
+                        </p>
+                        <p>
+                            <label for="username" class="lang" key="参数:"></label>
+                            <input type="text" id="input_callFun2" name="data" align="left">
+                        </p>
+                        <p>
+                            <label for="username" class="lang" key="备注:"></label>
+                            <input type="text" id="input_remarks2" name="remarks" align="left">
+                        </p>
+                        <p>
+                            <label for="username">nonce:</label>
+                            <input type="text" id="input_nonce2" name="nonce" align="left">
+                        </p>
+                        <p>
+                            <label for="username" class="lang" key="矿工费:"></label>
+                            <input type="text" id="gas2" name="gas" align="left" value="0.002" disabled="disabled">
+                        </p>
+                    </fieldset>
 
-            function OnExportChange() {
-            };
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            <div class="lang" key="取消"></div>
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="onCallSubmit('ModalCall')">
+                            <div class="lang" key="提交"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            function OnExportLeave(e) {
-                var password = $("#ModalExportText").val();
-                $("#ModalExportText").val("");
-                if (Login.checkPassword(password)) {
-                    var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
-                    var MnemonicWord = Wallet.GetMnemonicWord(addressKeyPair);
+    <script>
+        //setTimeout(function () { window.location.href = window.location.href }, 60000); // 1分钟刷新
 
-                    var encrypted = AES256.encrypt(MnemonicWord, password);// Encrypt
-                    var jsonObj = { version: 101, curIndex: 0, accounts: [{ address: addressCur, encrypted: encrypted }] };
-                    var jsonStr = JSON.stringify(jsonObj);
+        if (Login.LoadPassword() == null)
+            window.location.href = "index.html";
 
-                    Helper.funDownload(jsonStr, "Smart-Wallet.json");
-                    $("#ModalExport").modal('hide');
-                }
-                else {
-                    alert(Translate.Get("密码错误"));
-                }
+        function OnExportChange() {
+        };
+
+        function OnExportLeave(e) {
+            var password = $("#ModalExportText").val();
+            $("#ModalExportText").val("");
+            if (Login.checkPassword(password)) {
+                var addressKeyPair = Wallet.LoadFromAddress(addressCur, password);
+                var MnemonicWord = Wallet.GetMnemonicWord(addressKeyPair);
+
+                var encrypted = AES256.encrypt(MnemonicWord, password);// Encrypt
+                var jsonObj = { version: 101, curIndex: 0, accounts: [{ address: addressCur, encrypted: encrypted }] };
+                var jsonStr = JSON.stringify(jsonObj);
+
+                Helper.funDownload(jsonStr, "Smart-Wallet.json");
+                $("#ModalExport").modal('hide');
             }
-
-            function liOnSearch(e) {
-                var text = $('#' + e).val();
-
-                if (text != "") {
-                    Helper.ShowTransfer(text)
-                }
+            else {
+                alert(Translate.Get("密码错误"));
             }
+        }
 
-            function onTransferLoad(e) {
-                //alert(e.id);
-            };
+        function liOnSearch(e) {
+            var text = $('#' + e).val();
 
-            $(function () {
-                $("[data-toggle='popover']").popover();
-            });
-
-            // 地址栏参数
-            function getQueryVariable(variable, search) {
-                if (search == null)
-                    search = window.location.search;
-                var query = search.substring(1);
-                var vars = query.split("&");
-                for (var i = 0; i < vars.length; i++) {
-                    var pair = vars[i].split("=");
-                    if (pair[0] == variable) { return pair[1]; }
-                }
-                return (false);
+            if (text != "") {
+                Helper.ShowTransfer(text)
             }
+        }
 
-            var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
-            var platform = Helper.checkPlatform();
-            var colorindex = 1
+        function onTransferLoad(e) {
+            //alert(e.id);
+        };
 
-            var addressCur = getQueryVariable("address");
-            var tokenAddress = "";
-            var amountCur = 0;
-            var nonceCur = 0;
+        $(function () {
+            $("[data-toggle='popover']").popover();
+        });
 
-            var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
-
-            $(function () {
-                $('#ModalContract').on('show.bs.modal', function () {
-                    //var element = document.getElementById("myModalLabel");
-                    //element.innerHTML = "转出地址: " + addressCur;
-                    locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
-                    $('#input_addressIn').val(addressCur);
-                    $('#input_nonce').val(nonceCur);
-                })
-            });
-
-            // 复制到剪切板
-            var hide_popover_timer = null;
-            function copyToClipBoard() {
-                var aux = document.createElement("input");
-                aux.setAttribute("value", addressCur);
-                document.body.appendChild(aux);
-
-                if (navigator.userAgent.match(/(iPhone|iPod|iPad);?/i)) {//区分iPhone设备
-                    window.getSelection().removeAllRanges();//这段代码必须放在前面否则无效
-                    var range = document.createRange();
-                    // 选中需要复制的节点
-                    range.selectNode(aux);
-                    // 执行选中元素
-                    window.getSelection().addRange(range);
-                    // 执行 copy 操作
-                    var successful = document.execCommand('copy');
-                    // 移除选中的元素
-                    window.getSelection().removeAllRanges();
-                } else {
-                    aux.select(); // 选择对象
-                    document.execCommand("Copy"); // 执行浏览器复制命令
-                }
-                document.body.removeChild(aux);
-
-
-                $("[data-toggle='popover']").popover();
-                clearTimeout(hide_popover_timer);
-                hide_popover_timer = setTimeout("hide_popover()", 15000);
-
-                var btnCopyToClip = document.getElementById("btnCopyToClip");
-                var langText = Translate.Get(btnCopyToClip.getAttribute("data-content"));
-                btnCopyToClip.setAttribute("data-content", langText)
-            };
-
-            function hide_popover() {
-                var popover = document.getElementsByClassName("popover fade bottom in");
-                if (popover.length >= 1)
-                    document.getElementById("btnCopyToClip").click();
+        // 地址栏参数
+        function getQueryVariable(variable, search) {
+            if (search == null)
+                search = window.location.search;
+            var query = search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
             }
+            return (false);
+        }
 
-            var transferIndex = 0;
-            function onTransferInit() {
-                colorindex = 1;
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var platform = Helper.checkPlatform();
+        var colorindex = 1
 
-                $.ajax({
-                    url: Helper.GetServerIP() + "/GetProperty",
-                    dataType: "text",
-                    type: "get",
-                    data: { Address: addressCur },
-                    success: function (data) {
-                        if (data != "{\"ret\":\"failed\"}") {
-                            // 删除之前的数据
-                            var mytableEle = document.getElementById("mytable");
-                            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
-                                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
-                                    mytableEle.children[i].remove();
-                            }
+        var addressCur = getQueryVariable("address");
+        var tokenAddress = "";
+        var amountCur = 0;
+        var nonceCur = 0;
 
-                            var jsonObj = JSON.parse(data);
-                            for (var key in jsonObj) {
+        var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
 
-                                var text = jsonObj[key];
-                                var array = text.split(":")
-                                var symbol = array[0];
-                                var amount = array[1];
-                                var address = array[2];
+        $(function () {
+            $('#ModalContract').on('show.bs.modal', function () {
+                //var element = document.getElementById("myModalLabel");
+                //element.innerHTML = "转出地址: " + addressCur;
+                locktime = Date.parse(new Date()) / 1000; // 每次弹出窗口是设置时间戳， 防止多次点击
+                $('#input_addressIn').val(addressCur);
+                $('#input_nonce').val(nonceCur);
+            })
+            $('#ModalCall').on('show.bs.modal', function () {
+                locktime = Date.parse(new Date()) / 1000;
+                $('#input_addressIn2').val(addressCur);
+                $('#input_nonce2').val(nonceCur);
+            })
+        });
 
-                                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+        // 复制到剪切板
+        var hide_popover_timer = null;
+        function copyToClipBoard() {
+            var aux = document.createElement("input");
+            aux.setAttribute("value", addressCur);
+            document.body.appendChild(aux);
 
-                                var amount2 = new BigNumber(amount).toFormat();
+            if (navigator.userAgent.match(/(iPhone|iPod|iPad);?/i)) {//区分iPhone设备
+                window.getSelection().removeAllRanges();//这段代码必须放在前面否则无效
+                var range = document.createRange();
+                // 选中需要复制的节点
+                range.selectNode(aux);
+                // 执行选中元素
+                window.getSelection().addRange(range);
+                // 执行 copy 操作
+                var successful = document.execCommand('copy');
+                // 移除选中的元素
+                window.getSelection().removeAllRanges();
+            } else {
+                aux.select(); // 选择对象
+                document.execCommand("Copy"); // 执行浏览器复制命令
+            }
+            document.body.removeChild(aux);
 
-                                Helper.TableInsert2("mytable", symbol + ":" + address, color, Helper.Simplify(symbol, platform), amount2)
-                            }
+
+            $("[data-toggle='popover']").popover();
+            clearTimeout(hide_popover_timer);
+            hide_popover_timer = setTimeout("hide_popover()", 15000);
+
+            var btnCopyToClip = document.getElementById("btnCopyToClip");
+            var langText = Translate.Get(btnCopyToClip.getAttribute("data-content"));
+            btnCopyToClip.setAttribute("data-content", langText)
+        };
+
+        function hide_popover() {
+            var popover = document.getElementsByClassName("popover fade bottom in");
+            if (popover.length >= 1)
+                document.getElementById("btnCopyToClip").click();
+        }
+
+        var transferIndex = 0;
+        function onTransferInit() {
+            colorindex = 1;
+
+            $.ajax({
+                url: Helper.GetServerIP() + "/GetProperty",
+                dataType: "text",
+                type: "get",
+                data: { Address: addressCur },
+                success: function (data) {
+                    if (data != "{\"ret\":\"failed\"}") {
+                        // 删除之前的数据
+                        var mytableEle = document.getElementById("mytable");
+                        for (var i = mytableEle.children.length - 1; i >= 0; i--) {
+                            if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
+                                mytableEle.children[i].remove();
                         }
-                    },
-                    error: function (err) {
-                        alert(Translate.Get("没有找到可用节点"));
-                    }
-                });
-            }
-            onTransferInit(0);
 
-            function liOnclick(e) {
-                var array = e.id.split(":")
-                if (array.length == 2) {
-                    var symbol = array[0];
-                    var token = array[1];
-                    window.location.href = "transfer.html?address=" + addressCur + "&symbol=" + symbol + "&token=" + token;
-                }
-            };
-
-            function liOnSatswap() {
-                window.location.href = "satswap.html?address=" + addressCur;
-            };
-
-            function liOnPledge() {
-                window.location.href = "pledge.html?address=" + addressCur;
-            };
-
-            function liOnLock() {
-                window.location.href = "lock.html?address=" + addressCur;
-            };
-
-            function liOnModalQRCodeLeave(e) {
-                $("#ModalQRCode").modal('hide');
-            };
-
-            function liOnShowQRCode(e) {
-                $("#ModalQRCode").modal('show');
-
-                // 删除之前的数据
-                var myEle = document.getElementById("qrcode");
-                for (var i = myEle.children.length - 1; i >= 0; i--) {
-                    myEle.children[i].remove();
-                }
-
-                //初始化存放二维码的div
-                var qrcodeEncode = new QRCode(document.getElementById("qrcode"), {
-                    width: 300,
-                    height: 300
-                });
-                //window.location.href获取到URL
-                qrcodeEncode.makeCode("http://www.SmartX.com/Wallet/transfer.html?target=" + addressCur);
-            };
-
-            function liOnScanQRCode(e) {
-                $("#ModalScanQRCode").modal('show');
-                $("#scan_addressIn").val(addressCur);
-                $("#scan_addressOut").val("");
-                $("#scan_amount").val("");
-                $("#scan_nonce").val(nonceCur);
-                document.getElementById('photo').style.display = "none";//不可见;
-                document.getElementById('photo_image1').value = '';
-                document.getElementById('photo_image2').value = '';
-                document.getElementById('photo_image2').style.display = "block";//可见;
-                $("#photo_image1").click();
-            }
-
-            var getObjectURL = function (file) {
-                var url = null;
-                if (window.createObjectURL != undefined) { // basic
-                    url = window.createObjectURL(file);
-                } else if (window.URL != undefined) { // mozilla(firefox)
-                    url = window.URL.createObjectURL(file);
-                } else if (window.webkitURL != undefined) { // webkit or chrome
-                    url = window.webkitURL.createObjectURL(file);
-                }
-                return url;
-            }
-
-            function OnScanQRCodeChange(e) {
-                var file = document.getElementById(e).files[0];
-                qrcode.decode(getObjectURL(file));
-                qrcode.callback = function (imgMsg) {
-                    document.getElementById('photo').style.display = "none";//不可见;
-                    if (imgMsg == null || imgMsg == "error decoding QR Code") {
-                        alert(Translate.Get("无法识别,请重试！"))
-                        return;
-                    }
-                    document.getElementById('photo_image2').style.display = "none";//不可见;
-
-                    var search = imgMsg.split("?");
-                    if (search.length >= 2) {
-                        var addressOut = getQueryVariable("target", "?" + search[1])
-                        $("#scan_addressOut").val(addressOut);
-                    }
-                }
-            }
-
-            function OnScanQRCodeSubmit(e) {
-                var amount = new BigNumber($('#scan_amount').val());
-                var addressOut = $('#scan_addressOut').val();
-                var depend = $('#scan_depend').val();
-                var remarks = $('#scan_remarks').val();
-                var nonce = parseInt($('#scan_nonce').val());
-
-                if (CheckTransfer(amount, addressOut, depend, remarks, nonce))
-                    Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
-            }
-
-            function OnRefreshAmount() {
-                var arrayoAddress = new Array();
-                arrayoAddress[0] = addressCur;
-                $.ajax({
-                    url: Helper.GetServerIP() + "/getaccounts",
-                    dataType: "text",
-                    type: "get",
-                    data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
-                    success: function (data) {
                         var jsonObj = JSON.parse(data);
-                        var account = jsonObj[addressCur];
-                        var nonce = account["nonce"];
-                        nonceCur = nonce + 1;
-                    },
-                    error: function (err) {
+                        for (var key in jsonObj) {
+
+                            var text = jsonObj[key];
+                            var array = text.split(":")
+                            var symbol = array[0];
+                            var amount = array[1];
+                            var address = array[2];
+
+                            var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
+
+                            var amount2 = new BigNumber(amount).toFormat();
+
+                            Helper.TableInsert2("mytable", symbol + ":" + address, color, Helper.Simplify(symbol, platform), amount2)
+                        }
                     }
-                });
-                setTimeout(function () { OnRefreshAmount(); }, 5000);
-            }
-            OnRefreshAmount();
-
-            function onTransferSubmit(e) {
-                var depend = $('#input_depend').val();
-                var data = $('#input_callFun').val();
-                var nonce = parseInt($('#input_nonce').val());
-                var remarks = $('#input_remarks').val();
-
-                var hash = Helper.SendTransferSubmit(e, "contract", "0", "", data, depend, nonce, remarks);
-                if (hash != null) {
-                    Helper.Statusbar("statusbar", hash, "", Translate.Get("发布智能合约") + ": " + depend + " " + Translate.Get("备注:") + " " + remarks, 1, nonceCur);
-                    Helper.MessageBox(Translate.Get('发布智能合约'));
+                },
+                error: function (err) {
+                    alert(Translate.Get("没有找到可用节点"));
                 }
-            };
+            });
+        }
+        onTransferInit(0);
 
-            function QueryStats() {
-                $.ajax({
-                    url: Helper.GetServerIP() + "/Stats",
-                    dataType: "text",
-                    type: "get",
-                    data: { style: "1" },
-                    success: function (data) {
-
-                        var element = document.getElementById("statsLabel");
-                        element.innerHTML = data;
-
-                    },
-                    error: function (err) {
-                    }
-                });
+        function liOnclick(e) {
+            var array = e.id.split(":")
+            if (array.length == 2) {
+                var symbol = array[0];
+                var token = array[1];
+                window.location.href = "transfer.html?address=" + addressCur + "&symbol=" + symbol + "&token=" + token;
             }
-            QueryStats();
+        };
 
-            Helper.Statusbar();
-        </script>
+        function liOnSatswap() {
+            window.location.href = "satswap.html?address=" + addressCur;
+        };
+
+        function liOnPledge() {
+            window.location.href = "pledge.html?address=" + addressCur;
+        };
+
+        function liOnNFT() {
+            window.location.href = "nft.html?address=" + addressCur;
+        };
+
+        function liOnCorssChain() {
+            window.location.href = "crosschain.html?address=" + addressCur;
+        };
+
+        function liOnModalQRCodeLeave(e) {
+            $("#ModalQRCode").modal('hide');
+        };
+
+        function liOnShowQRCode(e) {
+            $("#ModalQRCode").modal('show');
+
+            // 删除之前的数据
+            var myEle = document.getElementById("qrcode");
+            for (var i = myEle.children.length - 1; i >= 0; i--) {
+                myEle.children[i].remove();
+            }
+
+            //初始化存放二维码的div
+            var qrcodeEncode = new QRCode(document.getElementById("qrcode"), {
+                width: 300,
+                height: 300
+            });
+            //window.location.href获取到URL
+            qrcodeEncode.makeCode("http://www.SmartX.com/Wallet/transfer.html?target=" + addressCur);
+        };
+
+        function liOnScanQRCode(e) {
+            $("#ModalScanQRCode").modal('show');
+            $("#scan_addressIn").val(addressCur);
+            $("#scan_addressOut").val("");
+            $("#scan_amount").val("");
+            $("#scan_nonce").val(nonceCur);
+            document.getElementById('photo').style.display = "none";//不可见;
+            document.getElementById('photo_image1').value = '';
+            document.getElementById('photo_image2').value = '';
+            document.getElementById('photo_image2').style.display = "block";//可见;
+            $("#photo_image1").click();
+        }
+
+        var getObjectURL = function (file) {
+            var url = null;
+            if (window.createObjectURL != undefined) { // basic
+                url = window.createObjectURL(file);
+            } else if (window.URL != undefined) { // mozilla(firefox)
+                url = window.URL.createObjectURL(file);
+            } else if (window.webkitURL != undefined) { // webkit or chrome
+                url = window.webkitURL.createObjectURL(file);
+            }
+            return url;
+        }
+
+        function OnScanQRCodeChange(e) {
+            var file = document.getElementById(e).files[0];
+            qrcode.decode(getObjectURL(file));
+            qrcode.callback = function (imgMsg) {
+                document.getElementById('photo').style.display = "none";//不可见;
+                if (imgMsg == null || imgMsg == "error decoding QR Code") {
+                    alert(Translate.Get("无法识别,请重试！"))
+                    return;
+                }
+                document.getElementById('photo_image2').style.display = "none";//不可见;
+
+                var search = imgMsg.split("?");
+                if (search.length >= 2) {
+                    var addressOut = getQueryVariable("target", "?" + search[1])
+                    $("#scan_addressOut").val(addressOut);
+                }
+            }
+        }
+
+        function OnScanQRCodeSubmit(e) {
+            var amount = new BigNumber($('#scan_amount').val());
+            var addressOut = $('#scan_addressOut').val();
+            var depend = $('#scan_depend').val();
+            var remarks = $('#scan_remarks').val();
+            var nonce = parseInt($('#scan_nonce').val());
+
+            if (CheckTransfer(amount, addressOut, depend, remarks, nonce)) {
+                hash = Helper.SendTransferSubmit(e, "transfer", amount.toString(), addressOut, "", "", nonce, remarks);
+                if (hash != null) {
+                    Helper.Statusbar("statusbar", hash, "", "交易: " + addressOut + " 转出: " + Helper.Fix(amount), 1, nonce);
+                    Helper.MessageBox('交易已提交');
+                }
+            }
+        }
+
+        function OnRefreshAmount() {
+            var arrayoAddress = new Array();
+            arrayoAddress[0] = addressCur;
+            $.ajax({
+                url: Helper.GetServerIP() + "/getaccounts",
+                dataType: "text",
+                type: "get",
+                data: { List: Base58.encode("" + JSON.stringify(arrayoAddress)) },
+                success: function (data) {
+                    var jsonObj = JSON.parse(data);
+                    var account = jsonObj[addressCur];
+                    var nonce = account["nonce"];
+                    nonceCur = nonce + 1;
+                },
+                error: function (err) {
+                }
+            });
+            setTimeout(function () { OnRefreshAmount(); }, 5000);
+        }
+        OnRefreshAmount();
+
+        function onTransferSubmit(e) {
+            var depend = $('#input_depend').val();
+            var data = $('#input_callFun').val();
+            var nonce = parseInt($('#input_nonce').val());
+            var remarks = $('#input_remarks').val();
+
+            var hash = Helper.SendTransferSubmit(e, "contract", "0", "", data, depend, nonce, remarks);
+            if (hash != null) {
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("发布智能合约") + ": " + depend + " " + Translate.Get("备注:") + " " + remarks, 1, nonceCur);
+                Helper.MessageBox(Translate.Get('发布智能合约'));
+            }
+        };
+
+        function onCallSubmit(e) {
+            var addressOut = $('#input_addressOut2').val();
+            var depend = '';
+            var data = $('#input_callFun2').val();
+            var nonce = parseInt($('#input_nonce2').val());
+            var remarks = $('#input_remarks2').val();
+
+            var hash = Helper.SendTransferSubmit(e, "contract", "0", addressOut, data, depend, nonce, remarks);
+            if (hash != null) {
+                Helper.Statusbar("statusbar", hash, "", Translate.Get("合约  调用") + ": " + depend + " " + Translate.Get("备注:") + " " + remarks, 1, nonceCur);
+                Helper.MessageBox(addressOut + " " + Translate.Get('合约  调用'));
+            }
+        };
+
+        function QueryStats() {
+            $.ajax({
+                url: Helper.GetServerIP() + "/Stats",
+                dataType: "text",
+                type: "get",
+                data: { style: "1" },
+                success: function (data) {
+
+                    var element = document.getElementById("statsLabel");
+                    element.innerHTML = data;
+
+                },
+                error: function (err) {
+                }
+            });
+        }
+        QueryStats();
+
+        if (Helper.GetCrossChainRpc() == 'http://127.0.0.1:8547') {
+            $('#CorssChainBtn').hide();
+        }
+
+        Helper.Statusbar();
+    </script>
 
 
 </body>

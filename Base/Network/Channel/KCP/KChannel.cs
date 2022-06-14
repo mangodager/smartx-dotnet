@@ -317,7 +317,7 @@ namespace ETModel
         {
 			uint timeNow = this.GetService().TimeNow;
             // 超时断开连接
-            if (timeNow - this.lastRecvTime > 15 * 1000)
+            if (timeNow - this.lastRecvTime > 60 * 1000)
             {
                 return true;
             }

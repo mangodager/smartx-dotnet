@@ -23,6 +23,13 @@ namespace ETModel
         public string power_average;
     }
 
+    public class PoolMessage
+    {
+        public Dictionary<string, string> map;
+        public string  result;  // 返回的消息
+        public Session session;
+    }
+
     // Http连接
     public class HttpPool : Component
     {
@@ -31,7 +38,8 @@ namespace ETModel
         public static double ignorePower = 600;  // 最小算力
         public static string poolPassword  = "";
 
-        ComponentNetworkHttp networkHttp;
+        ComponentNetworkInner networkInner;
+        SmartxRpc smartxRpc;
         public override void Awake(JToken jd = null)
         {
             if (jd["minerLimit"] != null)
@@ -44,20 +52,21 @@ namespace ETModel
             Log.Info($"HttpPool.minerLimit   = {minerLimit}");
             Log.Info($"HttpPool.ignorePower  = {ignorePower}");
 
-            ComponentNetMsg componentNetMsg = Entity.Root.GetComponent<ComponentNetMsg>();
-            componentNetMsg.registerMsg(NetOpcodeBase.HttpMessage, OnHttpMessage);
         }
 
         public IPEndPoint GetHttpAdderrs()
         {
-            return networkHttp.ipEndPoint;
+            return networkInner.ipEndPoint;
         }
 
         public override void Start()
         {
-            networkHttp = this.entity.GetComponent<ComponentNetworkHttp>();
-            Log.Info($"HttpMiner http://{networkHttp.ipEndPoint}/");
+            networkInner = this.entity.Find("Network").GetComponentInChild<ComponentNetworkInner>();
+            smartxRpc    = Entity.Root.GetComponentInChild<SmartxRpc>();
+            Log.Info($"TCP Pool {networkInner.ipEndPoint}");
 
+            ComponentNetMsg componentNetMsg = networkInner.entity.GetComponent<ComponentNetMsg>();
+            componentNetMsg.registerMsg(NetOpcode.Q2P_Pool, Q2P_Pool_Handle);
         }
 
         public long height = 2;
@@ -70,40 +79,78 @@ namespace ETModel
                 height = h;
                 hashmining = hash;
                 power = p;
+                //Log.Debug($"set hashmining {hashmining}");
             }
         }
 
-        public void OnHttpMessage(Session session, int opcode, object msg)
+        public void Q2P_Pool_Handle(Session session, int opcode, object msg)
         {
-            HttpMessage httpMessage = msg as HttpMessage;
-            if (httpMessage == null || httpMessage.request == null || networkHttp == null
-                || httpMessage.request.LocalEndPoint.ToString() != networkHttp.ipEndPoint.ToString())
-                return;
-            switch (httpMessage.map["cmd"].ToLower())
+            Q2P_Pool q2P_Pool = msg as Q2P_Pool;
+            PoolMessage poolMessage = new PoolMessage();
+            poolMessage.map = JsonHelper.FromJson<Dictionary<string, string>>(q2P_Pool.josn);
+            poolMessage.session = session;
+
+            switch (poolMessage.map["cmd"].ToLower())
             {
                 case "submit":
-                    OnSubmit(httpMessage);
+                    OnSubmit(poolMessage);
                     break;
                 case "registerpool":
-                    HttpPoolRelay.OnRegisterPool(httpMessage);
+                    HttpPoolRelay.OnRegisterPool(poolMessage);
                     break;
                 case "getmcblock":
-                    HttpPoolRelay.OnGetMcBlock(httpMessage);
+                    HttpPoolRelay.OnGetMcBlock(poolMessage);
                     break;
+                case "transfer":
+                    {
+                        HttpMessage httpMessage = new HttpMessage();
+                        httpMessage.map = poolMessage.map;
+                        smartxRpc?.OnTransfer(httpMessage);
+                        poolMessage.result = httpMessage.result;
+                        break;
+                    }
+                case "getaccounts":
+                    {
+                        HttpMessage httpMessage = new HttpMessage();
+                        httpMessage.map = poolMessage.map;
+                        smartxRpc?.GetAccounts(httpMessage);
+                        poolMessage.result = httpMessage.result;
+                        break;
+                    }
+                case "uniquetransfer":
+                    {
+                        HttpMessage httpMessage = new HttpMessage();
+                        httpMessage.map = poolMessage.map;
+                        smartxRpc?.UniqueTransfer(httpMessage);
+                        poolMessage.result = httpMessage.result;
+                        break;
+                    }
+                case "stats":
+                    {
+                        HttpMessage httpMessage = new HttpMessage();
+                        httpMessage.map = poolMessage.map;
+                        smartxRpc?.OnStats(httpMessage);
+                        poolMessage.result = httpMessage.result;
+                        break;
+                    }
                 default:
                     break;
             }
             //TestOnSubmit(httpMessage);
+
+            R2P_Pool r2P_Pool = new R2P_Pool() { josn = poolMessage.result };
+            session.Reply(q2P_Pool, r2P_Pool);
+
         }
 
-        public void TestOnSubmit(HttpMessage httpMessage)
+        public void TestOnSubmit(PoolMessage poolMessage)
         {
-            if (httpMessage.map["cmd"].ToLower() != "submit")
+            if (poolMessage.map["cmd"].ToLower() != "submit")
             {
                 return;
             }
 
-            var resultMap = JsonHelper.FromJson<Dictionary<string, string>>(httpMessage.result);
+            var resultMap = JsonHelper.FromJson<Dictionary<string, string>>(poolMessage.result);
             resultMap.TryGetValue("hashmining", out string hashmining);
 
             if (Pool.registerPool || string.IsNullOrEmpty(hashmining))
@@ -111,8 +158,8 @@ namespace ETModel
                 return;
             }
 
-            string address = httpMessage.map["address"];
-            string number  = httpMessage.map["number"];
+            string address = poolMessage.map["address"];
+            string number  = poolMessage.map["number"];
             for (int i = 0; i < 20000; i++)
             {
                 MinerTask minerTask = NewNextTakID(height, address, number);
@@ -135,7 +182,7 @@ namespace ETModel
         }
 
         // http://127.0.0.1:8088/mining?cmd=Submit
-        public void OnSubmit(HttpMessage httpMessage)
+        public void OnSubmit(PoolMessage poolMessage)
         {
             // submit
             Dictionary<string, string> map = new Dictionary<string, string>();
@@ -144,32 +191,35 @@ namespace ETModel
                 map.Add("report", "refuse");
 
                 // 版本检查
-                string version = httpMessage.map["version"];
+                string version = poolMessage.map["version"];
                 if (version != Miner.version) {
                     map.Remove("report");
                     map.Add("report", "error");
                     map.Add("tips", $"Miner.version: {Miner.version}");
-                    httpMessage.result = JsonHelper.ToJson(map);
+                    poolMessage.result = JsonHelper.ToJson(map);
                     return;
                 }
 
                 // 矿池登记检查
-                if (Pool.registerPool&&HttpPoolRelay.poolIpAddress.IndexOf(httpMessage.request.RemoteEndPoint.Address.ToString())==-1)
+                if (Pool.registerPool&&HttpPoolRelay.poolIpAddress.IndexOf(poolMessage.session.RemoteAddress.Address.ToString())==-1)
                 {
                     map.Add("tips", "need register Pool");
-                    httpMessage.result = JsonHelper.ToJson(map);
+                    poolMessage.result = JsonHelper.ToJson(map);
                     return;
                 }
 
-                long minerHeight = long.Parse(httpMessage.map["height"]);
-                string address = httpMessage.map["address"];
-                string number = httpMessage.map["number"];
-                MinerTask minerTask = GetMyTaskID(minerHeight, address, number, httpMessage.map["taskid"]);
+                long minerHeight = long.Parse(poolMessage.map["height"]);
+                string address = poolMessage.map["address"];
+                string number = poolMessage.map["number"];
+                MinerTask minerTask = GetMyTaskID(minerHeight, address, number, poolMessage.map["taskid"]);
+
+                //Log.Info($"{minerHeight} {height} {hashmining} {minerTask.taskid} ");
+
                 if (minerHeight == height && !string.IsNullOrEmpty(hashmining)
                  && minerTask != null && TimeHelper.time - minerTask.time > 0.1)
                 {
                     minerTask.time = TimeHelper.time;
-                    string random  = httpMessage.map["random"];
+                    string random  = poolMessage.map["random"];
                     string hash    = BlockDag.ToHash(height, hashmining, random);
                     double diff    = Helper.GetDiff(hash);
                     double power   = CalculatePower.Power(diff);
@@ -183,7 +233,7 @@ namespace ETModel
                         minerTask.diff = diff;
                         minerTask.random.Add(random);
                         minerTask.power  = power;
-                        minerTask.power_average = httpMessage.map["average"];
+                        minerTask.power_average = poolMessage.map["average"];
                         map.Remove("report");
                         map.Add("report", "accept");
                     }
@@ -228,7 +278,7 @@ namespace ETModel
                 map.Remove("report");
                 map.Add("report", "error");
             }
-            httpMessage.result = JsonHelper.ToJson(map);
+            poolMessage.result = JsonHelper.ToJson(map);
         }
 
         public long GetNodeTime()

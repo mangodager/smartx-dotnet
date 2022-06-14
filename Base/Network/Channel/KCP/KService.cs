@@ -380,7 +380,7 @@ namespace ETModel
 			this.timeId.Add(time, id);
 		}
 
-        TimePass timeHearBeat = new TimePass(0,1);
+        TimePass timeHearBeat = new TimePass(0,10);
         public override void Update()
 		{
 			this.TimeNow = (uint)(TimeHelper.ClientNow() - this.StartTime);

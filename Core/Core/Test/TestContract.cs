@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
+using System.IO;
 
 namespace ETModel
 {
@@ -249,6 +250,46 @@ namespace ETModel
 
             }
             Log.Debug("Do TransferAll End");
+        }
+
+
+        public static void Test1408123(string file, long min, long max)
+        {
+            // file open
+            string fullPath = file;
+            FileInfo fi = new FileInfo(fullPath);
+            if (!fi.Directory.Exists)
+            {
+                fi.Directory.Create();
+            }
+            FileStream fs = new FileStream(fullPath, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write);
+            fs.Seek(0, SeekOrigin.Begin);
+            fs.SetLength(0);
+
+            StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            string data = $"height,transfer_json";
+            sw.WriteLine(data);
+
+
+            var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+            var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+
+            for (long height = min; height <= max; height++)
+            {
+                var chain = BlockChainHelper.GetBlockChain(height);
+                List<Block> linksblks = blockMgr.GetBlock(chain.height);
+                for (int ii = 0; ii < linksblks.Count; ii++)
+                {
+                    Block linkblk = linksblks[ii];
+                    for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                    {
+                        var transfer = levelDBStore.Get($"Trans___{linkblk.linkstran[jj].hash}");
+
+                        sw.WriteLine($"{height},{transfer}");
+                    }
+                }
+            }
+
         }
 
     }

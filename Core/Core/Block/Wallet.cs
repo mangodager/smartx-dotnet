@@ -85,7 +85,7 @@ namespace ETModel
         {
             WalletKey walletKey = new WalletKey();
             input = input ?? Wallet.Inst.Input("Please enter random word: ");
-            walletKey.random = CryptoHelper.Sha256(Seek().ToHexString() + "#" + input).HexToBytes();
+            walletKey.random = CryptoHelper.Sha256(Seek().ToHexString() + "#Node#" + input).HexToBytes();
             ed25519.ed25519_create_keypair(walletKey.publickey, walletKey.privatekey, walletKey.random);
             this.keys.Add(walletKey);
             return walletKey;
@@ -411,6 +411,36 @@ namespace ETModel
 
         }
 
+        static public string MakeDeadAddress()
+        {
+            var input2 = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            var input  = "DeadFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+
+            var buffer = Base58.Decode(input);
+            byte[] buffer2 = new byte[buffer.Length - 4];
+            Buffer.BlockCopy(buffer, 0, buffer2, 0, buffer2.Length);
+
+            if (buffer.Length < 4) throw new FormatException();
+            string hash1 = CryptoHelper.Sha256(buffer2.ToHexString());
+            byte[] checksum = CryptoHelper.Sha256(hash1).HexToBytes();
+
+            buffer[buffer.Length - 4] = checksum[0];
+            buffer[buffer.Length - 3] = checksum[1];
+            buffer[buffer.Length - 2] = checksum[2];
+            buffer[buffer.Length - 1] = checksum[3];
+
+            if (!buffer.Skip(buffer.Length - 4).SequenceEqual(checksum.Take(4)))
+                return null;
+
+            var address = Base58.Encode(buffer);
+            if (!CheckAddress(address))
+                return null;
+
+            Console.WriteLine($"{input2} , {input2.Length}");
+            Console.WriteLine($"{address} , {address.Length}");
+
+            return address;
+        }
 
     }
 

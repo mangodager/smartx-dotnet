@@ -41,10 +41,13 @@ namespace ETModel
                 throw new Exception($"AddComponent, component already exist, component: {type.Name}");
             }
             Component component = Activator.CreateInstance(type) as Component;
-            component.entity = this;
-            this.componentsSet.Add(type.Name, component);
-            components.Add(component);
-            component.Awake(jd);
+            if (component != null)
+            {
+                component.entity = this;
+                this.componentsSet.Add(type.Name, component);
+                components.Add(component);
+                component.Awake(jd);
+            }
             return component;
         }
 

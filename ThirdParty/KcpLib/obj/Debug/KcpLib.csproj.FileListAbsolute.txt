@@ -1,60 +1,21 @@
-E:\tmp\smartx_dotnet\Bin\libkcp.dylib
-E:\tmp\smartx_dotnet\Bin\KcpLib.deps.json
-E:\tmp\smartx_dotnet\Bin\KcpLib.dll
-E:\tmp\smartx_dotnet\Bin\KcpLib.pdb
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\tmp\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
-E:\smartx_dotnet\Bin\libkcp.dylib
-E:\smartx_dotnet\Bin\KcpLib.deps.json
-E:\smartx_dotnet\Bin\KcpLib.dll
-E:\smartx_dotnet\Bin\KcpLib.pdb
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\smartx_dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
-E:\github\smartx-dotnet\Bin\libkcp.dylib
-E:\github\smartx-dotnet\Bin\KcpLib.deps.json
-E:\github\smartx-dotnet\Bin\KcpLib.dll
-E:\github\smartx-dotnet\Bin\KcpLib.pdb
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\github\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
-E:\www\smartx-dotnet\Bin\libkcp.dylib
-E:\www\smartx-dotnet\Bin\KcpLib.deps.json
-E:\www\smartx-dotnet\Bin\KcpLib.dll
-E:\www\smartx-dotnet\Bin\KcpLib.pdb
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\www\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
-E:\github\github版本编译\smartx-dotnet\Bin\libkcp.dylib
-E:\github\github版本编译\smartx-dotnet\Bin\KcpLib.deps.json
-E:\github\github版本编译\smartx-dotnet\Bin\KcpLib.dll
-E:\github\github版本编译\smartx-dotnet\Bin\KcpLib.pdb
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\github\github版本编译\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
-E:\github\github版本编译2\smartx-dotnet\Bin\libkcp.dylib
-E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.deps.json
-E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.dll
-E:\github\github版本编译2\smartx-dotnet\Bin\KcpLib.pdb
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
-E:\github\github版本编译2\smartx-dotnet\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+D:\Code\smartx_dotnet 2.0\Bin\libkcp.dylib
+D:\Code\smartx_dotnet 2.0\Bin\KcpLib.deps.json
+D:\Code\smartx_dotnet 2.0\Bin\KcpLib.dll
+D:\Code\smartx_dotnet 2.0\Bin\KcpLib.pdb
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+D:\Code\smartx_dotnet 2.0\ThirdParty\KcpLib\obj\Debug\KcpLib.csprojAssemblyReference.cache
+D:\Code\smartx_dotnet 3.0.0\Bin\libkcp.dylib
+D:\Code\smartx_dotnet 3.0.0\Bin\KcpLib.deps.json
+D:\Code\smartx_dotnet 3.0.0\Bin\KcpLib.dll
+D:\Code\smartx_dotnet 3.0.0\Bin\KcpLib.pdb
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.AssemblyInfo.cs
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.dll
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.pdb
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.csproj.AssemblyReference.cache
+D:\Code\smartx_dotnet 3.0.0\ThirdParty\KcpLib\obj\Debug\KcpLib.GeneratedMSBuildEditorConfig.editorconfig

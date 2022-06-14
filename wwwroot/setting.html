@@ -119,6 +119,10 @@
                 <label for="title">SatswapFactory:</label>
                 <input type="text" id="SSFAddress" name="SatswapFactory" align="left">
             </p>
+            <p>
+                <label for="title">NFTAddress:</label>
+                <input type="text" id="NFTAddress" name="NFTAddress" align="left">
+            </p>
 
         </fieldset>
 
@@ -148,11 +152,14 @@
             var SSFAddress = $('#SSFAddress').val();
             Helper.SetSSFAddress(SSFAddress)
 
+            var NFTAddress = $('#NFTAddress').val();
+            Helper.SetNFTAddress(NFTAddress)
 
         };
 
         $('#serverIP').val(Helper.GetServerIP());
         $('#SSFAddress').val(Helper.GetSSFAddress());
+        $('#NFTAddress').val(Helper.GetNFTAddress());
 
         Helper.Statusbar();
 

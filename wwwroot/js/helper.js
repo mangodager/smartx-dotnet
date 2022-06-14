@@ -36,6 +36,9 @@
         localStorage.setItem("poolIP", poolIP);
     }
 
+    Helper.GetCrossChainRpc = function () {
+        return 'http://127.0.0.1:8547';
+    }
     Helper.PoolList = {}
 
     Helper.GetSSFAddress = function () {
@@ -62,7 +65,19 @@
     }
 
     Helper.GetRewardRule = function () {
-        return "2522880000";//GetRewardRule*100
+        //return "2522880000";//GetRewardRule*100
+        return "420480000";//GetRewardRule*100
+    }
+
+    Helper.GetNFTAddress = function () {
+        var NFTAddress = localStorage.getItem("NFTAddress");
+        if (NFTAddress == null || NFTAddress == "")
+            NFTAddress = "c3MbYezD7CV9KcRZbnoVTmT6SMAzs2REL";
+        return NFTAddress;
+    }
+
+    Helper.SetNFTAddress = function (NFTAddress) {
+        localStorage.setItem("NFTAddress", NFTAddress);
     }
 
     Helper.TableInsert = function () {
@@ -452,7 +467,7 @@
         document.body.removeChild(eleLink);
     };
 
-    Helper.SendTransferSubmit = function (e, type, amount, addressOut, data, depend, nonce, remarks)
+    Helper.SendTransferSubmit = function (e, type, amount, addressOut, data, depend, nonce, remarks, serverIP)
     {
         if (Login.LoadPassword() == null) {
             alert("password is null!");
@@ -483,14 +498,16 @@
         else
             Helper.AddTransfer(addressCur, jsonStr);
 
+        if (serverIP == null || serverIP == "")
+            serverIP = Helper.GetServerIP()
         $.ajax({
-            url: Helper.GetServerIP() + "/Transfer",
+            url: serverIP + "/Transfer",
             dataType: "text",
             type: "get",
             data: transferdata,
             success: function (data) {
                 var jsonObj = JSON.parse(data);
-                if (data != "{\"success\":true}") {
+                if (data.indexOf("success\":true")==-1) {
                     var text = "";
                     var rel = jsonObj["rel"];
                     switch (rel) {
@@ -666,7 +683,7 @@
         
         if (text != "") {
             $.ajax({
-                url: Helper.GetServerIP() + "/TransferState",
+                url: Helper.GetServerIP() + "/TransferState2",
                 dataType: "text",
                 type: "get",
                 data: { hash: text },
@@ -697,8 +714,17 @@
                         var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
 
                         let state = Translate.Get("交易失败");
-                        if(jsonObj["height"]!=0) {
+                        if (jsonObj["height"] != 0) {
                             state = Translate.Get("交易已完成");
+                        }
+                        else {
+                            if (jsonObj["temp"] != null && jsonObj["temp"][jsonObj["temp"].length - 1] == "Transfer In Queue") {
+                                state = Translate.Get("Transfer In Queue");
+                            }
+                            else
+                            if (jsonObj["temp"] != null && jsonObj["temp"][jsonObj["temp"].length - 1] == "Waiting for block confirmation") {
+                                state = Translate.Get("Waiting for block confirmation");
+                            }
                         }
 
                         Helper.TableInsert("TransferInfoTable", "state", color, Translate.Get("状态"), state)

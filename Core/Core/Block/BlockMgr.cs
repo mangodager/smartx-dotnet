@@ -185,6 +185,7 @@ namespace ETModel
         }
 
         public long   newBlockHeight = 0;
+        TimePass temppass = new TimePass(5);
         void P2P_NewBlock_Handle(Session session, int opcode, object msg)
         {
             P2P_NewBlock p2p_Block = msg as P2P_NewBlock;
@@ -192,12 +193,18 @@ namespace ETModel
 
             if (!NodeManager.CheckNetworkID(p2p_Block.networkID))
             {
-                Log.Warning($"NewBlk:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
+                //Log.Warning($"NewBlk:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress}");
+                Log.Warning($"NewBlk:{blk.Address} H:{blk.height}");
                 return;
             }
-
-            //Log.Debug($"NewBlock IP:{session.RemoteAddress.ToString()} {blk.Address} hash:{blk.hash} ");
+#if !RELEASE
+            //Log.Debug($"NewBlk:{blk.Address} H:{blk.height} ipEndPoint:{p2p_Block.ipEndPoint} RemoteAddress:{session.RemoteAddress} hash:{blk.hash}");
             Log.Debug($"NewBlk:{blk.Address} H:{blk.height} Pre:{blk.prehash} T:{blk.linkstran.Count}");
+#else
+            if (temppass.IsPassSet()) {
+                Log.Debug($"NewBlk:{blk.Address} H:{blk.height} Pre:{blk.prehash} T:{blk.linkstran.Count}");
+            }
+#endif
 
             newBlockHeight = blk.height;
             // 有高度差的直接忽略

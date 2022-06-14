@@ -11,19 +11,44 @@ namespace ETModel
 {
     public class LevelDBStore : Component
     {
+        public static bool db_MultiThread = true;
+
         private DB db;
         public DbCache<Block> Blocks;
         public DbCache<List<string>> Heights;
         public string db_path;
         public bool   db_Compression = true;
 
+        public DB GetDB()
+        {
+            return db;
+        }
         public override void Awake(JToken jd = null)
         {
             db_path = jd["db_path"]?.ToString();
             bool.TryParse(jd["db_Compression"]?.ToString(), out db_Compression);
+            bool.TryParse(jd["db_MultiThread"]?.ToString(), out db_MultiThread);
 
             var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), db_path);
             Init(DatabasePath);
+        }
+
+        static public void Repair(string path)
+        {
+            Log.Debug($"Repair Start: {path}");
+
+            var DatabasePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), path);
+
+            var options = new Options()
+            {
+                BlockSize = 8 * 1024 * 1024, // 8M 
+                Cache = new Cache(100 * 1024 * 1024), // 内存缓存 100M
+                CompressionLevel = CompressionLevel.NoCompression,
+                CreateIfMissing = true,
+            };
+            DB.Repair(options, DatabasePath);
+
+            Log.Debug($"Repair End: {path}");
         }
 
         public override void Start()
@@ -92,41 +117,44 @@ namespace ETModel
         {
             height = Math.Max(height,1);
             long.TryParse(Get("UndoHeight"),out long height_total);
-            if (height == height_total)
+            if (height >= height_total)
                 return;
 
             Log.Debug($"UndoTransfers {height_total} to {height}");
 
-            WriteBatch batch = new WriteBatch();
-            long ii = height_total;
-            for ( ; ii > height; ii--)
+            lock (db)
             {
-                string Undos_Value = db.Get($"Undos___{ii}");
-                if (Undos_Value != null)
+                WriteBatch batch = new WriteBatch();
+                long ii = height_total;
+                for (; ii > height; ii--)
                 {
-                    DbUndo undos = JsonHelper.FromJson<DbCache<DbUndo>.Slice>(Undos_Value).obj;
-                    for (int jj = 0; jj < undos.keys.Count; jj++)
+                    string Undos_Value = db.Get($"Undos___{ii}");
+                    if (Undos_Value != null)
                     {
-                        string key = $"{undos.keys[jj]}_undo_{undos.height}";
-                        string value = db.Get(key);
-                        if (value != null && value != "")
-                            batch.Put(undos.keys[jj], value);
-                        else
-                            batch.Delete(undos.keys[jj]);
-                        batch.Delete(key);
+                        DbUndo undos = JsonHelper.FromJson<DbCache<DbUndo>.Slice>(Undos_Value).obj;
+                        for (int jj = 0; jj < undos.keys.Count; jj++)
+                        {
+                            string key = $"{undos.keys[jj]}_undo_{undos.height}";
+                            string value = db.Get(key);
+                            if (value != null && value != "")
+                                batch.Put(undos.keys[jj], value);
+                            else
+                                batch.Delete(undos.keys[jj]);
+                            batch.Delete(key);
+                        }
+                        batch.Delete($"Undos___{ii}");
                     }
-                    batch.Delete($"Undos___{ii}");
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
-                {
-                    break;
-                }
+
+                batch.Put("UndoHeight", System.Math.Min(ii, height_total).ToString());
+
+                db.Write(batch, new WriteOptions { Sync = true });
+                batch?.Dispose();
             }
-
-            batch.Put("UndoHeight", System.Math.Min(ii, height_total).ToString() );
-
-            db.Write(batch, new WriteOptions { Sync = true });
-            batch?.Dispose();
 
             Entity.Root.GetComponent<Consensus>()?.cacheRule.Clear();
         }
@@ -248,7 +276,7 @@ namespace ETModel
             }
         }
 
-        public static void Export2CSV_Account(string filename, string address)
+        public static void Export2CSV_Account(string filename, string address, string token=null)
         {
             var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
             // file open
@@ -267,20 +295,31 @@ namespace ETModel
             sw.WriteLine(data);
 
             long.TryParse(levelDBStore.Get("UndoHeight"), out long transferHeight);
-
+            string account = "";
             for (long ii = 1; ii < transferHeight; ii++)
             {
-                var account = levelDBStore.Get($"Accounts___{address}_undo_{ii}");
+                if (!string.IsNullOrEmpty(token)){
+                    account = levelDBStore.Get($"StgMap___{token}__balances__{address}_undo_{ii}");
+                }
+                else {
+                    account = levelDBStore.Get($"Accounts___{address}_undo_{ii}");
+                }
+
                 if (account != null)
                 {
                     sw.WriteLine($"{ii},{account}");
                 }
             }
 
-            var accountCur = levelDBStore.Get($"Accounts___{address}");
-            if (accountCur != null)
+            if (!string.IsNullOrEmpty(token)){
+                account = levelDBStore.Get($"StgMap___{token}__balances__{address}");
+            }
+            else {
+                account = levelDBStore.Get($"Accounts___{address}");
+            }
+            if (account != null)
             {
-                sw.WriteLine($"{transferHeight+1},{accountCur}");
+                sw.WriteLine($"{transferHeight+1},{account}");
             }
 
             sw.Close();
@@ -718,11 +757,16 @@ namespace ETModel
 
         static public void MakeSnapshot(Dictionary<string, string> param)
         {
+            bool trans = false;
+            if (param.ContainsKey("trans")) {
+                bool.TryParse(param["trans"], out trans);
+            }
+
             Console.WriteLine($"levelDB.Init {param["db"]}");
             LevelDBStore levelDB = new LevelDBStore();
             levelDB.Init(param["db"]);
 
-            if (param.ContainsKey("height")&& long.TryParse(param["height"], out long height))
+            if ( param.ContainsKey("height") && long.TryParse(param["height"], out long height) )
             {
                 levelDB.UndoTransfers(height);
             }
@@ -748,17 +792,31 @@ namespace ETModel
                       &&it.KeyAsString().IndexOf("Blocks") != 0
                       &&it.KeyAsString().IndexOf("BlockChain") != 0
                       &&it.KeyAsString().IndexOf("Queue") != 0
-                      &&it.KeyAsString().IndexOf("List") != 0
                       &&it.KeyAsString().IndexOf("Heights") != 0
                       &&it.KeyAsString().IndexOf("Undos___") != 0)
                     {
+                        if (it.KeyAsString().IndexOf("List___") == 0)
+                        {
+                            if (trans && it.KeyAsString().IndexOf("___TFA__") != -1)
+                            {
+                                snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                                Console.WriteLine($"Processed  key: {it.KeyAsString()}");
+                            }
+                        }
+                        else
                         if (it.KeyAsString().IndexOf("Trans___") == 0)
                         {
                             var slice = JsonHelper.FromJson< DbCache<BlockSub>.Slice >(it.ValueAsString());
-                            if (slice != null && slice.obj.height != 0)
+                            // fix debug Snapshot(Over deduction of handling charges)
+                            if (slice != null/* && slice.obj.height != 0*/)
                             {
                                 snapshotDB.Put(it.KeyAsString(), $"{{\"obj\":{{\"height\":{slice.obj.height}}}}}");
                                 Console.WriteLine($"Processed tran: {it.KeyAsString()}");
+                            }
+                            else
+                            {
+                                snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                                Console.WriteLine($"Processed  key: {it.KeyAsString()}");
                             }
                         }
                         else
@@ -838,5 +896,136 @@ namespace ETModel
             }
         }
 
+        static public void ExportBlock(Dictionary<string, string> param)
+        {
+            Console.WriteLine($"levelDB.Init {param["db"]}");
+            LevelDBStore levelDB = new LevelDBStore();
+            levelDB.Init(param["db"]);
+
+            if (param.ContainsKey("height") && long.TryParse(param["height"], out long height))
+            {
+                levelDB.UndoTransfers(height);
+            }
+            long.TryParse(levelDB.Get("UndoHeight"), out long transferHeight);
+            Console.WriteLine($"transferHeight: {transferHeight}");
+
+            var DatabasePath = $"./Data/LevelDB_ExportBlock_{transferHeight}";
+            if (Directory.Exists(DatabasePath))
+            {
+                Console.WriteLine($"Directory LevelDB_ExportBlock Exists");
+                return;
+            }
+            LevelDBStore snapshotDB = new LevelDBStore();
+            snapshotDB.Init(DatabasePath);
+
+            int count = 0;
+            using (var it = levelDB.db.CreateIterator())
+            {
+                for (it.SeekToFirst(); it.IsValid(); it.Next(), count++)
+                {
+                    //Log.Info($"Value as string: {it.KeyAsString()}");
+                    if (it.KeyAsString().IndexOf("_undo_") == -1
+                      && it.KeyAsString().IndexOf("Undos___") != 0
+                      && (it.KeyAsString().IndexOf("Blocks") == 0 ||  it.KeyAsString().IndexOf("Heights") ==0 ))
+                    {
+                        snapshotDB.Put(it.KeyAsString(), it.ValueAsString());
+                        Console.WriteLine($"Processed Block: {it.KeyAsString()}");
+                    }
+                    if (count % 1000000 == 0)
+                        Console.WriteLine($"Processed Count:{count}");
+                }
+            }
+
+            Console.WriteLine($"ExportBlock Complete");
+
+            snapshotDB.Dispose();
+
+            while (true)
+            {
+                System.Threading.Thread.Sleep(1000);
+            }
+
+        }
+
+        static public void PledgeReport(string address)
+        {
+            LevelDBStore dbstore = Entity.Root.GetComponent<LevelDBStore>();
+            long.TryParse(dbstore.Get("UndoHeight"), out long UndoHeight);
+            string filename = $"./{address}_{UndoHeight}.csv";
+            string keyStgMap = $"StgMap___{address}";
+
+            lock (dbstore.db)
+            {
+                int count = 0;
+                string sum = "0";
+                using (var it = dbstore.db.CreateIterator())
+                {
+                    File.Delete(filename);
+                    for (it.SeekToFirst(); it.IsValid(); it.Next(), count++)
+                    {
+                        var key = it.KeyAsString();
+                        if (key.IndexOf(keyStgMap) ==0)
+                        {
+                            var array = key.Split("_");
+                            var conAddress = array[3];
+                            var account    = array[5];
+
+                            if (conAddress == address)
+                            {
+                                File.AppendAllText(filename, $"{account},{it.ValueAsString()}\n");
+                            }
+                        }
+                        if (count % 1000000 == 0)
+                            Console.WriteLine($"Processed Count:{count}");
+                    }
+                    File.AppendAllText(filename, "All" + "," + sum + "\n");
+                }
+
+            }
+
+        }
+
+        static public void SnapshotDebug(Dictionary<string, string> param)
+        {
+            string db1 = param["db1"];
+            string db2 = param["db2"];
+            if (string.IsNullOrEmpty(db1) || string.IsNullOrEmpty(db2)) {
+                Console.WriteLine("db1 or db2 not find.");
+                return;
+            }
+
+            LevelDBStore levelDB1 = new LevelDBStore();
+            levelDB1.Init(param["db1"]);
+
+            LevelDBStore levelDB2 = new LevelDBStore();
+            levelDB2.Init(param["db2"]);
+
+            long.TryParse(param["height"], out long height);
+
+            while (true)
+            {
+                var it1 = levelDB1.Get($"Undos___{height}");
+                var slice1 = JsonHelper.FromJson<DbCache<DbUndo>.Slice>(it1);
+
+                var it2 = levelDB2.Get($"Undos___{height}");
+                var slice2 = JsonHelper.FromJson<DbCache<DbUndo>.Slice>(it2);
+
+                if (slice1 != null && slice1.obj.height != 0
+                  &&slice2 != null && slice2.obj.height != 0)
+                {
+
+                }
+                else
+                {
+                    Console.WriteLine($"stop at height: {height}");
+                    break;
+                }
+
+                height++;
+            }
+        }
+
     }
+
+
 }

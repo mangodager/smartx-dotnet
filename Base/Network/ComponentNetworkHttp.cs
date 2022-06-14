@@ -92,6 +92,10 @@ namespace ETModel
 
         public static async Task<HttpMessage> Query(string url, HttpMessage request)
         {
+            if(url.IndexOf("http")==-1) {
+                url = "http://"+url;
+            }
+
             string jsonModel = JsonHelper.ToJson(request.map);
             using (WebClient wc = new WebClient())
             {
@@ -107,6 +111,10 @@ namespace ETModel
 
         public static async Task<string> QueryString(string url, HttpMessage request)
         {
+            if(url.IndexOf("http")==-1) {
+                url = "http://"+url;
+            }
+
             string jsonModel = JsonHelper.ToJson(request.map);
             using (WebClient wc = new WebClient())
             {
@@ -120,6 +128,10 @@ namespace ETModel
 
         public static HttpMessage QuerySync(string url, HttpMessage request, float timeout = 1)
         {
+            if(url.IndexOf("http")==-1) {
+                url = "http://"+url;
+            }
+
             string jsonModel = JsonHelper.ToJson(request.map);
             var timepass = new TimePass(timeout);
             using (WebClient wc = new WebClient())
@@ -128,6 +140,7 @@ namespace ETModel
                 var awaiter = wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false).GetAwaiter();
                 while (!awaiter.IsCompleted)
                 {
+                    OneThreadSynchronizationContext.Instance.Update();
                     System.Threading.Thread.Sleep(10);
                     if (timepass.IsPassOnce())
                         return null;
@@ -140,8 +153,12 @@ namespace ETModel
             }
         }
 
-        public static string QueryStringSync(string url, HttpMessage request, float timeout = 1)
+        public static string QueryStringSync(string url, HttpMessage request, float timeout = 5f)
         {
+            if(url.IndexOf("http")==-1) {
+                url = "http://"+url;
+            }
+
             string jsonModel = JsonHelper.ToJson(request.map);
             var timepass = new TimePass(timeout);
             using (WebClient wc = new WebClient())
@@ -150,6 +167,7 @@ namespace ETModel
                 var awaiter = wc.UploadDataTaskAsync(url, System.Text.Encoding.UTF8.GetBytes(jsonModel)).ConfigureAwait(false).GetAwaiter();
                 while (!awaiter.IsCompleted)
                 {
+                    OneThreadSynchronizationContext.Instance.Update();
                     System.Threading.Thread.Sleep(10);
                     if (timepass.IsPassOnce())
                         return null;

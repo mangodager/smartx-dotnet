@@ -207,4 +207,18 @@ namespace ETModel
 
 	}
 
+	[Message(NetOpcode.Q2P_Pool,AppType.Core)]
+	public partial class Q2P_Pool: IRequestProto
+	{
+		public string josn { get; set; }
+
+	}
+
+	[Message(NetOpcode.R2P_Pool,AppType.Core)]
+	public partial class R2P_Pool: IResponseProto
+	{
+		public string josn { get; set; }
+
+	}
+
 }

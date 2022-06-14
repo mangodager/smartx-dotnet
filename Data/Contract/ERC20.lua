@@ -15,6 +15,7 @@ function create(_name,_symbol,_totalSupply)
 	end
 end
 
+
 --返回ERC20代币的名字
 function name()
 	return Storages.name;
@@ -114,4 +115,52 @@ function allowance(_from, _spender)
 
 	return allowed_from[_spender]
 end
+
+function createMinter(_name,_symbol,_totalSupply)
+	create(_name,_symbol,_totalSupply);
+	if Storages.canMinter==nil then
+		Storages.canMinter = true;
+	end
+end
+
+function addMinter(_value)
+	if Storages.publisher ~= sender then
+		return;
+	end
+	if Storages.canMinter ~= true then
+		return;
+	end
+
+	local value_sender = luaDB.GetValue("balances",sender);
+	value_sender = biglib.Add(value_sender,_value);
+	Storages.totalSupply = biglib.Add(Storages.totalSupply,_value);
+	luaDB.SetValue("balances",sender,value_sender);
+
+	lualib.TransferEvent(sender, sender, _value);
+
+end
+
+function burnMinter(_value)
+	if Storages.publisher ~= sender then
+		return;
+	end
+	if Storages.canMinter ~= true then
+		return;
+	end
+
+	local value_sender = luaDB.GetValue("balances",sender);
+	value_sender = biglib.Sub(value_sender,_value);
+	Storages.totalSupply = biglib.Sub(Storages.totalSupply,_value);
+	luaDB.SetValue("balances",sender,value_sender);
+
+	lualib.TransferEvent(sender, sender, _value);
+
+end
+
+function IsMinter()
+	return Storages.canMinter;
+end
+
+
+
 

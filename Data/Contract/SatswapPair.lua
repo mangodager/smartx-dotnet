@@ -97,10 +97,13 @@ function _addLiquidity(amountADesired,amountBDesired,amountAMin,amountBMin)
 		end
 	end
 
-	return amountA,amountB;
 end
 
 function addLiquidity(amountADesired,amountBDesired,amountAMin,amountBMin,deadline)
+	if deadline~=""and deadline~=nil then
+		lualib.Assert( biglib.Greater(deadline,curHeight,true) , "SatswapPair: INSUFFICIENT_OUT_DEADLINE" )
+	end
+
 	local amountA,amountB = _addLiquidity(amountADesired,amountBDesired,amountAMin,amountBMin)
 
 	lualib.TransferToken(Storages.tokenA,sender,addressThis,amountA);
@@ -183,42 +186,50 @@ function _burn(liquidity)
 
 end
 
+-- B to A :  (reserveA - reserveA*reserveB/(reserveB+amountB)) * 0.997 = amountA
 function _getAmountA(amountB,reserveA, reserveB)
 	lualib.Assert( biglib.Greater(amountB,"0") , "SatswapPair: INSUFFICIENT_INPUT_AMOUNT" )
 	lualib.Assert( biglib.Greater(reserveA,"0") and biglib.Greater(reserveB,"0") , "SatswapPair: INSUFFICIENT_LIQUIDITY" )
 
-	local numerator   = biglib.Mul( biglib.Mul( reserveA , amountB ) , "1000");
-	local denominator = biglib.Mul( biglib.Sub( reserveB , amountB ) ,  "997");
-	local _amount     = biglib.Add( biglib.Div( numerator, denominator ) , "0.00000001");	
+	local reserve     = biglib.Mul( reserveA , reserveB )
+	local numerator   = biglib.Add( reserveB , amountB  )
+	local denominator = biglib.Div( reserve  , numerator )
 
-	return _amount;
+	local amountA = biglib.Mul( biglib.Sub( reserveA , denominator ),"0.997" )
+
+	return amountA
 end
 
+-- A to B :  (reserveB - reserveA*reserveB/(reserveA+amountA)) * 0.997 = amountB
 function _getAmountB(amountA,reserveA, reserveB)
 	lualib.Assert( biglib.Greater(amountA,"0") , "SatswapPair: INSUFFICIENT_INPUT_AMOUNT" )
 	lualib.Assert( biglib.Greater(reserveA,"0") and biglib.Greater(reserveB,"0") , "SatswapPair: INSUFFICIENT_LIQUIDITY" )
 
-	local amountInWithFee = biglib.Mul( amountA , "997");
-	local numerator   = biglib.Mul( amountInWithFee , reserveB);
-	local denominator = biglib.Add( biglib.Mul( reserveA , "1000" ) , amountInWithFee);
-	local _amount     = biglib.Div( numerator , denominator);
-	
-	return _amount;
+	local reserve     = biglib.Mul( reserveA , reserveB )
+	local numerator   = biglib.Add( reserveA , amountA  )
+	local denominator = biglib.Div( reserve  , numerator )
+
+	local amountB = biglib.Mul( biglib.Sub( reserveB , denominator ),"0.997" )
+
+	return amountB
 end
 
 function swapTokensForTokens(amountAIn,amountBIn,amountAOutMin,amountBOutMin,deadline)
 	--lualib.Assert( biglib.Less(amountIn,"0",true) and biglib.Less(amount0Out,"0",true) , "INSUFFICIENT_LIQUIDITY_BURNED" )
+	if deadline~=""and deadline~=nil then
+		lualib.Assert( biglib.Greater(deadline,curHeight,true) , "SatswapPair: INSUFFICIENT_OUT_DEADLINE" )
+	end
 
 	if biglib.Greater(amountAIn,"0") then
 		lualib.TransferToken(Storages.tokenA,sender,addressThis,amountAIn);
 		local amountBOut = _getAmountB(amountAIn,Storages.reserveA,Storages.reserveB);
-		lualib.Assert( biglib.Greater(amountBOut,"0",true) , "SatswapPair: INSUFFICIENT_OUTPUT_AMOUNT" );
+		lualib.Assert( biglib.Greater(amountBOut,amountBOutMin,true) , "SatswapPair: INSUFFICIENT_SLIPPAGE_B");
 		_swap(amountAIn,"0","0",amountBOut);
 
 	elseif biglib.Greater(amountBIn,"0") then
 		lualib.TransferToken(Storages.tokenB,sender,addressThis,amountBIn);
 		local amountAOut = _getAmountA(amountBIn,Storages.reserveA,Storages.reserveB);
-		lualib.Assert( biglib.Greater(amountAOut,"0",true) , "SatswapPair: INSUFFICIENT_OUTPUT_AMOUNT" );
+		lualib.Assert( biglib.Greater(amountAOut,amountAOutMin,true) , "SatswapPair: INSUFFICIENT_SLIPPAGE_A");
 
 		_swap("0",amountBIn,amountAOut,"0");
 	else

@@ -111,7 +111,6 @@ namespace ETModel
                 return chinanext;
 
             List<BlockChain> list1 = new List<BlockChain>();
-            List<BlockChain> list2 = new List<BlockChain>();
 
             List<Block> blks1 = blockMgr.GetBlock(chain.height + 1);
             List<Block> blks2 = blockMgr.GetBlock(chain.height + 2);

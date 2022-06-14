@@ -41,12 +41,12 @@ namespace ETModel
             //var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = BlockMgr.networkID,ipEndPoint = p2p_Block.ipEndPoint };
             var newBlock = new P2P_NewBlock() { block = p2p_Block.block, networkID = NodeManager.networkIDBase, ipEndPoint = Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.ToString() };
 
-            relayNetworkInner.BroadcastToAll(newBlock);
+            relayNetworkInner?.BroadcastToAll(newBlock);
         }
 
         public void Broadcast(P2P_NewBlock p2p_NewBlock)
         {
-            relayNetworkInner.BroadcastToAll(p2p_NewBlock);
+            relayNetworkInner?.BroadcastToAll(p2p_NewBlock);
         }
 
         void Q2P_New_Node_Handle(Session session, int opcode, object msg)
@@ -55,22 +55,32 @@ namespace ETModel
             //Log.Debug($"Q2P_New_Nod {new_Node.ActorId} \r\nHash: {new_Node.HashCode}");
             if (nodeManager != null)
             {
-                //Internet
-                var nodes = nodeManager.GetNodeList();
-                nodes = nodes.FindAll((n) => { return (n.state & NodeManager.EnumState.RelayNetwork) == NodeManager.EnumState.RelayNetwork; });
+                if (!NodeManager.CheckNetworkID(new_Node.version))
+                {
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = "[]", nodeTime = TimeHelper.Now() };
+                    response.Message = $"Network Version Not Compatible your:{new_Node.version} cur:{NodeManager.networkIDBase}";
+                    session.Reply(new_Node, response);
+                    return;
+                }
+                else
+                {
+                    //Internet
+                    var nodes = nodeManager.GetNodeList();
+                    nodes = nodes.FindAll((n) => { return (n.state & NodeManager.EnumState.RelayNetwork) == NodeManager.EnumState.RelayNetwork; });
 
-                //// LAN
-                //var node = new NodeManager.NodeData();
-                //node.address = Wallet.GetWallet().GetCurWallet().ToAddress();
-                //node.nodeId = nodeManager.GetMyNodeId();
-                //node.ipEndPoint = $"{relayNetworkInner.ipEndPoint.Address}:{Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.Port}";
-                //node.state = 7;
-                //var nodes = new List<NodeManager.NodeData>();
-                //nodes.Add(node);
+                    //// LAN
+                    //var node = new NodeManager.NodeData();
+                    //node.address = Wallet.GetWallet().GetCurWallet().ToAddress();
+                    //node.nodeId = nodeManager.GetMyNodeId();
+                    //node.ipEndPoint = $"{relayNetworkInner.ipEndPoint.Address}:{Entity.Root.GetComponent<ComponentNetworkInner>().ipEndPoint.Port}";
+                    //node.state = 7;
+                    //var nodes = new List<NodeManager.NodeData>();
+                    //nodes.Add(node);
 
-                // 
-                R2P_New_Node response = new R2P_New_Node() { Nodes = JsonHelper.ToJson(nodes), nodeTime = TimeHelper.Now() };
-                session.Reply(new_Node, response);
+                    // 
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = JsonHelper.ToJson(nodes), nodeTime = TimeHelper.Now() };
+                    session.Reply(new_Node, response);
+                }
             }
         }
 

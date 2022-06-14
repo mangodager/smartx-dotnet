@@ -2,7 +2,7 @@
   "profiles": {
     "Core.App": {
       "commandName": "Project",
-      "commandLineArgs": "-index:11 -configure:./Data/Config/Pool.json -node:All -db:./Data/LevelDB -wallet:./Data/wallet.json",
+      "commandLineArgs": "-index:1 -configure:./Data/Config/CrossChain.json -node:All -db:./Data/LevelDB -wallet:./Data/wallet.json",
       "workingDirectory": "../",
       "sqlDebugging": false
     }

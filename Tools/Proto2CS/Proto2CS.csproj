@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
 
     <PropertyGroup>

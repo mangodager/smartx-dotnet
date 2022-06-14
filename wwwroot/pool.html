@@ -102,17 +102,17 @@
         <h4></h4>
 
         <!--<div class="row">
-        <div class="col-lg-1"></div>
-        <div class="col-lg-3">
-            <h4 id="miner_Fee" style='text-align:left;'>Fee:</h4>
-        </div>
-        <div class="col-lg-3">
-            <h4 id="miner_ver" style='text-align:center;'>Ver:</h4>
-        </div>
-        <div class="col-lg-3">
-            <h4 id="miner_state" style='text-align:right;'></h4>
-        </div>
-    </div>-->
+            <div class="col-lg-1"></div>
+            <div class="col-lg-3">
+                <h4 id="miner_Fee" style='text-align:left;'>Fee:</h4>
+            </div>
+            <div class="col-lg-3">
+                <h4 id="miner_ver" style='text-align:center;'>Ver:</h4>
+            </div>
+            <div class="col-lg-3">
+                <h4 id="miner_state" style='text-align:right;'></h4>
+            </div>
+        </div>-->
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="miner_info">
@@ -179,6 +179,33 @@
             <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
         </div>
     </footer>
+
+    <div class="modal fade" id="ModalReSendTranfer" tabindex="-1" role="dialog" aria-labelledby="ModalReSendTranferLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        ×
+                    </button>
+                    <h4 class="modal-title lang" id="myModalLabel" key="申请补发交易">
+                    </h4>
+                </div>
+                <div class="input-group">
+                    <span class="input-group-addon" id="basic-addon3">unique</span>
+                    <input type="text" class="form-control" id="input_unique" aria-describedby="basic-addon3" disabled="disabled">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="liOnReSend()">
+                        <div class="lang" key="提交"></div>
+                    </button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        <div class="lang" key="取消"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         function OnRefresh(e) {
@@ -353,7 +380,7 @@
 
         }
 
-        function QueryMinersAbstract(poolname,rul, address) {
+        function QueryMinersAbstract(poolname, rul, address) {
             if (address == null || address == "")
                 return;
             $.ajax({
@@ -365,7 +392,7 @@
                     if (data != "no miner" && data != "{ \"ret\": \"failed\" }") {
                         var minerView = JSON.parse(data);
                         var amount_cur = Helper.Fix(minerView["amount_cur"]);
-                        Helper.TableInsert("miner_info", poolname, "list-group-item-success", poolname,minerView.totalMiners, minerView["totalPower"], minerView["share"], amount_cur);
+                        Helper.TableInsert("miner_info", poolname, "list-group-item-success", poolname, minerView.totalMiners, minerView["totalPower"], minerView["share"], amount_cur);
                     }
                 },
                 error: function (err) {
@@ -429,7 +456,8 @@
                                 hash = "";
                             }
                             if (hash == "" && amount != "0") {
-                                state = "正在转"
+                                state = "正在转";
+                                hash = 'unique_' + transfers[key]["data"];
                             }
                             //state = " <button type=\"button\" class=\"btn btn-warning\" style='height:24px' onclick='liOnReSend('" + transfers[key]['data'] + "')'>" + Translate.Get("正在转") + "</button>";
 
@@ -497,14 +525,39 @@
 
         function liOnclick(e) {
             //alert(e.id);
-            if (e.id.indexOf("->") != -1)
+            if (e.id.indexOf("->") != -1) {
                 onClickCommand(e.id);
+            }
             else
-                Helper.ShowTransfer(e.id)
+                if (e.id.indexOf("unique_") != -1) {
+                    let unique = e.id
+                    unique = unique.replace(/unique_/g, "");
+
+                    $("#ModalReSendTranfer #input_unique").val(unique);
+                    $("#ModalReSendTranfer").modal('show');
+                }
+                else {
+                    Helper.ShowTransfer(e.id)
+                }
         };
 
-        function liOnReSend(e) {
-            alert(e);
+        function liOnReSend() {
+            let unique = $("#ModalReSendTranfer #input_unique").val()
+            $.ajax({
+                url: poolUrl + "/Command",
+                dataType: "text",
+                type: "get",
+                data: "".concat("input=minertransfer ", addressCur, " ", BillsCurIndex, " 10 ", MinersCurIndex, " 10 ", unique),
+                success: function (data) {
+                    if (data == "{\"success\":true}") {
+                        alert(Translate.Get("交易已重发!"));
+                    }
+                },
+                error: function (err) {
+                    alert(Translate.Get("提交失败!"));
+                }
+            });
+
         };
 
         function ShowMiners(address) {

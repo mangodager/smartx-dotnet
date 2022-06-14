@@ -16,8 +16,8 @@ namespace ETModel
     {
         Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 #if SmartX
-        public static string networkIDCur  = "SmartX_3.2.0d";
-        public static string networkIDBase = "SmartX_3.2.0";
+        public static string networkIDCur  = "SmartX_4.2.0";
+        public static string networkIDBase = "SmartX_4.2.0";
 #else
         public static string networkIDCur  = "alpha_2.2.2";
         public static string networkIDBase = "alpha_2.2.2";
@@ -35,6 +35,7 @@ namespace ETModel
             public const long transferShow = 1;
             public const long openSyncFast = 2;
             public const long RelayNetwork = 4;
+            public const long TransferComponent = 8;
         }
 
         public class NodeData
@@ -97,11 +98,35 @@ namespace ETModel
             return TimeHelper.Now() + nodeTimeOffset;
         }
 
+        List<string> NodeSessions     = null;
+        TimePass     NodeSessionsTime = new TimePass(60);
+        List<string> GetNodeSessions()
+        {
+            if (NodeSessions == null || NodeSessionsTime.IsPassSet())
+            {
+                List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
+                for (int ii = 0; ii < list.Count; ii++)
+                {
+                    list[ii] = NetworkHelper.DnsToIPEndPoint(list[ii]);
+                }
+                NodeSessions = list;
+            }
+            return NodeSessions;
+        }
+
         public async void Run(bool bRun)
         {
             await Task.Delay(1 * 1000);
 
-            List<string> list = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
+            if(LevelDBStore.db_MultiThread)
+            {
+                networkIDCur += " MT";
+            }
+
+            // DNS
+            List<string> list = GetNodeSessions();
+            List<string> list2 = JsonHelper.FromJson<List<string>>(Program.jdNode["NodeSessions"].ToString());
+
             // Get Internet IP
             try
             {
@@ -111,12 +136,27 @@ namespace ETModel
                 }
                 else
                 {
-                    Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[0]));
-                    Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
-                    R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 0.3f);
                     networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(GetIpV4() + ":" + networkInner.ipEndPoint.Port);
-                    if (rIPNode != null) {
-                        networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+                    for (int ii = 0; ii < list.Count; ii++)
+                    {
+                        Session session = null;
+                        try
+                        {
+                            session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[ii]));
+                        }
+                        catch (Exception)
+                        {
+                        }
+                        if (session != null && session.IsConnect())
+                        {
+                            Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
+                            R2P_IP_INFO rIPNode = (R2P_IP_INFO)await session.Query(qIPNode, 15);
+                            if (rIPNode != null)
+                            {
+                                networkInner.ipEndPoint = NetworkHelper.ToIPEndPoint(rIPNode.address + ":" + networkInner.ipEndPoint.Port);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -124,7 +164,7 @@ namespace ETModel
             {
             }
             Log.Info($"NodeManager  {networkInner.ipEndPoint.ToString()}");
-            Log.Info($"NodeSessions {list[0]}");
+            Log.Info($"NodeSessions {list2[0]}");
             Log.Info($"NodeVersion  {networkIDCur}");
 
             // 
@@ -141,52 +181,87 @@ namespace ETModel
                 state |= consensus.openSyncFast ? EnumState.openSyncFast : 0;
             }
             state |= Entity.Root.GetComponentInChild<RelayNetwork>() != null ? EnumState.RelayNetwork : 0;
+            state |= Entity.Root.GetComponentInChild<TransferComponent>() != null ? EnumState.TransferComponent : 0;
             new_Node.state   = state;
+
+            List<List<NodeData>> nodesQuery = new List<List<NodeData>>();
+            for (int ii = 0; ii < list.Count; ii++)
+            {
+                nodesQuery.Add(new List<NodeData>());
+            }
+            bool bResponse = false;
+            bool bNodeTimeOffset = false;
 
             while (bRun && list.Count>0)
             {
                 new_Node.version = NodeManager.networkIDCur;
+                bResponse = false;
+                bNodeTimeOffset = false;
                 try
                 {
                     for (int ii = 0; ii < list.Count; ii++)
                     {
-                        bool bResponse = false;
-                        new_Node.HashCode = StringHelper.HashCode(JsonHelper.ToJson(nodes));
-                        Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[ii]));
+                        new_Node.HashCode = StringHelper.HashCode(JsonHelper.ToJson(nodesQuery[ii]));
+
+                        Session session = null;
+                        try
+                        {
+                            session = await networkInner.Get(NetworkHelper.ToIPEndPoint(list[ii]));
+                        }
+                        catch (Exception)
+                        {
+                        }
+
                         if (session != null && session.IsConnect())
                         {
                             //Log.Debug($"NodeSessions connect " + r2P_New_Node.ActorId);
-                            //session.Send(new_Node);
 
                             long sendTime = TimeHelper.Now();
-                            R2P_New_Node r2P_New_Node = (R2P_New_Node)await session.Query(new_Node, 3f);
+                            R2P_New_Node r2P_New_Node = (R2P_New_Node)await session.Query(new_Node, 10f);
                             if (r2P_New_Node != null)
                             {
-                                long timeNow = TimeHelper.Now() ;
-                                nodeTimeOffset = (timeNow - sendTime) / 2 + r2P_New_Node.nodeTime - timeNow;
+                                if (!bNodeTimeOffset)
+                                {
+                                    long timeNow = TimeHelper.Now();
+                                     nodeTimeOffset = (timeNow - sendTime) / 2 + r2P_New_Node.nodeTime - timeNow;
+                                    bNodeTimeOffset = true;
+                                }
                                 if (!string.IsNullOrEmpty(r2P_New_Node.Nodes))
                                 {
-                                    nodes = JsonHelper.FromJson<List<NodeData>>(r2P_New_Node.Nodes);
+                                    nodesQuery[ii] = JsonHelper.FromJson<List<NodeData>>(r2P_New_Node.Nodes);
+                                    bResponse = true;
                                 }
-                                if(!string.IsNullOrEmpty(r2P_New_Node.Message))
+                                if (!string.IsNullOrEmpty(r2P_New_Node.Message))
                                 {
                                     Log.Warning($"NodeSessions: {r2P_New_Node.Message}");
                                 }
-                                bResponse = true;
                             }
-                        }
-                        if (bResponse)
-                        {
-                            break;
                         }
                     }
 
+                    if(bResponse)
+                    {
+                        var newnodes = new List<NodeData>();
+                        for (int ii = 0; ii < list.Count; ii++)
+                        {
+                            for (int jj = 0; jj < nodesQuery[ii].Count; jj++)
+                            {
+                                if (newnodes.Find(x => x.nodeId == nodesQuery[ii][jj].nodeId) == null)
+                                {
+                                    newnodes.Add(nodesQuery[ii][jj]);
+                                }
+                            }
+                        }
+                        nodes = newnodes;
+                    }
+
                     // 等待5秒后关闭连接
-                    await Task.Delay(5 * 1000);
+                    await Task.Delay(10 * 1000);
+                    list = GetNodeSessions();
                 }
                 catch (Exception)
                 {
-                    await Task.Delay(5 * 1000);
+                    await Task.Delay(10 * 1000);
                 }
             }
         }
@@ -207,16 +282,16 @@ namespace ETModel
             {
                 if(!CheckNetworkID(new_Node.version))
                 {
-                    R2P_New_Node response = new R2P_New_Node() { Nodes = "", nodeTime = TimeHelper.Now() };
+                    R2P_New_Node response = new R2P_New_Node() { Nodes = "[]", nodeTime = TimeHelper.Now() };
                     response.Message = $"Network Version Not Compatible your:{new_Node.version} cur:{NodeManager.networkIDBase}";
                     session.Reply(new_Node, response);
                     return;
                 }
 
                 //Log.Debug($"Q2P_New_Node_Handle {new_Node.address} ipEndPoint: {new_Node.ipEndPoint}  1");
-                Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 2);
+                Session sessionNew = await networkInner.Get(NetworkHelper.ToIPEndPoint(new_Node.ipEndPoint), 15);
                 Q2P_IP_INFO qIPNode = new Q2P_IP_INFO();
-                R2P_IP_INFO rIPNode = (R2P_IP_INFO)await sessionNew.Query(qIPNode, 0.3f);
+                R2P_IP_INFO rIPNode = (R2P_IP_INFO)await sessionNew.Query(qIPNode, 15);
 
                 if (rIPNode != null)
                 {
@@ -297,7 +372,7 @@ namespace ETModel
                     NodeData node = nodes[i];
                     if (nodesLastTime.TryGetValue(node.nodeId, out lastTime))
                     {
-                        if (TimeHelper.time - lastTime > 60f )
+                        if (TimeHelper.time - lastTime > 600f )
                         {
                             nodes.Remove(node);
                             nodesLastTime.Remove(node.nodeId);
@@ -400,7 +475,16 @@ namespace ETModel
             return result;
         }
 
-        public async void Broadcast(P2P_NewBlock p2p_Block, Block block)
+        async void SendAsync(IPEndPoint ipEndPoint, IMessage message)
+        {
+            Session session = await networkInner.Get(ipEndPoint);
+            if (session != null && session.IsConnect())
+            {
+                session.Send(message);
+            }
+        }
+
+        public void Broadcast(P2P_NewBlock p2p_Block, Block block)
         {
             var myNodeId = GetMyNodeId();
             for (int i = 0; i < nodes.Count; i++)
@@ -408,16 +492,12 @@ namespace ETModel
                 NodeData node = nodes[i];
                 if (node.nodeId != myNodeId)
                 {
-                    Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
-                    if (session != null && session.IsConnect())
-                    {
-                        session.Send(p2p_Block);
-                    }
+                    SendAsync(NetworkHelper.ToIPEndPoint(node.ipEndPoint), p2p_Block);
                 }
             }
         }
 
-        public async void Broadcast(IMessage message)
+        public void Broadcast(IMessage message)
         {
             // 向所在桶广播
             Broadcast2Kad(message);
@@ -440,17 +520,13 @@ namespace ETModel
             for (int i = 0; i < result.Count; i++)
             {
                 NodeData node = result[i];
-                Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
-                if (session != null && session.IsConnect())
-                {
-                    session.Send(message);
-                }
+                SendAsync(NetworkHelper.ToIPEndPoint(node.ipEndPoint), message);
             }
 
         }
 
         // Broadcast to my Kademlia
-        public async void Broadcast2Kad(IMessage message)
+        public void Broadcast2Kad(IMessage message)
         {
             NodeData nodeSelf = nodes.Find((n) => { return n.nodeId == GetMyNodeId(); });
             if (nodeSelf == null)
@@ -463,27 +539,19 @@ namespace ETModel
                 NodeData node = result[i];
                 if (node.nodeId != nodeSelf.nodeId) // ignore self
                 {
-                    Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
-                    if (session != null && session.IsConnect())
-                    {
-                        session.Send(message);
-                    }
+                    SendAsync(NetworkHelper.ToIPEndPoint(node.ipEndPoint), message);
                 }
             }
 
         }
-        public async void Broadcast2Kad(int kIndex, IMessage message)
+        public void Broadcast2Kad(int kIndex, IMessage message)
         {
             List<NodeData> result = GetkList(kIndex);
 
             for (int i = 0; i < result.Count; i++)
             {
                 NodeData node = result[i];
-                Session session = await networkInner.Get(NetworkHelper.ToIPEndPoint(node.ipEndPoint));
-                if (session != null && session.IsConnect())
-                {
-                    session.Send(message);
-                }
+                SendAsync(NetworkHelper.ToIPEndPoint(node.ipEndPoint), message);
             }
 
         }

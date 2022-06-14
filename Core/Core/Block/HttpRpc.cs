@@ -101,6 +101,9 @@ namespace ETModel
                 case "transferstate":
                     OnTransferState(httpMessage);
                     break;
+                case "transferstate2":
+                    OnTransferState2(httpMessage);
+                    break;
                 case "uniquetransfer":
                     UniqueTransfer(httpMessage);
                     break;
@@ -139,6 +142,9 @@ namespace ETModel
                     break;
                 case "callfun":
                     callFun(httpMessage);
+                    break;
+                case "getlinkbad":
+                    getLinkBad(httpMessage);
                     break;
                 default:
                     break;
@@ -198,6 +204,12 @@ namespace ETModel
                 case "transferstate":
                     OnTransferState(httpMessage);
                     break;
+                case "transferstate2":
+                    OnTransferState2(httpMessage);
+                    break;
+                case "uniquetransfer":
+                    UniqueTransfer(httpMessage);
+                    break;
                 case "beruler":
                     OnBeRuler(httpMessage);
                     break;
@@ -206,6 +218,9 @@ namespace ETModel
                     break;
                 case "miner":
                     OnMiner(httpMessage);
+                    break;
+                case "minertransfer":
+                    OnMinerTransfer(httpMessage);
                     break;
                 case "minertop":
                     OnMinerTop(httpMessage);
@@ -257,6 +272,9 @@ namespace ETModel
                     break;
                 case "pooltransfer":
                     PoolTransfer(httpMessage);
+                    break;
+                case "pledgereport":
+                    PledgeReport(httpMessage);
                     break;
                 default:
                     break;
@@ -446,7 +464,7 @@ namespace ETModel
                                         $"             Node: {nodeCount}\n" +
                                         $"    Rule.Transfer: {rule?.GetTransfersCount()}\n" +
                                         $"    Pool.Transfer: {pool?.GetTransfersCount()}\n" +
-                                        $"     NodeSessions: {Program.jdNode["NodeSessions"]}\n" +
+                                        $"     NodeSessions: {Program.jdNode["NodeSessions"][0]}\n" +
                                         $"           IsRule: {Entity.Root.GetComponent<Consensus>().IsRule(PoolHeight, address)}";
             }
             else
@@ -461,6 +479,24 @@ namespace ETModel
                 var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
                 httpMessage.result = $"H:{UndoHeight} P:{power2} Miner:{miners?.Count}/{httpPool?.minerLimit} P1:{power1} Fee:{Pool.GetServiceFee()*100}% {pool?.RewardInterval/4}min {HttpPool.ignorePower/1000}K Ver:{Miner.version.Replace("Miner_","")}";
             }
+            else
+            if (style == "3")
+            {
+                httpMessage.result = $"{UndoHeight}";
+            }
+            else
+            if (style == "5")
+            {
+                Dictionary<string, object> result = new Dictionary<string, object>();
+                result.Add("Address", address);
+                result.Add("AlppyHeight", UndoHeight);
+                result.Add("PoolHeight" , PoolHeight);
+                result.Add("Rule", Entity.Root.GetComponent<Consensus>().IsRule(PoolHeight, address));
+                result.Add("HardDisk", $"{DbSnapshot.GetHardDiskSpace()/1024}GB");
+                httpMessage.result = JsonHelper.ToJson(result);
+            }
+
+
         }
 
         public void OnPoolStats(HttpMessage httpMessage)
@@ -529,7 +565,7 @@ namespace ETModel
             var httpPoolRelay = Entity.Root.GetComponent<HttpPoolRelay>();
             if (httpPoolRelay != null)
             {
-                httpMessage.result = $"redirect {httpPoolRelay.rulerRpc}";
+                httpMessage.result = $"redirect {httpPoolRelay.rulerWeb}";
             }
             else
             {
@@ -563,9 +599,25 @@ namespace ETModel
 
         public void OnNode(HttpMessage httpMessage)
         {
+#if !RELEASE
             var nodes = Entity.Root.GetComponent<NodeManager>().GetNodeList();
             nodes.Sort((a, b) => b.kIndex - a.kIndex);
             httpMessage.result = JsonHelper.ToJson(nodes);
+#else
+            var nodes = new List<NodeManager.NodeData>();
+            Entity.Root.GetComponent<NodeManager>().GetNodeList().ForEach(x => nodes.Add(new NodeManager.NodeData()
+            {
+                //ipEndPoint = x.ipEndPoint.Substring(x.ipEndPoint.Length/3, x.ipEndPoint.Length-x.ipEndPoint.Length/3),
+                ipEndPoint = "",
+                kIndex = x.kIndex,
+                nodeId = x.nodeId,
+                state = x.state,
+                version = x.version,
+                address = x.address,
+            }));
+            nodes.Sort((a, b) => b.kIndex - a.kIndex);
+            httpMessage.result = JsonHelper.ToJson(nodes);
+#endif
         }
 
         public void OnMiner(HttpMessage httpMessage)
@@ -593,6 +645,36 @@ namespace ETModel
             {
                 httpMessage.result  = $"pool.style   : {pool.style}\n";
                 httpMessage.result += $"miners.Count : {miners?.Count}\n";
+            }
+        }
+
+        public void OnMinerTransfer(HttpMessage httpMessage)
+        {
+            var httpPool = Entity.Root.GetComponent<HttpPool>();
+            var pool = Entity.Root.GetComponent<Pool>();
+            var miners = httpPool?.GetMinerRewardMin(out long miningHeight);
+            if (GetParam(httpMessage, "1", "Address", out string address))
+            {
+                GetParam(httpMessage, "2", "transferIndex", out string str_transferIndex);
+                GetParam(httpMessage, "3", "transferColumn", out string str_transferColumn);
+                GetParam(httpMessage, "4", "minerIndex", out string str_minerIndex);
+                GetParam(httpMessage, "5", "minerColumn", out string str_minerColumn);
+                GetParam(httpMessage, "6", "unique", out string unique);
+
+                long.TryParse(str_transferIndex, out long transferIndex);
+                long.TryParse(str_transferColumn, out long transferColumn);
+                long.TryParse(str_minerIndex, out long minerIndex);
+                long.TryParse(str_minerColumn, out long minerColumn);
+
+                var rel = pool.ReSendTansfer(address, transferIndex, transferColumn, minerIndex, minerColumn, unique);
+                if (rel)
+                {
+                    httpMessage.result = "{\"success\":true}";
+                }
+                else
+                {
+                    httpMessage.result = "{\"success\":false,\"rel\":" + rel + "}";
+                }
             }
         }
 
@@ -1060,17 +1142,119 @@ namespace ETModel
                 if (transfer != null)
                 {
                     httpMessage.result = JsonHelper.ToJson(transfer);
+                    return;
                 }
-                else
-                    httpMessage.result = "";
             }
+
+            httpMessage.result = "";
+        }
+
+        public void OnTransferState2(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "hash", out string hash))
+            {
+                httpMessage.result = "command error! \nexample: transferstate hash";
+                return;
+            }
+
+            using (var dbSnapshot = Entity.Root.GetComponent<LevelDBStore>().GetSnapshot(0))
+            {
+                var transfer = dbSnapshot.Transfers.Get(hash);
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    return;
+                }
+            }
+
+            {
+                var transfer = Entity.Root.GetComponent<Rule>().GetTransferState(hash);
+                if(transfer!=null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    var temp = JsonHelper.FromJson<BlockSub>(httpMessage.result);
+                    if (temp.temp == null) {
+                        temp.temp = new List<string>();
+                    }
+                    temp.temp.Add("Transfer In Queue");
+                    httpMessage.result = JsonHelper.ToJson(temp);
+                    return;
+                }
+            }
+
+            var lastblk = Entity.Root.GetComponent<Rule>().GetLastMcBlock();
+            if (lastblk != null)
+            {
+                BlockSub transfer = null;
+                long transferHeight = Entity.Root.GetComponent<Consensus>().transferHeight;
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+
+                List<Block> blks = new List<Block>();
+                var curblk = lastblk;
+                for (long height = curblk.height; height > transferHeight; height--)
+                {
+                    blks.Insert(0, curblk);
+                    curblk = blockMgr.GetBlock(curblk.prehash);
+                }
+
+                for (var blks_index = 0; blks_index < blks.Count && transfer == null; blks_index++)
+                {
+                    var mcblk = blks[blks_index];
+                    for (int ii = 0; ii < mcblk.linksblk.Count && transfer == null; ii++)
+                    {
+                        Block linkblk = blockMgr.GetBlock(mcblk.linksblk[ii]);
+                        if (linkblk == null)
+                        {
+                            continue;
+                        }
+                        if (linkblk.height != 1)
+                        {
+                            for (int jj = 0; jj < linkblk.linkstran.Count && transfer == null ; jj++)
+                            {
+                                if (linkblk.linkstran[jj].hash == hash)
+                                {
+                                    transfer = linkblk.linkstran[jj];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<Block> linksblks = blockMgr.GetBlock(lastblk.height);
+                for (int ii = 0; ii < linksblks.Count && transfer == null; ii++)
+                {
+                    Block linkblk = linksblks[ii];
+                    for (int jj = 0; jj < linkblk.linkstran.Count; jj++)
+                    {
+                        if (linkblk.linkstran[jj].hash == hash)
+                        {
+                            transfer = linkblk.linkstran[jj];
+                        }
+                    }
+                }
+
+                if (transfer != null)
+                {
+                    httpMessage.result = JsonHelper.ToJson(transfer);
+                    var temp = JsonHelper.FromJson<BlockSub>(httpMessage.result);
+                    if (temp.temp == null)
+                    {
+                        temp.temp = new List<string>();
+                    }
+                    temp.temp.Add("Waiting for block confirmation");
+                    httpMessage.result = JsonHelper.ToJson(temp);
+                    return;
+                }
+            }
+
+            httpMessage.result = "";
         }
 
         public void UniqueTransfer(HttpMessage httpMessage)
         {
             if (!GetParam(httpMessage, "1", "unique", out string unique))
             {
-                httpMessage.result = "command error! \nexample: transferstate hash";
+                httpMessage.result = "command error! \nexample: UniqueTransfer hash";
                 return;
             }
 
@@ -1277,17 +1461,27 @@ namespace ETModel
             else
             if (style == "5")
             {
-                if (!GetParam(httpMessage, "3", "Address", out string Address))
+                if (!GetParam(httpMessage, "3", "address", out string address)
+                  ||!GetParam(httpMessage, "4", "file", out string file))
                 {
                     httpMessage.result = "command error! \nexample: test 5 Address C:\\Address.csv";
                     return;
                 }
-                if (!GetParam(httpMessage, "4", "file", out string file))
+                GetParam(httpMessage, "5", "token", out string token);
+
+                LevelDBStore.Export2CSV_Account(file, address, token);
+            }
+            else
+            if (style == "1408123")
+            {
+                if (!GetParam(httpMessage, "3", "min", out string min)
+                 || !GetParam(httpMessage, "4", "max", out string max)
+                 || !GetParam(httpMessage, "5", "file", out string file))
                 {
-                    httpMessage.result = "command error! \nexample: test 5 Address C:\\Address.csv";
+                    httpMessage.result = "command error! \nexample: test passwaor 1408123 min max  C:\\name.csv";
                     return;
                 }
-                LevelDBStore.Export2CSV_Account($"{file}", Address);
+                TestContract.Test1408123(file, long.Parse(min), long.Parse(max));
             }
             else
             if (style == "pledge")
@@ -1327,19 +1521,11 @@ namespace ETModel
         public void DelBlock(HttpMessage httpMessage)
         {
             httpMessage.result = "";
-            if (!GetParam(httpMessage, "1", "password", out string password))
+            if (!GetParam(httpMessage, "1", "password", out string password)
+              ||!GetParam(httpMessage, "2", "from", out string from)
+              ||!GetParam(httpMessage, "3", "to", out string to) )
             {
-                httpMessage.result = "command error! \nexample: mergechain 123 100 1";
-                return;
-            }
-            if (!GetParam(httpMessage, "2", "from", out string from))
-            {
-                httpMessage.result = "command error! \nexample: mergechain 123 100 1";
-                return;
-            }
-            if (!GetParam(httpMessage, "3", "to", out string to))
-            {
-                httpMessage.result = "command error! \nexample: mergechain 123 1 100 ";
+                httpMessage.result = "command error! \nexample: mergechain passwaord 110 100";
                 return;
             }
 
@@ -1357,7 +1543,7 @@ namespace ETModel
             long max = DelBlock_max;
             long min = DelBlock_min;
 
-            Log.Info($"mergechain {min} {max}");
+            Log.Info($"MergeChain {max} {min}");
 
             Entity.Root.GetComponent<Consensus>().transferHeight = min;
             Entity.Root.GetComponent<LevelDBStore>().UndoTransfers(min);
@@ -1366,7 +1552,7 @@ namespace ETModel
                 Entity.Root.GetComponent<BlockMgr>().DelBlock(ii);
             }
 
-            Log.Info("mergechain finish");
+            Log.Info("MergeChain finish");
         }
 
         public void MergeChain(HttpMessage httpMessage)
@@ -1502,6 +1688,24 @@ namespace ETModel
             }
         }
 
+        public void PledgeReport(HttpMessage httpMessage)
+        {
+            if (!GetParam(httpMessage, "1", "password", out string password))
+            {
+                return;
+            }
+            if (!GetParam(httpMessage, "2", "Address", out string address))
+            {
+                return;
+            }
+
+            if (Wallet.GetWallet().IsPassword(password))
+            {
+                LevelDBStore.PledgeReport(address);
+            }
+
+        }
+
         static Dictionary<string, long> AccountNotice = new Dictionary<string, long>();
         public static long GetAccountNotice(string address,bool reset=true)
         {
@@ -1557,6 +1761,86 @@ namespace ETModel
             return null;
         }
 
+        public void getLinkBad(HttpMessage httpMessage)
+        {
+            try
+            {
+                var consensus = Entity.Root.GetComponent<Consensus>();
+                var blockMgr = Entity.Root.GetComponent<BlockMgr>();
+                var levelDBStore = Entity.Root.GetComponent<LevelDBStore>();
+
+                string _recentheight;
+                string address;
+                if (!GetParam(httpMessage, "height", "height", out _recentheight))
+                {
+                    _recentheight = consensus.transferHeight.ToString();
+                }
+                if (!GetParam(httpMessage, "address", "address", out address))
+                {
+                    return;
+                }
+
+                long recentheight = long.Parse(_recentheight)+1;
+                List<string> res = new List<string>();
+
+                Block myBlk = null;
+                var hashs_1 = levelDBStore.Heights.Get((recentheight-1).ToString());
+                for (int ii = 0; ii < hashs_1.Count; ii++)
+                {
+                    var linkBlock = blockMgr.GetBlock(hashs_1[ii]);
+                    if (linkBlock!=null&& linkBlock.Address==address)
+                    {
+                        myBlk = linkBlock;
+                    }
+                }
+                if (myBlk == null)
+                {
+                    httpMessage.result  = $"address: {address} , height: { myBlk.height}\n";
+                    httpMessage.result += "no find blk\n";
+                    return;
+                }
+
+                res.Add($"Query address: {address} , blk: {myBlk.hash} , pre: {myBlk.prehash} height: {myBlk.height}\n");
+                Block mcblk2 = BlockChainHelper.GetMcBlock(recentheight-1);
+                res.Add($"mcblk address: {mcblk2.Address} , blk: {mcblk2.hash} , pre: {mcblk2.prehash} height: {mcblk2.height}\n");
+
+                Block mcblk = BlockChainHelper.GetMcBlock(recentheight);
+
+                var hashs_2 = levelDBStore.Heights.Get((recentheight).ToString());
+                for (int ii = 0; ii < hashs_2.Count; ii++)
+                {
+                    var linkBlock = blockMgr.GetBlock(hashs_2[ii]);
+                    var first = linkBlock.linksblk.Values.FirstOrDefault( x => x == myBlk.hash);
+                    var mcflag = "";
+
+                    if (linkBlock.hash == mcblk.hash)
+                    {
+                        mcflag = $"<---- MCBlock height: {mcblk.height}";
+                    }
+
+                    if (!string.IsNullOrEmpty(first))
+                    {
+                        res.Add($"link {linkBlock.Address} , blk: {linkBlock.hash} {mcflag}\n");
+                    }
+                    else
+                    {
+                        res.Add($"bad  {linkBlock.Address} , blk: {linkBlock.hash} {mcflag}\n");
+
+                    }
+                }
+
+                httpMessage.result = "";
+                for (int ii = 0; ii < res.Count; ii++)
+                {
+                    httpMessage.result += res[ii];
+                }
+                //httpMessage.result = JsonHelper.ToJson(res);
+            }
+            catch (Exception ex)
+            {
+                httpMessage.result = "";
+            }
+        }
 
         public async void Test2Async(object o)
         {

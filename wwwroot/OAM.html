@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>SmartX Wallet</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="js/mystyle.css" type="text/css" rel="stylesheet">
+
+    <!--自定义样式
+    <!--<style>
+        .jumbotron {
+            background: url(images/model.png);
+        }
+    </style>
+     -->
+
+</head>
+<body>
+    <script src="bootstrap/jquery.min.js"></script>
+    <script src="bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="js/crypto/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="js/crypto/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="js/crypto/utils/encrpt-ed25519.js"></script>-->
+
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/basex.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/base/base58.js"></script>
+    <script type="text/javascript" src="crypto-master/js/encrypt/ed25519/nacl-fast.js"></script>
+    <script type="text/javascript" src="crypto-master/js/utils/encrypt-ed25519-2.js"></script>
+
+    <script src='js/bignumber.min.js'></script>
+    <script type="text/javascript" src="js/crypto-js.js"></script>
+    <script src='js/forge-sha256.min.js'></script>
+    <script src='js/hashes.js'></script>
+    <script src='js/wallet.js'></script>
+    <script src='js/helper.js'></script>
+    <script src='js/Login.js'></script>
+    <script src="js/translate.js"></script>
+
+    <div class="container">
+
+        <div class="jumbotron">
+            <h1>SmartX</h1>
+            <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
+            <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
+        </div>
+
+        <div style="width:100%;height:100%;overflow-x:auto;">
+            <table class="table table-hover" id="myrules">
+                <caption id="RulesLabel">Rules:</caption>
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>Address</th>
+                        <th>AlppyHeight</th>
+                        <th>PoolHeight</th>
+                        <th>Rule</th>
+                        <th>HardDisk</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="navbar-fixed-bottom navbar-inverse">
+        <div class="row nav_box">
+            <div class="qx_1"><a href="index.html"><h3 class="text-primary lang" key="钱包"></h3></a></div>
+            <div class="qx_1"><a href="browser.html"><h3 class="text-success lang" key="区块"></h3></a></div>
+            <div class="qx_1"><a href="rules.html"><h3 class="text-danger lang" key="节点"></h3></a></div>
+            <div class="qx_1"><a href="setting.html"><h3 class="text-warning lang" key="设置"></h3></a></div>
+        </div>
+    </footer>
+
+    <script>
+
+        function liOnclick(e) {
+            //alert(e.id);
+        };
+        function OnRefresh(e) {
+            window.location.href = window.location.href;
+        };
+
+        function JSONLength(obj) {
+            var size = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) size++;
+            }
+            return size;
+        };
+
+        var colorlist = ["list-group-item-success", "", "list-group-item-info", "", "list-group-item-warning", "", "list-group-item-danger", ""];
+        var colorindex = 0;
+        var platform = Helper.checkPlatform();
+
+        var Ruless = [];
+
+        // 地址栏参数
+        function getRuless() {
+            var search = window.location.search;
+            var query = search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                Ruless[i] = vars[i];
+            }
+            return (false);
+        }
+
+        async function getState(ip) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: "http://" + ip + "/Command?input=stats&style=5",
+                    dataType: "text",
+                    type: "get",
+                    data: { get: "all" },
+                    success: function (data) {
+                        try {
+                            var jsonObj = JSON.parse(data);
+                            var color = colorlist[colorindex % colorlist.length]; colorindex++;
+                            Helper.TableInsert("myrules", ip, color,
+                                ip,
+                                Helper.Simplify(jsonObj["Address"], platform),
+                                jsonObj["AlppyHeight"],
+                                jsonObj["PoolHeight"],
+                                jsonObj["Rule"],
+                                jsonObj["HardDisk"]);
+                            resolve(null);
+                        }
+                        catch (exception) {
+                            var color = colorlist[colorindex % colorlist.length]; colorindex++;
+                            Helper.TableInsert("myrules", ip, color, ip, "Unsupported", "", "", "", "");
+                            resolve(null);
+                        }
+                    },
+                    error: function (err) {
+                        //alert("提交失败");
+                        var color = colorlist[colorindex % colorlist.length]; colorindex++;
+                        Helper.TableInsert("myrules", ip, color, ip, "Timeout", "", "", "", "");
+                        resolve(null);
+                    }
+                });
+            })
+        }
+
+        async function show() {
+            getRuless();
+            for (var rr = 0; rr < Ruless.length; rr++) {
+                await getState(Ruless[rr]);
+            }
+            var element = document.getElementById("RulesLabel");
+            element.innerHTML = "Rules: " + Ruless.length;
+        }
+        show();
+
+        Helper.Statusbar();
+
+
+    </script>
+
+</body>
+</html>

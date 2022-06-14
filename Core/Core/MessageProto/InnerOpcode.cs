@@ -25,5 +25,7 @@ namespace ETModel
 		 public const ushort R2P_Sync_Height = 121;
 		 public const ushort Q2P_HasBlock = 122;
 		 public const ushort R2P_HasBlock = 123;
+		 public const ushort Q2P_Pool = 124;
+		 public const ushort R2P_Pool = 125;
 	}
 }

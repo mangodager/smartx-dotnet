@@ -104,8 +104,9 @@ Wallet.ToAddress = function(publicKey) {
 Wallet.CheckAddress = function (address) {
     try{
         var decode58 = Base58.decodeArray(address);
+        var encode58 = Base58.encode(decode58);
 
-        var temp = new Uint8Array(21);
+        var temp = new Uint8Array(decode58.length-4);
         for (var i = 0; i < temp.length; i++) {
             temp[i] = decode58[i];
         }
@@ -113,15 +114,13 @@ Wallet.CheckAddress = function (address) {
         var hash1 = new Hashes.SHA256().hex(data);
         var hash2 = new Hashes.SHA256().hex(hash1);
         hash2 = Wallet.Hex2Bytes(hash2);
-        var buffer = new Uint8Array(25);
-        for (var i = 0; i < temp.length; i++) {
-            buffer[i] = temp[i];
-        }
+
         for (var i = 0; i < 4; i++) {
-            buffer[21 + i] = hash2[i];
+            if (decode58[21 + i] != hash2[i]) {
+                return false;
+            }
         }
-        var b58 = Base58.encode(buffer);
-        return address == b58;
+        return true;
     }
     catch
     {

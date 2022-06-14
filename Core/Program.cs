@@ -48,37 +48,13 @@ namespace ETModel
                 Update();
                 return;
             }
+
             RandomXSharp.RandomX.randomx_init(false);
 
-            //RandomXSharp.RandomX.Test1(args);
-            //return;
-
-            //Wallet.Import("");
-            //return;
-
-            //BigHelper.Test();
-            //return;
-
-            //CalculatePower.Test();
-            //return;
-
-            //Wallet.Test2();
-            //return;
-
-            //Wallet.Test3();
-            //return;
-
-            // 测试代码
-            //LuaVMEnv.TestRapidjson(args);
-            //LuaVMEnv.TestLib(args);
-            //LuaVMEnv.TestCoroutine(args);
-            //LuaVMEnv.Test_number(args);
-            //LevelDBStore.test_delete(args);
-            //LevelDBStore.test_undo(args);
-            //LevelDBStore.Export2CSV_Block(args);
-            //LevelDBStore.test_ergodic(args);
-            //return;
-            //Log.Info(Environment.CurrentDirectory);
+            if (Test(args))
+            {
+                return;
+            }
 
             if (param.TryGetValue("makeSnapshot", out string _))
             {
@@ -86,44 +62,35 @@ namespace ETModel
                 return;
             }
 
-            string walletFile = param["wallet"];
-            Wallet wallet = Wallet.GetWallet(walletFile);
-            if (wallet == null)
+            if (param.TryGetValue("ExportBlock", out string _))
             {
+                LevelDBStore.ExportBlock(param);
+                return;
+            }
+
+            if (param.TryGetValue("DBRepair", out string _path))
+            {
+                LevelDBStore.Repair(_path);
                 return;
             }
 
             if (param.TryGetValue("makeGenesis", out string _))
             {
+                string walletFile = param["wallet"];
+                var wallet1 = Wallet.GetWallet(walletFile);
+                if (wallet1 == null)
+                {
+                    return;
+                }
                 Consensus.MakeGenesis();
                 return;
             }
-
-            //DisbleQuickEditMode();
-            Console.Clear();
-            Console.CursorVisible = false;
-#if !RELEASE
-            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet.GetCurWallet().ToAddress()} Debug";
-#else
-            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet.GetCurWallet().ToAddress()} Release";
-#endif
-            Log.Debug($"address: {wallet.GetCurWallet().ToAddress()}");
 
             string NodeKey = param["node"];
             // 异步方法全部会回调到主线程
             SynchronizationContext.SetSynchronizationContext(OneThreadSynchronizationContext.Instance);
             AssemblyHelper.AddAssembly("Base",typeof(AssemblyHelper).Assembly);
             AssemblyHelper.AddAssembly("App" ,typeof(Program).Assembly);
-
-            // check contract
-            var contractHash = FileHelper.HashDirectory("Data/Contract", CryptoHelper.Sha256);
-            if (contractHash != "da4d968db3d8a7360873221cb917c9fcb073600968c2e88a22640b90c529d0f1")
-            {
-                Log.Debug($"contractHash error: {contractHash}");
-#if RELEASE
-                return;
-#endif
-            }
 
             // 读取配置文件
             try
@@ -143,29 +110,54 @@ namespace ETModel
                 return;
             }
 
+            Wallet wallet = null;
             if (jdNode!=null)
             {
-                Log.Debug("启动： " + jdNode["appType"]);
-
-                // DNS
-                List<string> list = JsonHelper.FromJson<List<string>>(jdNode["NodeSessions"].ToString());
-                for (int ii = 0; ii < list.Count; ii++)
+                // check contract
+                if (jdNode["Consensus"] != null || jdNode["NodeManager"] != null || jdNode["Pool"] != null || jdNode["CrossChain"] != null)
                 {
-                    list[ii] = NetworkHelper.DnsToIPEndPoint(list[ii]);
+                    string walletFile = param["wallet"];
+                    wallet = Wallet.GetWallet(walletFile);
+                    if (wallet == null)
+                    {
+                        return;
+                    }
+
+                    var contractHash = FileHelper.HashDirectory("Data/Contract", CryptoHelper.Sha256);
+                    if (contractHash != "64cbbe81160d15d7a1d49d815303d03d142e673119a3c827cd15c623525b855b")
+                    {
+                        Log.Debug($"contractHash error: {contractHash}");
+#if RELEASE
+                        return;
+#endif
+                    }
                 }
-                jdNode["NodeSessions"] = JsonHelper.ToJson(list);
+
+                //DisbleQuickEditMode();
+                Console.Clear();
+                Console.CursorVisible = false;
+#if !RELEASE
+            Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet?.GetCurWallet().ToAddress()} Debug";
+#else
+                Console.Title = $"SmartX 配置： {param["configure"]} {index} Address: {wallet?.GetCurWallet().ToAddress()} Release";
+#endif
+                Log.Debug($"address: {wallet?.GetCurWallet().ToAddress()}");
+
+                Log.Debug("启动： " + jdNode["appType"]);
 
                 if (!string.IsNullOrEmpty(index))
                 {
                     if(jdNode["HttpRpc"]!=null)
                         jdNode["HttpRpc"]["ComponentNetworkHttp"]["address"]  = ((string)jdNode["HttpRpc" ]["ComponentNetworkHttp"]["address"]).Replace("8101", (8100 + int.Parse(index)).ToString() );
                     if(jdNode["HttpPool"] !=null)
-                        jdNode["HttpPool"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkHttp"]["address"]).Replace("9101", (9100 + int.Parse(index)).ToString());
+                        jdNode["HttpPool"]["ComponentNetworkInner"]["address"] = ((string)jdNode["HttpPool"]["ComponentNetworkInner"]["address"]).Replace("9101", (9100 + int.Parse(index)).ToString());
                     if(jdNode["SmartxRpc"] !=null)
                         jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"] = ((string)jdNode["SmartxRpc"]["ComponentNetworkHttp"]["address"]).Replace("5000", ((5000 - 1) + int.Parse(index)).ToString());
                     if(jdNode["ComponentNetworkInner"] !=null)
                         jdNode["ComponentNetworkInner"]["address"] = ((string)jdNode["ComponentNetworkInner"]["address"]).Replace("58601", (58600 + int.Parse(index)).ToString());
-                    if(jdNode["RelayNetwork"] !=null)
+                    if (jdNode["publicIP"] != null)
+                        jdNode["publicIP"] = ((string)jdNode["publicIP"]).Replace("58601", (58600 + int.Parse(index)).ToString());
+                    if (jdNode["RelayNetwork"] !=null)
                         jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"] = ((string)jdNode["RelayNetwork"]["ComponentNetworkInner"]["address"]).Replace("57601", (57600 + int.Parse(index)).ToString());
                     if(jdNode["Pool"] != null)
                         jdNode["Pool"]["db_path"] = ((string)jdNode["Pool"]["db_path"]) + index;
@@ -181,8 +173,6 @@ namespace ETModel
 
                 Entity.Root.AddComponent<ComponentStart>(jdNode);
             }
-
-            //TransferProcess.Test();
 
             Update();
 
@@ -244,6 +234,41 @@ namespace ETModel
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Log.Error(e.ExceptionObject.ToString());
+        }
+
+        private static bool Test(string[] args)
+        {
+            //RandomXSharp.RandomX.Test1(args);
+            //return;
+
+            //Wallet.Import("");
+            //return;
+
+            //BigHelper.Test();
+            //return;
+
+            //CalculatePower.Test();
+            //return;
+
+            //Wallet.Test2();
+            //return;
+
+            //Wallet.Test3();
+            //return;
+
+            // 测试代码
+            //LuaVMEnv.TestRapidjson(args);
+            //LuaVMEnv.TestLib(args);
+            //LuaVMEnv.TestCoroutine(args);
+            //LuaVMEnv.Test_number(args);
+            //LevelDBStore.test_delete(args);
+            //LevelDBStore.test_undo(args);
+            //LevelDBStore.Export2CSV_Block(args);
+            //LevelDBStore.test_ergodic(args);
+            //return;
+            //Log.Info(Environment.CurrentDirectory);
+
+            return false;
         }
 
     }

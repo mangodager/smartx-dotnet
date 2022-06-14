@@ -19,6 +19,8 @@ namespace ETModel
 
 		public void Update()
 		{
+			if (mainThreadId != Thread.CurrentThread.ManagedThreadId)
+				return;
 			try
 			{
 				while (true)

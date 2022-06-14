@@ -1,72 +1,24 @@
-E:\tmp\smartx_dotnet\Proto\Proto2CS.deps.json
-E:\tmp\smartx_dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\tmp\smartx_dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\tmp\smartx_dotnet\Proto\Proto2CS.dll
-E:\tmp\smartx_dotnet\Proto\Proto2CS.pdb
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\tmp\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
-E:\smartx_dotnet\Proto\Proto2CS.deps.json
-E:\smartx_dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\smartx_dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\smartx_dotnet\Proto\Proto2CS.dll
-E:\smartx_dotnet\Proto\Proto2CS.pdb
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\smartx_dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
-E:\github\smartx-dotnet\Proto\Proto2CS.deps.json
-E:\github\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\github\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\github\smartx-dotnet\Proto\Proto2CS.dll
-E:\github\smartx-dotnet\Proto\Proto2CS.pdb
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\github\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
-E:\www\smartx-dotnet\Proto\Proto2CS.deps.json
-E:\www\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\www\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\www\smartx-dotnet\Proto\Proto2CS.dll
-E:\www\smartx-dotnet\Proto\Proto2CS.pdb
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\www\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
-E:\github\github版本编译\smartx-dotnet\Proto\Proto2CS.deps.json
-E:\github\github版本编译\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\github\github版本编译\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\github\github版本编译\smartx-dotnet\Proto\Proto2CS.dll
-E:\github\github版本编译\smartx-dotnet\Proto\Proto2CS.pdb
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\github\github版本编译\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
-E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.deps.json
-E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.runtimeconfig.json
-E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.runtimeconfig.dev.json
-E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.dll
-E:\github\github版本编译2\smartx-dotnet\Proto\Proto2CS.pdb
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.dll
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
-E:\github\github版本编译2\smartx-dotnet\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
+D:\Code\smartx_dotnet 2.0\Proto\Proto2CS.deps.json
+D:\Code\smartx_dotnet 2.0\Proto\Proto2CS.runtimeconfig.json
+D:\Code\smartx_dotnet 2.0\Proto\Proto2CS.runtimeconfig.dev.json
+D:\Code\smartx_dotnet 2.0\Proto\Proto2CS.dll
+D:\Code\smartx_dotnet 2.0\Proto\Proto2CS.pdb
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.dll
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
+D:\Code\smartx_dotnet 2.0\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache
+D:\Code\smartx_dotnet 3.0.0\Proto\Proto2CS.deps.json
+D:\Code\smartx_dotnet 3.0.0\Proto\Proto2CS.runtimeconfig.json
+D:\Code\smartx_dotnet 3.0.0\Proto\Proto2CS.runtimeconfig.dev.json
+D:\Code\smartx_dotnet 3.0.0\Proto\Proto2CS.dll
+D:\Code\smartx_dotnet 3.0.0\Proto\Proto2CS.pdb
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.csprojAssemblyReference.cache
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfoInputs.cache
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.AssemblyInfo.cs
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.csproj.CoreCompileInputs.cache
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.dll
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.pdb
+D:\Code\smartx_dotnet 3.0.0\Tools\Proto2CS\obj\Debug\Proto2CS.genruntimeconfig.cache

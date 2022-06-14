@@ -39,9 +39,9 @@ namespace ETModel
                         }
 
                         if(parent!=null&& parent!= obj)
-                            Log.Debug($"{parent.Name}.{obj.Name} + {item.Name}");
+                            Log.Debug($"{parent.Name}.{item.Name} Entity");
                         else
-                            Log.Debug($"{obj.Name} + {item.Name}");
+                            Log.Debug($"{obj.Name}.{item.Name}");
                         obj.AddComponent(item, jd[item.Name]);
 
                         LoadComponent(jd[item.Name], obj);
