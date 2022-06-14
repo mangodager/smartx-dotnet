@@ -1,0 +1,29 @@
+{
+  "All": {
+    "appType": "All",
+
+    "ComponentNetMsg": {
+
+    },
+
+    "publicIP":"10.0.236.10:58601",
+
+    "CrossChain": {
+      "Entity": "CrossChain",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:8547/",
+        "website":true
+      },
+      "db_path": "Data/CrossChainDB",
+      "rpcUrl":"http://rpc.bnbstars.org",
+      "TokenMapping":[
+         ["SAT","",""],
+         ["USDT","nn39KR2C4P8FwqfXZRcTwB7d12RWEgc1r","0xdcd456342075037988a2cbe5f174bfe87825ce36"],
+      ],
+    },
+
+
+  }
+
+}

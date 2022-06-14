@@ -1,0 +1,78 @@
+{
+  "All": {
+    "appType": "All",
+
+    "NodeSessions": [
+      "seednode.smartx.one:58600",
+      "seednode2.smartx.one:58600",
+    ],
+
+    "LevelDBStore": {
+      "db_path": "Data/LevelDB",
+      "db_MultiThread":true,
+    },
+
+    "ComponentNetworkInner": {
+      "protocol": "TCP",
+      "address": "0.0.0.0:58601",
+      "CheckHearBeat": false,
+      "CheckKcpWaitsnd": false,
+      "ComponentNetMsg": {},
+    },
+
+
+    "LuaVMEnv": {
+    },
+
+    "NodeManager": {
+    },
+
+    "BlockMgr": {
+    },
+
+
+    "Consensus": {
+      "openSyncFast" : true,
+    },
+
+    "Rule": {
+      "Run": true,
+      "TransferComponent":{},
+    },
+
+    "SmartxRpc": {
+      "Entity": "SmartxRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:5000/"
+      }
+    },
+
+    "HttpRpc": {
+      "Entity": "HttpRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:8101/",
+        "website":true
+      }
+
+    },
+
+    "RelayNetwork": {
+      "Entity": "RelayNetwork",
+      "ComponentNetworkInner": {
+        "protocol": "TCP",
+        "address": "0.0.0.0:57601",
+        "CheckHearBeat": false,
+        "CheckKcpWaitsnd": false,
+        "ComponentNetMsg":{},
+      },
+    },
+
+    "AutoBeRuler": {
+      "Run": true
+    },
+
+  }
+
+}

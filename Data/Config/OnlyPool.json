@@ -1,0 +1,52 @@
+{
+  "All": {
+    "appType": "All",
+
+    "NodeSessions": [
+      "seednode.smartx.one:58600"
+    ],
+    "ComponentNetMsg": {
+
+    },
+    "HttpRpc": {
+      "Entity": "HttpRpc",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:8101/",
+        "website": true
+      }
+    },
+    "HttpPool": {
+      "ComponentNetworkInner": {
+        "Entity": "Network",
+        "protocol": "TCP",
+        "address": "0.0.0.0:9101",
+        "CheckHearBeat": true,
+        "CheckKcpWaitsnd": false,
+        "ComponentNetMsg": {},
+      },
+      "minerLimit": 6000,
+      "ignorePower": 20,
+      "poolPassword":""
+    },
+    "Pool": {
+      "style": "PPLNS",
+      "db_path": "Data/PoolDB",
+      "serviceFee": 0.03,
+      "RewardInterval":240,
+      "registerPool":false
+    },
+    "HttpPoolRelay": {
+      "protocol": "TCP",
+      "number": "Pool1",
+      "rulerWeb": "192.168.3.7:8102",
+      "poolUrl": "192.168.3.7:9102",
+    }
+  },
+}
+
+
+
+
+
+
