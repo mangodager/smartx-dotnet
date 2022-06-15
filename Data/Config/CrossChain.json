@@ -16,7 +16,9 @@
         "website":true
       },
       "db_path": "Data/CrossChainDB",
-      "rpcUrl":"http://rpc.bnbstars.org",
+      "SL2_rpcUrl":"http://123.58.210.13:8546",
+      "SAT_httpRpc8101":"http://122.10.161.138:8102",
+      "SAT_bestNodeRpc":"http://app.smartx.one/getNode",
       "TokenMapping":[
          ["SAT","",""],
          ["USDT","nn39KR2C4P8FwqfXZRcTwB7d12RWEgc1r","0xdcd456342075037988a2cbe5f174bfe87825ce36"],
