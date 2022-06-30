@@ -82,6 +82,7 @@
             <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
             &nbsp;&nbsp;&nbsp;&nbsp;
             <button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>
+            <button type="button" class="btn btn-primary" onclick="liOnCorssChainMGR()" id="CorssChainMGRBtn" style="display: none;">后台管理</button>
             <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
@@ -385,6 +386,10 @@
                     console.log(addressCrossChain);
                     console.log(cashOutData);
                     console.log(MappingSymbol);
+
+                    if (addressCur == addressCrossChain) {
+                        $('#CorssChainMGRBtn').show();
+                    }
                 },
                 error: function (err) {
                 }
@@ -594,6 +599,9 @@
 
         function liOnSatswap() {
             window.location.href = "satswap.html?address=" + addressCur;
+        };
+        function liOnCorssChainMGR(){
+            window.location.href = "crosschainMGR.html?address=" + addressCur;
         };
 
         function liOnModalQRCodeLeave(e) {
@@ -842,13 +850,14 @@
 
                     var element = document.getElementById("statsLabel");
                     element.innerHTML = data;
-
+                     
                 },
                 error: function (err) {
                 }
             });
         }
         QueryStats();
+
 
         Helper.Statusbar();
     </script>

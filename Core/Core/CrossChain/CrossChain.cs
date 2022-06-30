@@ -134,8 +134,6 @@ namespace ETModel
             poolIP += $"'Ruler->{ipAddress}:{httpPool?.GetHttpAdderrs().Port}':'http://{ipAddress}:{networkHttp.ipEndPoint.Port}'\n";
             RawUrlFileText = RawUrlFileText.Replace("Helper.PoolList = {}", $"Helper.PoolList = {{\n{poolIP}}}");
 
-            RawUrlFileText = RawUrlFileText.Replace("'http://127.0.0.1:8547'", $"\"http://{Authority}\"");
-
             return System.Text.Encoding.UTF8.GetBytes(RawUrlFileText);
         }
 
@@ -205,7 +203,7 @@ namespace ETModel
 
         public string GetCashOutAddress(string addressSAT)
         {
-            using (DbSnapshot snapshot = crossChainDBStore.GetSnapshot(0, true))
+            using (DbSnapshot snapshot = crossChainDBStore.GetSnapshot(0, false))
             {
                 return snapshot.Get($"SAT_CashOut{addressSAT}");
             }
@@ -1017,6 +1015,9 @@ namespace ETModel
                 case "getcashoutlog":
                     GetCashOutLog(httpMessage);
                     break;
+                case "getcashoutmgr":
+                    GetCashOutMgr(httpMessage);
+                    break;
                 default:
                     {
                         if (cmd!= "hearbeat" && bestNodeList.Count>0)
@@ -1137,7 +1138,7 @@ namespace ETModel
             int.TryParse(indexStr, out int getIndex);
 
             var objList = new List<JObject>();
-            using (DbSnapshot snapshot = crossChainDBStore.GetSnapshot(0, true))
+            using (DbSnapshot snapshot = crossChainDBStore.GetSnapshot(0, false))
             {
                 int Log_Count = snapshot.List.GetCount($"CASH_OUT_{address}");
                 getIndex = Log_Count - getIndex;
@@ -1169,6 +1170,39 @@ namespace ETModel
             {
                 var obj = v.Value;
                 if (obj != null && obj["addressIn"].ToString() == address)
+                {
+                    objList.Insert(0, obj);
+                }
+            }
+
+            httpMessage.result = JsonHelper.ToJson(objList);
+        }
+
+        public void GetCashOutMgr(HttpMessage httpMessage)
+        {
+            if (!HttpRpc.GetParam(httpMessage, "1", "address", out string address))
+            {
+                httpMessage.result = "command error! \nexample: account address";
+                return;
+            }
+            HttpRpc.GetParam(httpMessage, "2", "index", out string indexStr);
+
+            int.TryParse(indexStr, out int getIndex);
+
+            var objList = new List<JObject>();
+            foreach (var v in recharges)
+            {
+                var obj = v.Value;
+                if (obj != null && (TimeHelper.Now() - long.Parse(obj["timestamp"].ToString())) > 120000)
+                {
+                    objList.Insert(0, obj);
+                }
+            }
+
+            foreach (var v in cashOuts)
+            {
+                var obj = v.Value;
+                if (obj != null && (TimeHelper.Now() - long.Parse(obj["timeCashOut"].ToString())) > 120000)
                 {
                     objList.Insert(0, obj);
                 }

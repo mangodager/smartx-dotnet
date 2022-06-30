@@ -1,0 +1,27 @@
+{
+  "All": {
+    "appType": "All",
+
+    "ComponentNetMsg": {
+
+    },
+
+    "publicIP":"10.0.236.10:58601",
+
+    "NFTFaucet": {
+      "Entity": "CrossChain",
+      "ComponentNetworkHttp": {
+        "protocol": "HttpSocket",
+        "address": "http://0.0.0.0:8105/",
+        "website":true
+      },
+      "db_path": "Data/NFTFaucetDB",
+      "SAT_httpRpc8101":"http://122.10.161.138:8102",
+      "SAT_bestNodeRpc":"http://app.smartx.one/getNode",
+
+    },
+
+
+  }
+
+}

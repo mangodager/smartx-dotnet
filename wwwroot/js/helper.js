@@ -37,7 +37,8 @@
     }
 
     Helper.GetCrossChainRpc = function () {
-        return 'http://127.0.0.1:8547';
+        return Helper.GetServerIP();
+        //return 'http://127.0.0.1:8547';
     }
     Helper.PoolList = {}
 
