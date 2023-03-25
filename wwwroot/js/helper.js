@@ -1,13 +1,25 @@
 ﻿(function (Helper) {
 'use strict';
 
-    Helper.checkPlatform = function() {
-        var system = {};
-        var p = navigator.platform;
-        system.win = p.indexOf('Win') == 0;
-        system.mac = p.indexOf("Mac") == 0;
-        system.x11 = (p == "X11") || (p.indexOf("Linux") == 0);
-        if (system.win || system.mac || system.x11) {
+    Helper.checkPlatform = function () {
+        const ua = navigator.userAgent.toLowerCase();
+        const testUa = regexp => regexp.test(ua);
+
+        // 系统
+        let system = "unknown";
+        if (testUa(/windows|win32|win64|wow32|wow64/ig)) {
+            system = "Windows"; // window系统
+        } else if (testUa(/macintosh|macintel/ig)) {
+            system = "MAC OS"; // MAC OS系统
+        } else if (testUa(/x11/ig)) {
+            system = "Linux"; // Linux系统
+        } else if (testUa(/android|adr/ig)) {
+            system = "Android"; // Android系统
+        } else if (testUa(/ios|iphone|ipad|ipod|iwatch/ig)) {
+            system = "IOS"; // IOS系统
+        }
+
+        if (system == "Windows" || system == "MAC OS" || system == "Linux") {
             return "pc";
         } else {
             return "phone";
@@ -545,8 +557,11 @@
                         case -11:
                             text = Translate.Get("交易包大小超过限制");
                             break;
+                        case -23:
+                            text = "体现金额必须大于20000";
+                            break;
                     }
-                    alert(Translate.Get("提交失败: ") + text);
+                    alert(Translate.Get("提交失败: ") + rel + "," + text);
                     Helper.liOnTransferInfoDelete(hash);
                 }
 

@@ -92,7 +92,7 @@
             <button type="button" class="btn btn-info" onclick="liOnPledge()"><div class="lang" key="质押合约"></div></button>
             <button type="button" class="btn btn-info" onclick="liOnNFT()"><div class="lang" key="数字资产"></div></button>
             <button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>
-            <button type="button" class="btn btn-primary" onclick="liOnCorssChain()" id="CorssChainBtn"><div class="lang" key="跨链"></div></button>
+            <button type="button" class="btn btn-primary" onclick="liOnCorssChain()" id="CorssChainBtn"><div class="lang" key="跨链BSC"></div></button>
             <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
@@ -522,7 +522,7 @@
         };
 
         function liOnCorssChain() {
-            window.location.href = "crosschain.html?address=" + addressCur;
+            window.location.href = "crosschainBSC.html?address=" + addressCur;
         };
 
         function liOnModalQRCodeLeave(e) {

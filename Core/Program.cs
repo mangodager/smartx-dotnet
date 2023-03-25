@@ -114,8 +114,7 @@ namespace ETModel
             if (jdNode!=null)
             {
                 // check contract
-                if (jdNode["Consensus"] != null || jdNode["NodeManager"] != null || jdNode["Pool"] != null
-                || jdNode["CrossChain"] != null || jdNode["NFTFaucet"] != null)
+                if (jdNode["UseWallet"] == null || jdNode["UseWallet"].ToString()=="true" )
                 {
                     string walletFile = param["wallet"];
                     wallet = Wallet.GetWallet(walletFile);

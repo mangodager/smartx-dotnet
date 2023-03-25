@@ -101,11 +101,11 @@
 
         <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="mytable">
-                <caption id="caption_mytable111" class="lang" key="账单列表:"></caption>
+                <caption id="caption_mytable111" >跨链列表:</caption>
                 <thead id="thead_mytable111">
                     <tr>
                         <th class="lang" key="名称"></th>
-                        <th style='text-align:right;' class="lang" key="余额"></th>
+                        <th style='text-align:center;' class="lang" key="余额"></th>
                     </tr>
                 </thead>
             </table>
@@ -127,7 +127,7 @@
 
         <footer class="navbar-fixed-bottom ">
             <center>
-                <div style="width:50%;height:100%;overflow-x:auto;">
+                <div style="max-width: 75%; min-width: 350px; height: 100%">
                     <table class="table table-hover" id="statusbar" style='background:#ffffff'>
                     </table>
                 </div>
@@ -166,7 +166,7 @@
 
                     <div style="margin-left: 30px;">
                         <h5 class="text-muted">网络</h5>
-                        <h4 class="text-white">SL2 Main Chain</h4>
+                        <h4 class="text-white">BSC</h4>
                         <h4></h4>
 
                         <h5 class="text-muted">入账账户</h5>
@@ -174,7 +174,7 @@
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white">从SL2充值至SAT主网</h4>
+                        <h4 class="text-white">从BSC充值至SAT主网</h4>
                         <h4></h4>
                     </div>
 
@@ -200,7 +200,7 @@
                     </div>
                     <h3></h3>
 
-                    <div style="margin-left: 30px;">
+                    <div style="padding-inline: 15px;">
                         <fieldset>
                             <p>
                                 <label for="username" class="lang" key="转出地址:">转出地址:</label>
@@ -210,7 +210,7 @@
                             <p>
                                 <label for="username" class="lang" key="提现地址:">提现地址:</label>
                                 <input type="text" id="input_addressOut" align="left">
-                                <label for="title" id="tokenname">SL2地址</label>
+                                <label for="title" id="tokenname">BSC地址</label>
                             </p>
 
                             <p>
@@ -221,18 +221,18 @@
                         </fieldset>
 
                         <h5 class="text-muted">入账账户</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">SL2</h4>
+                        <h4 class="text-white" style="padding-inline: 10px;">BSC</h4>
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">从SAT主网提现至SL2</h4>
+                        <h4 class="text-white" style="padding-inline: 10px;">从SAT主网提现至BSC</h4>
                         <h4></h4>
                         <h5 class="text-muted">状态</h5>
-                        <div style="margin-left: 12px;" id="ModalCashOut_State">
+                        <div style="padding-inline: 10px;" id="ModalCashOut_State">
                             <h5 class="text-muted">SAT交易Hash:</h5>
                             <h5 class="text-muted">SAT主网交易确认</h5>
-                            <h5 class="text-muted">SL2交易Hash:</h5>
-                            <h5 class="text-muted">SL2转账确认</h5>
+                            <h5 class="text-muted">BSC交易Hash:</h5>
+                            <h5 class="text-muted">BSC转账确认</h5>
                             <h5 class="text-muted">提现完成</h5>
                             <h4></h4>
                         </div>
@@ -263,12 +263,12 @@
                     </div>
                     <h3></h3>
 
-                    <div style="margin-left: 30px;">
+                    <div style="padding-inline: 15px;">
                         <fieldset>
                             <p>
                                 <label for="username" class="lang" key="转出地址:">转出地址:</label>
                                 <input type="text" id="input_addressIn" align="left" disabled="disabled">
-                                <label for="title" id="tokenname">SL2地址</label>
+                                <label for="title" id="tokenname">BSC地址</label>
                             </p>
                             <p>
                                 <label for="username" class="lang" key="提现地址:">充值地址:</label>
@@ -283,16 +283,16 @@
                         </fieldset>
 
                         <h5 class="text-muted">充值账户</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">SAT</h4>
+                        <h4 class="text-white" style="padding-inline: 10px;">SAT</h4>
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">从SL2充值至SAT主网</h4>
+                        <h4 class="text-white" style="padding-inline: 10px;">从BSC充值至SAT主网</h4>
                         <h4></h4>
                         <h5 class="text-muted">状态</h5>
-                        <div style="margin-left: 12px;" id="ModalRechargeLog_State">
-                            <h5 class="text-muted">SL2交易Hash:</h5>
-                            <h5 class="text-muted">SL2转账确认</h5>
+                        <div style="padding-inline: 10px;" id="ModalRechargeLog_State">
+                            <h5 class="text-muted">BSC交易Hash:</h5>
+                            <h5 class="text-muted">BSC转账确认</h5>
                             <h5 class="text-muted">SAT交易Hash:</h5>
                             <h5 class="text-muted">SAT主网交易确认</h5>
                             <h5 class="text-muted">提现完成</h5>
@@ -367,7 +367,7 @@
         var transferIndex = 0;
         var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
         var MappingSymbol = { "SAT": "SAT", "USDT": "nn39KR2C4P8FwqfXZRcTwB7d12RWEgc1r" };
-        var chain_name = "SL2";
+        var chain_name = "BSC";
 
         var addressCrossChain = 0;
         var cashOutData = null;
@@ -588,8 +588,8 @@
                                 $('#ModalRechargeLog #input_amount').val(_cashOutData["amount"])
 
                                 var innerHTML = "";
-                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">SL2交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
-                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">SL2转账确认</h5>';
+                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">BSC交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
+                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">BSC转账确认</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">SAT交易Hash:<br/>' + (_cashOutData["SAT_hash"] != undefined ? _cashOutData["SAT_hash"] : '') + '</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">SAT主网交易确认</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '5' ? "text-white" : "text-muted") + '">充值完成</h5>';
@@ -663,7 +663,7 @@
                 height: 196
             });
             //window.location.href获取到URL
-            qrcodeEncode.makeCode("http://www.SmartX.com/Wallet/transfer.html?target=" + address);
+            qrcodeEncode.makeCode(address);
 
         };
 
@@ -694,8 +694,8 @@
                 var innerHTML = "";
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">SAT交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">SAT主网交易确认</h5>';
-                innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">SL2交易Hash:<br/>' + (_cashOutData["SL2_hash"] != undefined ? _cashOutData["SL2_hash"] : '') + '</h5>';
-                innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">SL2转账确认</h5>';
+                innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">BSC交易Hash:<br/>' + (_cashOutData["SL2_hash"] != undefined ? _cashOutData["SL2_hash"] : '') + '</h5>';
+                innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">BSC转账确认</h5>';
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '5' ? "text-white" : "text-muted") + '">提现完成</h5>';
                 innerHTML += '<h4></h4>';
                 document.getElementById("ModalCashOut_State").innerHTML = innerHTML;
@@ -712,8 +712,8 @@
                 var innerHTML = "";
                 innerHTML += '<h5 class="text-muted">SAT交易Hash:</h5>'
                 innerHTML += '<h5 class="text-muted">SAT主网交易确认</h5>'
-                innerHTML += '<h5 class="text-muted">SL2交易Hash:</h5>'
-                innerHTML += '<h5 class="text-muted">SL2转账确认</h5>'
+                innerHTML += '<h5 class="text-muted">BSC交易Hash:</h5>'
+                innerHTML += '<h5 class="text-muted">BSC转账确认</h5>'
                 innerHTML += '<h5 class="text-muted">提现完成</h5>'
                 innerHTML += '<h4></h4>'
                 document.getElementById("ModalCashOut_State").innerHTML = innerHTML;
@@ -770,7 +770,7 @@
                 error: function (err) {
                 }
             });
-            setTimeout(function () { OnRefreshAmount(); }, 8000);
+            //setTimeout(function () { OnRefreshAmount(); }, 8000);
         }
         OnRefreshAmount();
 
@@ -781,7 +781,7 @@
 
             }
             if (amount.isLessThanOrEqualTo(0)) {
-                alert(Translate.Get('amount Must be greater than zero'));
+                alert(Translate.Get('amount Must be greater than 0'));
                 return false;
             }
             if (amount.isNaN()) {
@@ -801,7 +801,7 @@
                 alert(Translate.Get("CrossChain Address Error!"));
             }
 
-            if (tokenAddress=="")
+            if (tokenAddress == "" || tokenAddress == null)
             {
                 var amount = new BigNumber((new BigNumber($('#ModalCashOut #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
                 var addressCashOut = $('#ModalCashOut #input_addressOut').val();
@@ -822,7 +822,6 @@
                 }
             }
             else
-            if (tokenAddress != "")
             {
                 var amount = new BigNumber((new BigNumber($('#ModalCashOut #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
                 var addressCashOut = $('#ModalCashOut #input_addressOut').val();
@@ -864,8 +863,8 @@
         }
         QueryStats();
 
-
         Helper.Statusbar();
+
     </script>
 
 

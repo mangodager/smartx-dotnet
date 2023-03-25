@@ -82,7 +82,6 @@
             <button type="button" class="btn btn-primary" onclick='OnRefresh()'><div class="lang" key="刷新"></div></button>
             &nbsp;&nbsp;&nbsp;&nbsp;
             <button type="button" class="btn btn-primary" onclick="liOnSatswap()">Satswap</button>
-            <button type="button" class="btn btn-primary" onclick="liOnCorssChainMGR()" id="CorssChainMGRBtn" style="display: none;">后台管理</button>
             <button type="button" style="float:right" class="translate btn btn-success" id="en"><div class="lang" key="语言"></div></button>
 
         </div>
@@ -100,20 +99,8 @@
         </div>
 
         <div style="width:100%;height:100%;overflow-x:auto;">
-            <table class="table table-hover" id="mytable">
-                <caption id="caption_mytable111" class="lang" key="账单列表:"></caption>
-                <thead id="thead_mytable111">
-                    <tr>
-                        <th class="lang" key="名称"></th>
-                        <th style='text-align:right;' class="lang" key="余额"></th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-
-        <div style="width:100%;height:100%;overflow-x:auto;">
             <table class="table table-hover" id="logtable">
-                <caption id="caption_mytable111" class="lang" key="Log:">Log:</caption>
+                <caption id="caption_mytable111" class="lang" key="Log:">Mgr:</caption>
                 <thead id="thead_mytable111">
                     <tr>
                         <th class="lang" key="hash">hash</th>
@@ -166,7 +153,7 @@
 
                     <div style="margin-left: 30px;">
                         <h5 class="text-muted">网络</h5>
-                        <h4 class="text-white">SL2 Main Chain</h4>
+                        <h4 class="text-white">BSC</h4>
                         <h4></h4>
 
                         <h5 class="text-muted">入账账户</h5>
@@ -174,7 +161,7 @@
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white">从SL2充值至SAT主网</h4>
+                        <h4 class="text-white">从BSC充值至SAT主网</h4>
                         <h4></h4>
                     </div>
 
@@ -210,7 +197,7 @@
                             <p>
                                 <label for="username" class="lang" key="提现地址:">提现地址:</label>
                                 <input type="text" id="input_addressOut" align="left">
-                                <label for="title" id="tokenname">SL2地址</label>
+                                <label for="title" id="tokenname">BSC地址</label>
                             </p>
 
                             <p>
@@ -221,18 +208,18 @@
                         </fieldset>
 
                         <h5 class="text-muted">入账账户</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">SL2</h4>
+                        <h4 class="text-white" style="margin-left: 12px;">BSC</h4>
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">从SAT主网提现至SL2</h4>
+                        <h4 class="text-white" style="margin-left: 12px;">从SAT主网提现至BSC</h4>
                         <h4></h4>
                         <h5 class="text-muted">状态</h5>
                         <div style="margin-left: 12px;" id="ModalCashOut_State">
                             <h5 class="text-muted">SAT交易Hash:</h5>
                             <h5 class="text-muted">SAT主网交易确认</h5>
-                            <h5 class="text-muted">SL2交易Hash:</h5>
-                            <h5 class="text-muted">SL2转账确认</h5>
+                            <h5 class="text-muted">BSC交易Hash:</h5>
+                            <h5 class="text-muted">BSC转账确认</h5>
                             <h5 class="text-muted">提现完成</h5>
                             <h4></h4>
                         </div>
@@ -268,7 +255,7 @@
                             <p>
                                 <label for="username" class="lang" key="转出地址:">转出地址:</label>
                                 <input type="text" id="input_addressIn" align="left" disabled="disabled">
-                                <label for="title" id="tokenname">SL2地址</label>
+                                <label for="title" id="tokenname">BSC地址</label>
                             </p>
                             <p>
                                 <label for="username" class="lang" key="提现地址:">充值地址:</label>
@@ -287,12 +274,12 @@
                         <h4></h4>
 
                         <h5 class="text-muted">说明</h5>
-                        <h4 class="text-white" style="margin-left: 12px;">从SL2充值至SAT主网</h4>
+                        <h4 class="text-white" style="margin-left: 12px;">从BSC充值至SAT主网</h4>
                         <h4></h4>
                         <h5 class="text-muted">状态</h5>
                         <div style="margin-left: 12px;" id="ModalRechargeLog_State">
-                            <h5 class="text-muted">SL2交易Hash:</h5>
-                            <h5 class="text-muted">SL2转账确认</h5>
+                            <h5 class="text-muted">BSC交易Hash:</h5>
+                            <h5 class="text-muted">BSC转账确认</h5>
                             <h5 class="text-muted">SAT交易Hash:</h5>
                             <h5 class="text-muted">SAT主网交易确认</h5>
                             <h5 class="text-muted">提现完成</h5>
@@ -367,7 +354,7 @@
         var transferIndex = 0;
         var locktime = Date.parse(new Date()) / 1000; // 初始化时间戳
         var MappingSymbol = { "SAT": "SAT", "USDT": "nn39KR2C4P8FwqfXZRcTwB7d12RWEgc1r" };
-        var chain_name = "SL2";
+        var chain_name = "BSC";
 
         var addressCrossChain = 0;
         var cashOutData = null;
@@ -391,10 +378,8 @@
                     console.log(chain_name);
 
                     if (addressCur == addressCrossChain) {
-                        $('#CorssChainMGRBtn').show();
+                    //    $('#CorssChainMGRBtn').show();
                     }
-
-                    onPropertyInit();
                 },
                 error: function (err) {
                 }
@@ -442,21 +427,6 @@
                 document.getElementById("btnCopyToClip").click();
         }
 
-        TableInsert3 = function () {
-            var innerHTML = "<tbody><tr class='mycolor' id='myid' onclick='liOnclick(this)'>";
-            innerHTML = innerHTML.replace(/myid/g, arguments[1]);
-            innerHTML = innerHTML.replace(/mycolor/g, arguments[2]);
-
-            innerHTML += "<td style='vertical-align:middle;'>" + arguments[3] + "</td>";
-            innerHTML += "<td style='text-align:center;vertical-align:middle;'>" + arguments[4] + "</td>";
-            innerHTML += "<td style='text-align:center;vertical-align:middle;'>" + arguments[5] + "</td.amount>";
-            innerHTML += '</tr ></tbody>';
-
-            var item_new = document.createElement("tbody");
-
-            item_new.innerHTML = innerHTML;
-            document.getElementById(arguments[0]).appendChild(item_new);
-        }
 
         async function getBalanceOf(tokenAddress) {
             return new Promise((resolve, reject) => {
@@ -482,36 +452,13 @@
             });
         }
 
-        async function onPropertyInit() {
-            colorindex = 1;
-            // 删除之前的数据
-            var mytableEle = document.getElementById("mytable");
-            for (var i = mytableEle.children.length - 1; i >= 0; i--) {
-                if (mytableEle.children[i].id.indexOf("_mytable111") == -1)
-                    mytableEle.children[i].remove();
-            }
-
-            for (var symbol in MappingSymbol) {
-                var color = colorlist[(colorindex - 1) % colorlist.length]; colorindex++;
-                var tokenAdress = MappingSymbol[symbol] == symbol ? "" :  MappingSymbol[symbol];
-                var amount = await getBalanceOf(tokenAdress);
-
-                var state = "";
-                state = " <button type=\"button\" class=\"btn btn-danger\"  style=\"width: 90px;\" onclick='liOnRechargeAddress(\"" + tokenAdress + "\",\"" + addressCur + "\")'>" + Translate.Get("充值") + "</button>";
-                state += " <button type=\"button\" class=\"btn btn-warning\" style=\"width: 90px;\" onclick='liOnCashOut(\"" + tokenAdress + "\",\"" + addressCur + "\")'>" + Translate.Get("提现至" + chain_name) + "</button>";
-                TableInsert3("mytable", symbol + ":" + tokenAdress, color, symbol, amount, state);
-                //break;
-            }
-        }
-        
-
         var cashOutDataLog = null;
         var crossChainLogIndex = 0;
         function onCrossChainLog() {
             //colorindex = 1;
 
             $.ajax({
-                url: Helper.GetCrossChainRpc() + "/getcashoutlog",
+                url: Helper.GetCrossChainRpc() + "/getcashoutmgr",
                 dataType: "text",
                 type: "get",
                 data: { address: addressCur },
@@ -588,8 +535,8 @@
                                 $('#ModalRechargeLog #input_amount').val(_cashOutData["amount"])
 
                                 var innerHTML = "";
-                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">SL2交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
-                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">SL2转账确认</h5>';
+                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">BSC交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
+                                innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">BSC转账确认</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">SAT交易Hash:<br/>' + (_cashOutData["SAT_hash"] != undefined ? _cashOutData["SAT_hash"] : '') + '</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">SAT主网交易确认</h5>';
                                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '5' ? "text-white" : "text-muted") + '">充值完成</h5>';
@@ -604,9 +551,6 @@
 
         function liOnSatswap() {
             window.location.href = "satswap.html?address=" + addressCur;
-        };
-        function liOnCorssChainMGR(){
-            window.location.href = "crosschainMGR.html?address=" + addressCur;
         };
 
         function liOnModalQRCodeLeave(e) {
@@ -694,8 +638,8 @@
                 var innerHTML = "";
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '1' ? "text-white" : "text-muted") + '">SAT交易Hash:<br/>' + _cashOutData["hash"] + '</h5>';
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '2' ? "text-white" : "text-muted") + '">SAT主网交易确认</h5>';
-                innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">SL2交易Hash:<br/>' + (_cashOutData["SL2_hash"] != undefined ? _cashOutData["SL2_hash"] : '') + '</h5>';
-                innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">SL2转账确认</h5>';
+                innerHTML += '<h5 class="' + (_cashOutData['state'] == '3' ? "text-white" : "text-muted") + '">BSC交易Hash:<br/>' + (_cashOutData["SL2_hash"] != undefined ? _cashOutData["SL2_hash"] : '') + '</h5>';
+                innerHTML += '<h5 class="' + (_cashOutData['state'] == '4' ? "text-white" : "text-muted") + '">BSC转账确认</h5>';
                 innerHTML += '<h5 class="' + (_cashOutData['state'] == '5' ? "text-white" : "text-muted") + '">提现完成</h5>';
                 innerHTML += '<h4></h4>';
                 document.getElementById("ModalCashOut_State").innerHTML = innerHTML;
@@ -712,8 +656,8 @@
                 var innerHTML = "";
                 innerHTML += '<h5 class="text-muted">SAT交易Hash:</h5>'
                 innerHTML += '<h5 class="text-muted">SAT主网交易确认</h5>'
-                innerHTML += '<h5 class="text-muted">SL2交易Hash:</h5>'
-                innerHTML += '<h5 class="text-muted">SL2转账确认</h5>'
+                innerHTML += '<h5 class="text-muted">BSC交易Hash:</h5>'
+                innerHTML += '<h5 class="text-muted">BSC转账确认</h5>'
                 innerHTML += '<h5 class="text-muted">提现完成</h5>'
                 innerHTML += '<h4></h4>'
                 document.getElementById("ModalCashOut_State").innerHTML = innerHTML;
@@ -770,7 +714,7 @@
                 error: function (err) {
                 }
             });
-            setTimeout(function () { OnRefreshAmount(); }, 8000);
+            setTimeout(function () { OnRefreshAmount(); }, 15000);
         }
         OnRefreshAmount();
 
@@ -801,34 +745,12 @@
                 alert(Translate.Get("CrossChain Address Error!"));
             }
 
-            if (tokenAddress=="")
-            {
-                var amount = new BigNumber((new BigNumber($('#ModalCashOut #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
-                var addressCashOut = $('#ModalCashOut #input_addressOut').val();
-                var remarks = "CashOutSubmit:" + addressCashOut;;
-                var nonce = nonceCur;
-
-                if (CheckTransfer(amount, addressCrossChain, nonce, "", remarks)) {
-                    $('#btnCashOutSubmit').attr("disabled", true);
-                    var hash = Helper.SendTransferSubmit(null, "transfer", amount.toString(), addressCrossChain, "", "", nonce, remarks, Helper.GetCrossChainRpc());
-                    if (hash != null) {
-                        Helper.Statusbar("statusbar", hash, "", "地址: " + addressCashOut + " 提现: " + Helper.Fix(amount), 1, nonceCur);
-                        Helper.MessageBox('交易已提交');
-
-                        $("#ModalCashOut").modal('hide');
-                        GetCrossChainConf();
-                        onCrossChainLog();
-                    }
-                }
-            }
-            else
-            if (tokenAddress != "")
-            {
+            if (tokenAddress != null && tokenAddress != "") {
                 var amount = new BigNumber((new BigNumber($('#ModalCashOut #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
                 var addressCashOut = $('#ModalCashOut #input_addressOut').val();
                 var addressOut = tokenAddress;
                 var data = "transfer(\"" + addressCrossChain + "\",\"" + amount.toString() + "\")";
-                var remarks = "CashOutSubmit:" + addressCashOut;
+                var remarks = "CashOutSubmit:"+addressCashOut;
                 var nonce = nonceCur;
 
                 if (CheckTransfer(amount, addressOut, nonce, "", remarks)) {
@@ -844,6 +766,27 @@
                     }
                 }
             }
+            else {
+                var amount = new BigNumber((new BigNumber($('#ModalCashOut #input_amount').val())).toFixed(8, BigNumber.ROUND_DOWN)); // 截断小数点后8位，并且去掉多余的0
+                var addressCashOut = $('#ModalCashOut #input_addressOut').val();
+                var remarks = "CashOutSubmit:"+addressCashOut;;
+                var nonce = nonceCur;
+
+                if (CheckTransfer(amount, addressCrossChain, nonce, "", remarks)) {
+                    $('#btnCashOutSubmit').attr("disabled", true);
+                    var hash = Helper.SendTransferSubmit(null, "transfer", amount.toString(), addressCrossChain, "", "", nonce, remarks, Helper.GetCrossChainRpc());
+                    if (hash != null) {
+                        Helper.Statusbar("statusbar", hash, "", "地址: " + addressCashOut + " 提现: " + Helper.Fix(amount), 1, nonceCur);
+                        Helper.MessageBox('交易已提交');
+
+                        $("#ModalCashOut").modal('hide');
+                        GetCrossChainConf();
+                        onCrossChainLog();
+                    }
+                }
+            }
+
+
         }
 
         function QueryStats() {
